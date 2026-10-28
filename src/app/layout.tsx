@@ -1,0 +1,38 @@
+import type { Metadata } from "next";
+import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif, Outfit } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import "./globals.css";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+});
+// Geometric sans with a true-circle "o", used only for the wordmark.
+const outfit = Outfit({ variable: "--font-outfit", subsets: ["latin"], weight: ["400", "500"] });
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+export const metadata: Metadata = {
+  title: "Bloom AI — Category-Defining Autonomous Engines",
+  description:
+    "Category-defining autonomous engines for creators, founders, and high-end enterprises: the Aware Marketing Engine, Aware Infrastructure Architect, Autonomous Shadow Workforce, and IntentPulse Lead Engine. Built and launched as standalone apps by the Bloom AI lab.",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${cormorant.variable} ${outfit.variable} min-h-dvh bg-background antialiased`}>
+        {children}
+        <Toaster richColors />
+      </body>
+    </html>
+  );
+}

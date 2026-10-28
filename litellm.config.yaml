@@ -1,0 +1,15 @@
+# LiteLLM proxy config (used only with `docker compose --profile litellm up`).
+# Model names here are what agents reference in the Inspector when LITELLM_BASE_URL is set.
+# Wildcard passthrough: any "anthropic/claude-..." slug is forwarded to OpenRouter.
+model_list:
+  - model_name: "anthropic/*"
+    litellm_params:
+      model: "openrouter/anthropic/*"
+      api_key: os.environ/OPENROUTER_API_KEY
+
+router_settings:
+  num_retries: 1
+  timeout: 120
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

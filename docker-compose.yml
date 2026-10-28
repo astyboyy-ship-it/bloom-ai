@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wfa
+      POSTGRES_PASSWORD: wfa
+      POSTGRES_DB: workflow_architect
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wfa -d workflow_architect"]
+      interval: 5s
+      retries: 10
+
+  # Optional: run a LiteLLM proxy and set LITELLM_BASE_URL=http://localhost:4000
+  # to route the gateway through it instead of OpenRouter directly.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    profiles: ["litellm"]
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY:-sk-litellm-local}
+    volumes:
+      - ./litellm.config.yaml:/app/config.yaml:ro
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
