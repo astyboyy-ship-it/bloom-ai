@@ -3,6 +3,7 @@
 import { useCallback, useReducer, useRef } from "react";
 import type { EngineKey } from "@/components/bloom/command/engines";
 import type { Lang } from "@/components/bloom/i18n";
+import type { CalibrationInput } from "@/lib/engines/calibration";
 import type { RunEvent, RunMode, Usage } from "@/lib/engines/events";
 
 /**
@@ -17,7 +18,7 @@ export type LogEntry =
   | { id: string; kind: "reasoning" | "text"; at: number; agentId: string; text: string }
   | { id: string; kind: "tool"; at: number; agentId: string; tool: string; input: unknown; output?: unknown; ok?: boolean; ms?: number }
   | { id: string; kind: "delegate"; at: number; agentId: string; to: EngineKey }
-  | { id: string; kind: "error"; at: number; agentId: string | null; text: string };
+  | { id: string; kind: "notice" | "error"; at: number; agentId: string | null; text: string };
 
 export type RunStatus = "idle" | "running" | "done" | "failed";
 
@@ -77,6 +78,8 @@ function reduce(s: RunState, a: Action): RunState {
         log: [...next.log, { id: `${e.agentId}-end`, kind: "agent", at, agentId: e.agentId, phase: e.ok ? "end" : "failed", ms: e.ms }],
       };
     }
+    case "notice":
+      return { ...next, log: [...next.log, { id: `notice-${next.log.length}`, kind: "notice", at, agentId: e.agentId, text: e.text }] };
     case "error":
       return { ...next, log: [...next.log, { id: `err-${next.log.length}`, kind: "error", at, agentId: e.agentId, text: e.message }] };
     case "run.end":
@@ -89,7 +92,7 @@ export function useRun(networkError: string, aborted: string) {
   const abortRef = useRef<AbortController | null>(null);
 
   const run = useCallback(
-    async (engine: EngineKey, command: string, lang: Lang) => {
+    async (engine: EngineKey, command: string, lang: Lang, extras: { headers?: Record<string, string>; calibrations?: Partial<Record<EngineKey, CalibrationInput>> } = {}) => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -98,8 +101,8 @@ export function useRun(networkError: string, aborted: string) {
       try {
         const res = await fetch(`/api/command/${engine}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ command, lang }),
+          headers: { "Content-Type": "application/json", ...extras.headers },
+          body: JSON.stringify({ command, lang, calibrations: extras.calibrations ?? {} }),
           signal: ctrl.signal,
         });
         if (!res.ok || !res.body) {

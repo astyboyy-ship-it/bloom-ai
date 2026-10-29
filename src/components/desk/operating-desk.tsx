@@ -11,59 +11,85 @@ import { ENGINES, isEngineKey, type EngineKey } from "@/components/bloom/command
 import { localizeEngine, useCommandCopy } from "@/components/bloom/command/locale";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { clockShift, type ShiftMode } from "@/components/bloom/shift-plan";
+import { readCalibration } from "@/lib/engines/calibration";
+import { CalibrationHub } from "./calibration-hub";
 import { DESK_COPY, PRESETS } from "./copy";
 import { EngineRail } from "./engine-rail";
 import { engineStatuses, STATUS_DOT } from "./engine-status";
 import { ExecutionLog } from "./execution-log";
+import { HUB_COPY, HUBS, type Hub } from "./hub-copy";
+import { NetworkView } from "./network-view";
 import { ResultCard } from "./result-card";
+import { keyHeaders, useDeskSettings } from "./settings";
+import { SettingsHub } from "./settings-hub";
 import { TopBar } from "./top-bar";
 import { TopologyPanel } from "./topology-panel";
 import { useRun } from "./use-run";
 import { useTelemetry } from "./use-telemetry";
 
 /**
- * The Sovereign Operating Desk: pick an engine, command it, and watch the multi-agent runtime execute live.
- * Left: engine rail with metric feeds. Center: command, active topology, execution log, result. Right: shift topology and run telemetry.
+ * The unified desktop workspace (/desk), in three hubs:
+ *   01 Architectures: engine rail with metric feeds; command, network view, execution log and result; shift topology and run telemetry.
+ *   02 App Settings: provider keys, shift defaults, local persistence.
+ *   03 Engine Calibration: per-engine prompts, overrides, schema constraints and tools.
+ * The run lives here, above the hubs, so switching hubs never interrupts one.
  */
 export function OperatingDesk() {
   const { lang, dir, c: cc } = useCommandCopy();
   const c = DESK_COPY[lang];
+  const h = HUB_COPY[lang];
+  const { settings } = useDeskSettings();
+  const headers = useMemo(() => keyHeaders(settings.keys), [settings.keys]);
+  const [hub, setHub] = useState<Hub>("architectures");
   const [selected, setSelected] = useState<EngineKey>("sovereign");
   const [command, setCommand] = useState("");
   const [shift, setShift] = useState<ShiftMode>("prime");
   const [clock, setClock] = useState<ShiftMode | null>(null);
   const { state, run, abort } = useRun(c.networkError, c.aborted);
-  const { manifest, latency, uptime, sla } = useTelemetry();
+  const { manifest, latency, uptime, sla } = useTelemetry(headers);
   const statuses = useMemo(() => engineStatuses(state.agents), [state.agents]);
   const running = state.status === "running";
   const elapsed = useElapsed(running, state.startedAt);
 
-  // Engine from ?engine=, and the shift that's on the clock for this visitor, both resolved after mount.
+  // Engine and hub from the URL, and the shift on the clock for this visitor, all resolved after mount.
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("engine");
-    if (q && isEngineKey(q)) setSelected(q);
-    const m = clockShift(new Date().getHours());
-    setClock(m);
-    setShift(m);
+    const q = new URLSearchParams(window.location.search);
+    const e = q.get("engine");
+    if (e && isEngineKey(e)) setSelected(e);
+    const hq = q.get("hub");
+    if (hq && (HUBS as string[]).includes(hq)) setHub(hq as Hub);
+    setClock(clockShift(new Date().getHours()));
   }, []);
 
+  // The shift at rest: the operator's default from App Settings, or the clock's.
+  const restShift: ShiftMode | null = settings.shiftDefault === "clock" ? clock : settings.shiftDefault;
+  useEffect(() => {
+    if (restShift && !running) setShift(restShift);
+  }, [restShift, running]);
+
+  const syncUrl = (key: string, value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    window.history.replaceState(null, "", url);
+  };
   const select = (k: EngineKey) => {
     setSelected(k);
-    const url = new URL(window.location.href);
-    url.searchParams.set("engine", k);
-    window.history.replaceState(null, "", url);
+    syncUrl("engine", k);
+  };
+  const openHub = (next: Hub) => {
+    setHub(next);
+    syncUrl("hub", next);
   };
 
   const execute = () => {
     const text = command.trim();
     if (text.length < 3 || running) return;
-    // A command is an event: the grid surges for its duration, then returns to the shift on the clock.
-    setShift("surge");
-    run(selected, text, lang);
+    // A command is an event: the grid surges for its duration, then returns to the shift at rest.
+    if (settings.surgeOnRun) setShift("surge");
+    // Calibrations go out as the runtime will read them, so stale or hand-edited storage can't fail the request.
+    const calibrations = Object.fromEntries(Object.entries(settings.calibrations).map(([k, v]) => [k, readCalibration(v)]));
+    run(selected, text, lang, { headers, calibrations });
   };
-  useEffect(() => {
-    if (!running && clock && state.status !== "idle") setShift(clock);
-  }, [running, clock, state.status]);
 
   const engine = localizeEngine(ENGINES[selected], lang);
   const painting = paintings[engine.painting];
@@ -85,9 +111,19 @@ export function OperatingDesk() {
         uptime={uptime}
         latency={latency}
         firstEvent={state.firstEventMs}
+        hub={hub}
+        hubLabels={h.hubs}
+        onHub={openHub}
       />
 
-      <div className="grid flex-1 grid-cols-[minmax(0,1fr)] lg:min-h-0 lg:grid-cols-[17rem_minmax(0,1fr)_19rem] xl:grid-cols-[18.5rem_minmax(0,1fr)_21rem]">
+      {hub === "settings" && (
+        <div className="flex-1 overflow-y-auto">
+          <SettingsHub c={h} />
+        </div>
+      )}
+      {hub === "calibration" && <CalibrationHub c={h} lang={lang} selected={selected} onSelect={select} />}
+
+      <div hidden={hub !== "architectures"} className="grid flex-1 grid-cols-[minmax(0,1fr)] lg:min-h-0 lg:grid-cols-[17rem_minmax(0,1fr)_19rem] xl:grid-cols-[18.5rem_minmax(0,1fr)_21rem]">
         <EngineRail c={c} lang={lang} selected={selected} onSelect={select} statuses={statuses} />
 
         <main style={paletteVars(PALETTES[selected])} className="relative flex min-h-0 flex-col overflow-hidden">
@@ -169,6 +205,8 @@ export function OperatingDesk() {
                 )}
               </div>
             </form>
+
+            <NetworkView label={h.network} hint={h.networkHint} engines={manifest?.engines} agents={state.agents} statuses={statuses} selected={selected} onSelect={select} />
 
             {/* Active topology: every agent in this run, nested by who delegated to whom. */}
             <div className="flex flex-wrap items-center gap-2">

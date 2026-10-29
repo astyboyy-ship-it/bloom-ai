@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { isEngineKey } from "@/components/bloom/command/engines";
 import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
+import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
 import { runCommand } from "@/lib/orchestrator";
+import { ownKeys } from "../keys";
 
 export const dynamic = "force-dynamic";
 // A Sovereign command can fan out to four engines, each with its own tool loop.
@@ -12,6 +14,8 @@ const Body = z.object({
   command: z.string().trim().min(3).max(4000),
   params: z.record(z.string(), z.unknown()).default({}),
   lang: z.enum(["en", "es", "he"]).default("en"),
+  /** Per-engine tuning from the Engine Calibration bay; applies to the commanded engine and any it delegates to. */
+  calibrations: CalibrationsSchema,
 });
 
 export const OPTIONS = preflight;
@@ -20,7 +24,10 @@ export const OPTIONS = preflight;
 export async function POST(req: Request, { params }: { params: Promise<{ engine: string }> }) {
   const { engine } = await params;
   if (!isEngineKey(engine)) return fail(404, `Unknown engine "${engine}".`);
-  if (rateLimited(req, "command-run", 6)) return fail(429, "Too many runs. Try again in a minute.");
+  const keys = ownKeys(req);
+  // Runs on the operator's own key cost the server nothing, so they get more room.
+  const own = Boolean(keys.anthropic || keys.openrouter);
+  if (rateLimited(req, own ? "command-run-own" : "command-run", own ? 30 : 6)) return fail(429, "Too many runs. Try again in a minute.");
   const json = await readJson(req);
   if (!json.ok) return fail(400, "Request body must be valid JSON.");
   const body = Body.safeParse(json.body);
@@ -45,6 +52,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
           emit: (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`),
           signal: req.signal,
           lang: body.data.lang,
+          keys,
+          calibrations: body.data.calibrations,
         });
       } finally {
         clearInterval(keepAlive);

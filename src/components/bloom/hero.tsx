@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { DownloadDesktopButton } from "@/components/desktop/download-desktop-button";
 import { PaintingCanvas, PaintingCaption } from "./art/painting-canvas";
 import { RoseFrame } from "./art/rose-frame";
 import { ENGINE_ORDER, ENGINES } from "./command/engines";
@@ -92,6 +93,7 @@ export function Hero() {
             <span className="relative">{t.hero.ctaPrimary}</span>
             <ArrowRight className="relative size-4 transition-transform group-hover:translate-x-1 rtl:-scale-x-100" />
           </Link>
+          <DownloadDesktopButton variant="hero" />
           <a
             href="#engines"
             className="inline-flex h-13 items-center gap-2 rounded-full border border-white/25 bg-ink/40 px-8 text-sm font-medium text-white/85 backdrop-blur-md transition-colors hover:border-white/45 hover:text-white"

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { OperatingDesk } from "@/components/desk/operating-desk";
+import { EngineGrid } from "@/components/bloom/command/engine-grid";
 
 export const metadata: Metadata = {
-  title: "Sovereign Operating Desk — Bloom AI",
-  description: "Command all eight Bloom AI engines from one desk and watch the multi-agent runtime execute live.",
+  title: "Command Center — Bloom AI",
+  description: "All eight Bloom AI engines in one command center. Enter any engine's desk to command it live.",
 };
 
 export default function Page() {
-  return <OperatingDesk />;
+  return <EngineGrid />;
 }

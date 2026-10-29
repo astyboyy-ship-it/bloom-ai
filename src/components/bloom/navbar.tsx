@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DownloadDesktopButton } from "@/components/desktop/download-desktop-button";
 import { useI18n } from "./i18n";
 import { LanguageSwitcher } from "./language-switcher";
 import { BloomLogo } from "./logo";
@@ -72,6 +73,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
+          <DownloadDesktopButton variant="nav" className="hidden md:inline-flex" />
           <Link
             href="/command"
             lang={lang}
@@ -121,6 +123,7 @@ export function Navbar() {
             >
               {t.nav.cta} <ArrowUpRight className="size-4" />
             </Link>
+            <DownloadDesktopButton variant="nav" onClick={() => setOpen(false)} className="mt-1 flex w-full justify-center py-3" />
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ENGINE_ORDER, ENGINES, type EngineKey } from "@/components/bloom/command/engines";
 import { localizeEngine } from "@/components/bloom/command/locale";
@@ -10,36 +8,7 @@ import type { Lang } from "@/components/bloom/i18n";
 import type { DESK_COPY } from "./copy";
 import { STATUS_DOT, type EngineRunStatus } from "./engine-status";
 import { fmtUsdCompact } from "./format";
-
-/** Starting points for each engine's headline metric feed (sample data, labeled as such on the desk). */
-const BASE: Record<EngineKey, number> = {
-  sovereign: 1_840_000,
-  apex: 642_000,
-  coreops: 118_000,
-  intentpulse: 386_000,
-  vanguard: 512_000,
-  cortex: 274_000,
-  shield: 931_000,
-  aether: 208_000,
-};
-
-/** Each feed drifts upward in small steps, faster for engines working in the current run. */
-function useMetricFeed(active: Partial<Record<EngineKey, EngineRunStatus>>) {
-  const [values, setValues] = useState(BASE);
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    if (reduce) return;
-    const t = setInterval(() => {
-      setValues((v) => {
-        const out = { ...v };
-        for (const k of ENGINE_ORDER) out[k] = v[k] * (1 + (Math.random() - 0.3) * (active[k] === "running" ? 0.012 : 0.0025));
-        return out;
-      });
-    }, 2400);
-    return () => clearInterval(t);
-  }, [reduce, active]);
-  return values;
-}
+import { useMetricFeed } from "./metrics";
 
 type Props = {
   c: (typeof DESK_COPY)["en"];

@@ -1138,3 +1138,10 @@
   outline-offset: 4px;
   border-radius: 4px;
 }
+
+/* Operating Desk network view: hand-off links flow from the delegating engine to the one doing the work. */
+@keyframes net-flow {
+  to {
+    stroke-dashoffset: -10;
+  }
+}

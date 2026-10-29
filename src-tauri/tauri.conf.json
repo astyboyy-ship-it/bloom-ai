@@ -1,0 +1,48 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Bloom AI",
+  "version": "0.1.0",
+  "identifier": "ai.bloom.desktop",
+  "build": {
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "https://workflow-architect.vercel.app",
+    "beforeDevCommand": "npm run dev"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Bloom AI",
+        "url": "launch?app=desktop",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#0b0612"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "app"],
+    "category": "Business",
+    "shortDescription": "Bloom AI Desktop: the Sovereign Operating Desk.",
+    "longDescription": "Command all eight Bloom AI engines, tune them, and manage your keys and shifts from a native desktop workspace.",
+    "copyright": "© Bloom AI",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

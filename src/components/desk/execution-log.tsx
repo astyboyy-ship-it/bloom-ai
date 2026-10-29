@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { AlertTriangle, ArrowDownRight, BrainCircuit, Check, CircleDot, Loader2, MessageSquareText, Wrench, X } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, Info, BrainCircuit, Check, CircleDot, Loader2, MessageSquareText, Wrench, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ENGINES, type EngineKey } from "@/components/bloom/command/engines";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
@@ -92,6 +92,13 @@ function Line({ c, entry: l, engine }: { c: Props["c"]; entry: LogEntry; engine?
           <ArrowDownRight className="size-3.5 shrink-0" />
           <span className="font-sans text-[12.5px]">{c.delegatedTo(ENGINES[l.to].name)}</span>
           <span className={cn("size-1.5 rounded-full", STATUS_DOT.running)} />
+        </p>
+      );
+    case "notice":
+      return (
+        <p className="flex gap-1.5 font-sans text-[12px] text-[#f3e2b8]/80">
+          <Info className="mt-0.5 size-3.5 shrink-0" />
+          <span dir="auto" className="break-words">{l.text}</span>
         </p>
       );
     case "error":

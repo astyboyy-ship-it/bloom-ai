@@ -76,7 +76,8 @@ export type SimulationKit = {
   think: (text: string) => Promise<void>;
 };
 
-export type EngineAgent<I extends z.ZodType = z.ZodType, O extends z.ZodType = z.ZodType> = {
+// Outputs are objects so calibration can tighten their fields (see applyCalibration in the orchestrator).
+export type EngineAgent<I extends z.ZodType = z.ZodType, O extends z.ZodObject = z.ZodObject> = {
   key: EngineKey;
   /** File-system name, e.g. "01-sovereign". */
   codename: string;
@@ -92,4 +93,4 @@ export type EngineAgent<I extends z.ZodType = z.ZodType, O extends z.ZodType = z
   simulate: (input: NoInfer<z.infer<I>>, kit: SimulationKit) => Promise<NoInfer<z.infer<O>>>;
 };
 
-export const defineEngine = <I extends z.ZodType, O extends z.ZodType>(e: EngineAgent<I, O>): EngineAgent => e as unknown as EngineAgent;
+export const defineEngine = <I extends z.ZodType, O extends z.ZodObject>(e: EngineAgent<I, O>): EngineAgent => e as unknown as EngineAgent;

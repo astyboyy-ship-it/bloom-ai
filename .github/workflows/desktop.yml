@@ -1,0 +1,62 @@
+# Builds the Bloom AI desktop installers on native runners and attaches them to a GitHub release:
+# Windows (NSIS .exe) and macOS (universal .dmg, Apple silicon + Intel).
+# Trigger: push a tag like `desktop-v0.1.0`, or run it manually from the Actions tab.
+#
+# Optional repository variable BLOOM_APP_URL points the app at a different deployment than the
+# frontendDist in src-tauri/tauri.conf.json (for example a custom domain or a staging site).
+name: Desktop release
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: "--bundles nsis"
+          - platform: macos-latest
+            args: "--target universal-apple-darwin --bundles dmg"
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: npm ci
+
+      - name: Point the app at BLOOM_APP_URL
+        if: ${{ vars.BLOOM_APP_URL != '' }}
+        shell: bash
+        run: node -e 'const f="src-tauri/tauri.conf.json";const c=require("./"+f);c.build.frontendDist=process.env.URL;require("fs").writeFileSync(f,JSON.stringify(c,null,2))'
+        env:
+          URL: ${{ vars.BLOOM_APP_URL }}
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'desktop-v__VERSION__' }}
+          releaseName: "Bloom AI Desktop v__VERSION__"
+          releaseBody: "Bloom AI Desktop installers: Windows (.exe) and macOS universal (.dmg)."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
