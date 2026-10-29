@@ -105,9 +105,10 @@ type Msg = { id: number; from: "ai" | "user"; text?: string; scenario?: Scenario
 
 /**
  * A conversation with the engine's own persona: the scripted hook and challenge, then the live engine at
- * /api/chat, in the visitor's language. Each reply is a short pitch ending in a discovery question, followed
- * by an execution card (the steps, the bundle with a second engine, first-week notifications and a capital
- * projection) written for that visitor's business. The visitor can keep answering.
+ * /api/chat, in the visitor's language. Discovery replies are a short pitch ending in one question; once the
+ * engine has enough to go on (or the visitor asks for the plan) its closing reply also carries an execution
+ * card (the steps, the bundle with a second engine, first-week notifications and a capital projection)
+ * written for that visitor's business. The input stays open after every reply.
  */
 export function NeuralChat({ engine, open, onClose }: { engine: Engine; open: boolean; onClose: () => void }) {
   return <AnimatePresence>{open && <Chat key="chat" engine={engine} onClose={onClose} />}</AnimatePresence>;
@@ -176,9 +177,10 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
 
   /**
    * Sends the user's words, the conversation so far and their UI language to the live engine at /api/chat.
-   * The pitch streams into the usual AI bubbles (one per paragraph); the card JSON after CARD_MARKER is held
-   * back and rendered as the execution card once complete. There is no scripted fallback: if the engine
-   * can't answer, it says why and the visitor can send again.
+   * The pitch streams into the usual AI bubbles (one per paragraph). Only a closing reply carries card JSON
+   * after CARD_MARKER: it is held back and rendered as the execution card once complete and valid; a
+   * discovery reply shows only its bubbles. There is no scripted fallback: if the engine can't answer, it
+   * says why and the visitor can send again.
    */
   const ask = async (t: string) => {
     setStage("answer");
@@ -193,11 +195,9 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
 
     const ids: number[] = [];
     let acc = "";
-    // Everything from the first "<<<" on belongs to the card, including a marker that has only half arrived.
-    const pitchOf = () => {
-      const cut = acc.indexOf("<<<");
-      return cut < 0 ? acc : acc.slice(0, cut);
-    };
+    // Where the card starts: the marker (even half-arrived), or a bare card object if the marker was skipped.
+    const cardAt = () => [acc.indexOf("<<<"), acc.indexOf('{"read"')].filter((i) => i >= 0).reduce((a, b) => Math.min(a, b), Infinity);
+    const pitchOf = () => acc.slice(0, cardAt());
     const render = () => {
       const paras = pitchOf().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
       while (ids.length < paras.length) ids.push(++seq.current);
@@ -218,15 +218,16 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
         if (pitchOf().trim()) {
           render();
           // Dots again while the card is being written.
-          setTyping(acc.includes("<<<"));
+          setTyping(cardAt() < Infinity);
         }
       }
       if (!pitchOf().trim()) throw new Error("The engine returned an empty reply.");
       setTyping(false);
-      const at = acc.indexOf(CARD_MARKER);
-      const card = at < 0 ? undefined : parseCard(acc.slice(at + CARD_MARKER.length), engine.key);
+      // Only a closing reply carries a card; a discovery reply ends here with just its bubbles.
+      const at = cardAt();
+      const card = at === Infinity ? undefined : parseCard(acc.slice(at).replace(CARD_MARKER, ""), engine.key);
       if (card) setMsgs((ms) => [...ms, { id: ++seq.current, from: "ai", scenario: card }]);
-      else if (at >= 0) console.warn("[neural breakdown] the engine's execution card was incomplete or malformed; showing the pitch only.");
+      else if (at !== Infinity) console.warn("[neural breakdown] the engine's execution card was incomplete or malformed; showing the pitch only.");
       setStage("done");
     } catch (err) {
       if (ctrl.signal.aborted) return;
