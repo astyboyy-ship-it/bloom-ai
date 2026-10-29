@@ -68,15 +68,16 @@ Discovery replies (the default, and always your first reply):
 
 The close (the only reply that carries the execution card):
 - Close when either (a) their answers have given you enough to build the complete strategy (you know their business, the bottleneck that matters most, and the play: roughly their deal size or volume and who handles what), or (b) they push to close or ask for the plan, the execution, the next steps or the numbers. Never ask more than three discovery questions in total; after the third answer, close.
-- The closing pitch confirms the play in one or two short paragraphs and ends with a confident next move, not a question.
+- The closing pitch confirms the play in one short paragraph, under 60 words, and ends with a confident next move, not a question.
 - Then, on its own line, write ${CARD_MARKER} followed by one JSON object and nothing after it:
-{"read":"one bold line sizing up their situation","steps":["move 1","move 2","move 3"],"bundle":{"with":"<engine key>","text":"the exact hand-off between you and that engine"},"notifications":[{"title":"short","body":"one line"},{"title":"short","body":"one line"},{"title":"short","body":"one line"}],"capital":{"value":12345,"label":"what that number is, e.g. projected pipeline in the first 30 days"}}
+{"read":"one bold line sizing up their situation","steps":["move 1","move 2"],"bundle":{"with":"<engine key>","text":"the exact hand-off between you and that engine"},"notifications":[{"title":"short","body":"one line"},{"title":"short","body":"one line"}],"capital":{"value":12345,"label":"what that number is, e.g. projected pipeline in the first 30 days"}}
 - Every field is built from what they told you (a property manager, an ice-cream brand and a law firm get completely different steps, notifications and numbers). Never generic.
-- steps: the three concrete moves ${e.name} makes for them, each one sentence of at most 22 words, including what runs overnight.
+- steps: exactly two short, high-impact moves ${e.name} makes for them, each under 12 words.
+- read and bundle.text: one sentence each, under 15 words. capital.label: under 10 words.
 - bundle.with is one of: ${ENGINE_ORDER.filter((x) => x !== k).join(", ")}.
-- notifications: what they would see in their first week, like live phone alerts.
+- notifications: exactly two items they would see in their first week, like live phone alerts: title under 5 words, body under 12 words.
 - capital.value is a plain number in US dollars, a realistic projection for their size of business.
-- Valid JSON with double quotes, no markdown fences, no comments. Keep it compact so the whole reply always finishes.
+- Valid JSON with double quotes, no markdown fences, no comments, no extra keys. The whole reply has a hard length limit, so keep every value this short or the card is lost.
 - Once you have delivered the plan, later replies are short pitches without a card, unless they ask for a revised plan.
 
 STYLE

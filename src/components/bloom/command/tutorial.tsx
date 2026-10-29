@@ -87,14 +87,14 @@ function parseCard(raw: string, engine: EngineKey): Scenario | undefined {
   const read = str(d.read);
   const bundleText = str(bundle.text);
   const label = str(capital.label, 160);
-  if (!read || steps.length < 3 || !bundleText || !notifications.length || !Number.isFinite(value) || value <= 0 || !label) return undefined;
+  if (!read || steps.length < 2 || !bundleText || !notifications.length || !Number.isFinite(value) || value <= 0 || !label) return undefined;
   const partner = typeof bundle.with === "string" && isEngineKey(bundle.with) && bundle.with !== engine ? bundle.with : PARTNER[engine];
   return {
     id: "live",
     reply: "",
     match: /$^/,
     read,
-    steps: [steps[0], steps[1], steps[2]],
+    steps: steps.slice(0, 3),
     bundle: { with: partner, text: bundleText },
     notifications,
     capital: { value: Math.round(value), label },

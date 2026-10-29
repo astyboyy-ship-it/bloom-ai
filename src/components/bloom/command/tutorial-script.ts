@@ -8,7 +8,8 @@ export type Scenario = {
   match: RegExp;
   /** How the engine sizes up the situation, in its own voice. */
   read: string;
-  steps: [string, string, string];
+  /** Three in the scripted scenarios; a live closing card has two. */
+  steps: string[];
   bundle: { with: EngineKey; text: string };
   notifications: { title: string; body: string }[];
   capital: { value: number; label: string };
