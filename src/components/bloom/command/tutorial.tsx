@@ -279,11 +279,12 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       tabIndex={-1}
       role="dialog"
       aria-label={`${engine.name} ${c.neural}`}
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 16, scale: 0.98 }}
+      initial={{ opacity: 0, x: 48 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 48 }}
       transition={{ duration: 0.45, ease: EASE }}
-      className="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(680px,calc(100dvh-24px))] flex-col overflow-hidden rounded-2xl border border-c-edge/60 bg-black/75 shadow-[0_40px_120px_-30px_rgb(0_0_0/0.95),0_0_40px_-12px_var(--c-glow-soft)] outline-none backdrop-blur-md sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px]"
+      // A full-height sidebar on the right: header and footer keep their size, only the messages scroll.
+      className="fixed bottom-0 right-0 top-0 z-50 flex h-dvh w-full flex-col overflow-hidden border-l border-c-edge/60 bg-black/80 shadow-[0_0_120px_-30px_rgb(0_0_0/0.95),0_0_40px_-12px_var(--c-glow-soft)] outline-none backdrop-blur-md sm:w-[500px] md:w-[600px] lg:w-[680px]"
     >
       <span aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-c-2/70 to-transparent" />
       <header className="flex shrink-0 items-center gap-3 border-b border-c-edge/40 px-4 py-3">
@@ -300,7 +301,7 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
         </button>
       </header>
 
-      <div ref={scroller} onScroll={onScroll} className="max-h-full min-h-0 flex-1 basis-[200px] space-y-3 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
+      <div ref={scroller} onScroll={onScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" aria-live="polite">
         {msgs.map((m) =>
           m.from === "user" ? (
             <motion.p key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="ms-auto max-w-[85%] rounded-2xl rounded-ee-sm border border-c-1/30 bg-c-1/15 px-3.5 py-2 text-[13.5px] leading-snug text-white">
