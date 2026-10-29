@@ -14,6 +14,9 @@ export type Scenario = {
   capital: { value: number; label: string };
 };
 
+/** Separates a live reply's spoken pitch from its execution card's JSON; the drawer never shows what follows it. */
+export const CARD_MARKER = "<<<CARD>>>";
+
 export type Persona = { hook: string; challenge: string; closer: string; scenarios: [Scenario, Scenario, Scenario] };
 
 const CHALLENGE = "Tell me what you're working on, what your daily bottleneck is, and what you expect this engine to conquer for you.";

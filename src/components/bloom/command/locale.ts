@@ -69,6 +69,12 @@ const en = {
   againLine: "Again? Good. Winners test the machine. ",
   backToCommand: "Back to command",
   liveError: "I can't reach my live link right now. Give it a moment and send that again.",
+  youSaid: "You said:",
+  execution: "The exact execution",
+  bundle: "The bundle",
+  openEngine: "Open Engine Nº",
+  onceDeployed: "What you'll see once deployed",
+  sampleProjection: "Sample projection. Live results depend on your business and budget.",
 };
 
 export type CommandCopy = typeof en;
@@ -132,6 +138,12 @@ const es: CommandCopy = {
   againLine: "¿Otra vez? Bien. Los ganadores ponen a prueba la máquina. ",
   backToCommand: "Volver al mando",
   liveError: "Ahora mismo no llego a mi enlace en vivo. Dame un momento y vuelve a enviarlo.",
+  youSaid: "Dijiste:",
+  execution: "La ejecución exacta",
+  bundle: "El paquete",
+  openEngine: "Abrir el motor Nº",
+  onceDeployed: "Lo que verás una vez desplegado",
+  sampleProjection: "Proyección de muestra. Los resultados reales dependen de tu negocio y tu presupuesto.",
 };
 
 const he: CommandCopy = {
@@ -193,6 +205,12 @@ const he: CommandCopy = {
   againLine: "שוב? מצוין. מנצחים בודקים את המכונה. ",
   backToCommand: "חזרה לפיקוד",
   liveError: "אין לי כרגע חיבור לקו החי. תנו לי רגע ושלחו שוב.",
+  youSaid: "אמרתם:",
+  execution: "הביצוע המדויק",
+  bundle: "החבילה",
+  openEngine: "פתחו את מנוע מס׳",
+  onceDeployed: "מה תראו אחרי הפריסה",
+  sampleProjection: "תחזית לדוגמה. התוצאות בפועל תלויות בעסק ובתקציב שלכם.",
 };
 
 const COPY: Record<Lang, CommandCopy> = { en, es, he };
