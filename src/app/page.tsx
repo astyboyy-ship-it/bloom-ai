@@ -1,8 +1,7 @@
+import { DynamicShiftTopology } from "@/components/bloom/dynamic-shift-topology";
 import { Footer } from "@/components/bloom/footer";
 import { Hero } from "@/components/bloom/hero";
-import { MorningBrief } from "@/components/bloom/morning-brief";
 import { Navbar } from "@/components/bloom/navbar";
-import { NightShift } from "@/components/bloom/night-shift";
 import { PartnerProgram } from "@/components/bloom/partner-program";
 import { ProductTopologyGallery } from "@/components/bloom/product-topology-gallery";
 import { Engines } from "@/components/bloom/engines/engines";
@@ -18,9 +17,8 @@ export default function Home() {
         <Hero />
         <Engines />
         <ProductTopologyGallery />
+        <DynamicShiftTopology />
         <PartnerProgram />
-        <MorningBrief />
-        <NightShift />
         <Waitlist />
       </main>
       <Footer />

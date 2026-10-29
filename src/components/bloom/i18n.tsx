@@ -12,11 +12,10 @@ export const LANGUAGES: { code: Lang; label: string; native: string }[] = [
 
 const en = {
   nav: {
-    nightShift: "The Night Shift",
     engines: "Engines",
     partners: "Developers",
     architectures: "Architectures",
-    morning: "Morning Brief",
+    shifts: "Shifts",
     waitlist: "Early Access",
     cta: "Enter Command Center",
     language: "Language",
@@ -31,13 +30,6 @@ const en = {
     ctaPrimary: "Deploy Your Shadow Workforce",
     ctaSecondary: "Explore the Apps",
   },
-  nightShift: {
-    eyebrow: "The Night Shift",
-    titlePre: "You log off. ",
-    titleAccent: "Bloom clocks in.",
-    description:
-      "The grand finale: 24/7 ambient execution across all eight engines. Brief them once, the way you'd brief your best hires, and they work every hour you don't.",
-  },
   engines: {
     eyebrow: "From the Bloom AI Lab",
     titlePre: "8 Specialized Engines. ",
@@ -47,6 +39,39 @@ const en = {
     badgePre: "With More Game-Changing Engines & Services To Come ",
     badgeAccent: "That Will Bloom Your Business",
     devBanner: "All engines in active development · building toward 100% autonomy",
+  },
+  shifts: {
+    eyebrow: "Dynamic Shift Topology",
+    titlePre: "One engine. Three shifts. ",
+    titleAccent: "Zero downtime.",
+    description: "Bloom never clocks out. The Dynamic Shift Topology Engine moves compute between your engines around the clock: closing hard while your market is awake, mining and cleaning while it sleeps, and surging the moment a high-value signal lands.",
+    liveNow: "Live in your timezone now",
+    eventDriven: "Event-driven",
+    preview: "Bloom switches shifts automatically. Select one to preview its allocation.",
+    nodes: "compute nodes",
+    allocation: "Live node allocation",
+    running: "Running in this shift",
+    trigger: "Trigger",
+    modes: {
+      prime: {
+        name: "Prime Market Shift",
+        trigger: "Peak regional business hours",
+        body: "High-velocity deal orchestration while your buyers are online.",
+        ops: ["Real-time lead qualification", "Live deal orchestration across Apex and Cortex", "Active objection handling on open conversations", "Same-hour hand-offs to your closers"],
+      },
+      dark: {
+        name: "Dark Market Shift",
+        trigger: "Off-peak hours, every region",
+        body: "The quiet hours do the heavy lifting, so mornings start clean.",
+        ops: ["Continuous vector DB ingestion", "Intent signal mining across channels", "Cross-border lead scoring", "Pipeline hygiene and CRM clean-up"],
+      },
+      surge: {
+        name: "Surge Shift",
+        trigger: "Inbound signal spike or off-hours high-ACV lead",
+        body: "Event-driven compute scaling the instant demand spikes.",
+        ops: ["Compute scaled up automatically", "High-ACV leads answered within seconds, any hour", "Extra closing capacity on the spike", "Scales back down when the wave passes"],
+      },
+    },
   },
   architectures: {
     eyebrow: "Enterprise architectures",
@@ -60,13 +85,6 @@ const en = {
     titleAccent: "Demo Creator Suite",
     subtitle: "A low-cost sandbox portal: spin up branded client demos in seconds and close $3k–$5k retainers without writing backend code.",
     cta: "Launch Demo Creator Suite",
-  },
-  morning: {
-    eyebrow: "The Morning Brief",
-    titlePre: "Good morning. ",
-    titleAccent: "Here's what bloomed.",
-    description:
-      "No dashboards to dig through. One brief over coffee: what your engines did overnight, what it earned, and the deals waiting for your signature.",
   },
   waitlist: {
     eyebrow: "Early access",
@@ -114,11 +132,10 @@ export type Dictionary = typeof en;
 
 const es: Dictionary = {
   nav: {
-    nightShift: "El turno de noche",
     engines: "Motores",
     partners: "Desarrolladores",
     architectures: "Arquitecturas",
-    morning: "Informe matutino",
+    shifts: "Turnos",
     waitlist: "Acceso anticipado",
     cta: "Entrar al Centro de Mando",
     language: "Idioma",
@@ -133,13 +150,6 @@ const es: Dictionary = {
     ctaPrimary: "Despliega tu fuerza de trabajo en la sombra",
     ctaSecondary: "Explorar las apps",
   },
-  nightShift: {
-    eyebrow: "El turno de noche",
-    titlePre: "Tú te desconectas. ",
-    titleAccent: "Bloom entra a trabajar.",
-    description:
-      "El gran final: ejecución ambiental 24/7 en los ocho motores. Dales las instrucciones una vez, como a tus mejores fichajes, y trabajan cada hora que tú no.",
-  },
   engines: {
     eyebrow: "Desde el laboratorio Bloom AI",
     titlePre: "8 motores especializados. ",
@@ -149,6 +159,39 @@ const es: Dictionary = {
     badgePre: "Vienen más motores y servicios revolucionarios ",
     badgeAccent: "que harán florecer tu negocio",
     devBanner: "Todos los motores en desarrollo activo · rumbo al 100% de autonomía",
+  },
+  shifts: {
+    eyebrow: "Topología dinámica de turnos",
+    titlePre: "Un motor. Tres turnos. ",
+    titleAccent: "Cero interrupciones.",
+    description: "Bloom nunca ficha la salida. El motor de topología dinámica de turnos mueve capacidad de cómputo entre tus motores a todas horas: cierra con fuerza mientras tu mercado está despierto, extrae y limpia mientras duerme, y se dispara en cuanto llega una señal de alto valor.",
+    liveNow: "Activo ahora en tu zona horaria",
+    eventDriven: "Por eventos",
+    preview: "Bloom cambia de turno automáticamente. Elige uno para ver su asignación.",
+    nodes: "nodos de cómputo",
+    allocation: "Asignación de nodos en vivo",
+    running: "En marcha en este turno",
+    trigger: "Activador",
+    modes: {
+      prime: {
+        name: "Turno de mercado activo",
+        trigger: "Horario comercial punta de cada región",
+        body: "Orquestación de acuerdos a alta velocidad mientras tus compradores están conectados.",
+        ops: ["Cualificación de leads en tiempo real", "Orquestación de acuerdos en vivo entre Apex y Cortex", "Gestión activa de objeciones en conversaciones abiertas", "Traspasos a tus closers en la misma hora"],
+      },
+      dark: {
+        name: "Turno de mercado inactivo",
+        trigger: "Horas valle, en todas las regiones",
+        body: "Las horas tranquilas hacen el trabajo pesado para que las mañanas empiecen limpias.",
+        ops: ["Ingesta continua en la base vectorial", "Extracción de señales de intención en todos los canales", "Puntuación de leads entre países", "Higiene del pipeline y limpieza del CRM"],
+      },
+      surge: {
+        name: "Turno de pico",
+        trigger: "Pico de señales entrantes o lead de alto ACV fuera de horario",
+        body: "Escalado de cómputo por eventos en el instante en que se dispara la demanda.",
+        ops: ["Cómputo escalado automáticamente", "Leads de alto ACV respondidos en segundos, a cualquier hora", "Capacidad extra de cierre durante el pico", "Vuelve a reducirse cuando pasa la ola"],
+      },
+    },
   },
   architectures: {
     eyebrow: "Arquitecturas empresariales",
@@ -162,13 +205,6 @@ const es: Dictionary = {
     titleAccent: "Demo Creator Suite de Bloom",
     subtitle: "Un portal sandbox de bajo coste: crea demos con la marca de tu cliente en segundos y cierra retainers de $3k–$5k sin escribir código backend.",
     cta: "Abrir la Demo Creator Suite",
-  },
-  morning: {
-    eyebrow: "El informe matutino",
-    titlePre: "Buenos días. ",
-    titleAccent: "Esto es lo que floreció.",
-    description:
-      "Sin paneles que revisar. Un solo informe con el café: lo que hicieron tus motores durante la noche, lo que generaron y los acuerdos que esperan tu firma.",
   },
   waitlist: {
     eyebrow: "Acceso anticipado",
@@ -214,11 +250,10 @@ const es: Dictionary = {
 
 const he: Dictionary = {
   nav: {
-    nightShift: "משמרת הלילה",
     engines: "המנועים",
     partners: "מפתחים",
     architectures: "ארכיטקטורות",
-    morning: "תדריך הבוקר",
+    shifts: "משמרות",
     waitlist: "גישה מוקדמת",
     cta: "כניסה למרכז הפיקוד",
     language: "שפה",
@@ -233,13 +268,6 @@ const he: Dictionary = {
     ctaPrimary: "הפעילו את כוח העבודה השקט שלכם",
     ctaSecondary: "גלו את האפליקציות",
   },
-  nightShift: {
-    eyebrow: "משמרת הלילה",
-    titlePre: "אתם מתנתקים. ",
-    titleAccent: "Bloom נכנס למשמרת.",
-    description:
-      "הגמר הגדול: ביצוע סביבתי 24/7 בכל שמונת המנועים. תדרכו אותם פעם אחת, כמו את הגיוסים הכי טובים שלכם, והם עובדים בכל שעה שאתם לא.",
-  },
   engines: {
     eyebrow: "ממעבדת Bloom AI",
     titlePre: "8 מנועים מתמחים. ",
@@ -249,6 +277,39 @@ const he: Dictionary = {
     badgePre: "בדרך עוד מנועים ושירותים פורצי דרך ",
     badgeAccent: "שיגרמו לעסק שלכם לפרוח",
     devBanner: "כל המנועים בפיתוח פעיל · בדרך ל־100% אוטונומיה",
+  },
+  shifts: {
+    eyebrow: "טופולוגיית משמרות דינמית",
+    titlePre: "מנוע אחד. שלוש משמרות. ",
+    titleAccent: "אפס השבתה.",
+    description: "Bloom אף פעם לא מסיים משמרת. מנוע טופולוגיית המשמרות הדינמית מזיז כוח מחשוב בין המנועים שלכם מסביב לשעון: סוגר בכוח כשהשוק שלכם ער, כורה ומנקה כשהוא ישן, ומזנק ברגע שנוחת אות בשווי גבוה.",
+    liveNow: "פעיל עכשיו באזור הזמן שלכם",
+    eventDriven: "מבוסס אירועים",
+    preview: "Bloom מחליף משמרות אוטומטית. בחרו אחת כדי לראות את ההקצאה שלה.",
+    nodes: "צמתי מחשוב",
+    allocation: "הקצאת צמתים חיה",
+    running: "רץ במשמרת הזו",
+    trigger: "טריגר",
+    modes: {
+      prime: {
+        name: "משמרת שוק פעיל",
+        trigger: "שעות הפעילות העסקית בשיא בכל אזור",
+        body: "תזמור עסקאות במהירות גבוהה כשהקונים שלכם מחוברים.",
+        ops: ["סינון לידים בזמן אמת", "תזמור עסקאות חי בין Apex ל־Cortex", "טיפול פעיל בהתנגדויות בשיחות פתוחות", "העברה לסוגרים שלכם באותה שעה"],
+      },
+      dark: {
+        name: "משמרת שוק שקט",
+        trigger: "שעות השפל, בכל האזורים",
+        body: "השעות השקטות עושות את העבודה הכבדה, כדי שהבוקר יתחיל נקי.",
+        ops: ["הטמעה רציפה למסד הנתונים הווקטורי", "כריית אותות כוונה בכל הערוצים", "דירוג לידים חוצה גבולות", "היגיינת צנרת וניקוי ה־CRM"],
+      },
+      surge: {
+        name: "משמרת זינוק",
+        trigger: "זינוק באותות נכנסים או ליד בשווי ACV גבוה מחוץ לשעות",
+        body: "הגדלת כוח מחשוב מבוססת אירועים ברגע שהביקוש מזנק.",
+        ops: ["כוח מחשוב שגדל אוטומטית", "לידים בשווי ACV גבוה נענים תוך שניות, בכל שעה", "קיבולת סגירה נוספת לאורך הזינוק", "חוזר לגודל רגיל כשהגל עובר"],
+      },
+    },
   },
   architectures: {
     eyebrow: "ארכיטקטורות לארגונים",
@@ -262,13 +323,6 @@ const he: Dictionary = {
     titleAccent: "Demo Creator Suite של Bloom",
     subtitle: "פורטל סנדבוקס במחיר נמוך: צרו דמו ממותג ללקוח בתוך שניות וסגרו ריטיינרים של ‎$3k–$5k בלי לכתוב קוד צד שרת.",
     cta: "פתחו את ה־Demo Creator Suite",
-  },
-  morning: {
-    eyebrow: "תדריך הבוקר",
-    titlePre: "בוקר טוב. ",
-    titleAccent: "הנה מה שפרח.",
-    description:
-      "בלי דשבורדים לחפור בהם. תדריך אחד עם הקפה: מה המנועים עשו בלילה, כמה זה הכניס, ואילו עסקאות מחכות לחתימה שלכם.",
   },
   waitlist: {
     eyebrow: "גישה מוקדמת",

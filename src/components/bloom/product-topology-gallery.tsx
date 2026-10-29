@@ -17,16 +17,16 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 type Product = { id: string; name: string; engines: EngineKey[]; setup: number; retainer: number };
 
 const PRODUCTS: Product[] = [
-  { id: "inbound", name: "Inbound Signal Collector", engines: ["intentpulse", "sovereign"], setup: 25000, retainer: 4500 },
-  { id: "outbound", name: "Autonomous Outbound Engine", engines: ["intentpulse", "vanguard", "apex"], setup: 35000, retainer: 7500 },
-  { id: "fullfunnel", name: "Full-Funnel Closing Suite", engines: ["vanguard", "cortex", "aether"], setup: 45000, retainer: 12000 },
-  { id: "retention", name: "Retention & Churn Shield", engines: ["shield", "aether", "sovereign"], setup: 30000, retainer: 6800 },
-  { id: "executive", name: "Executive Authority Engine", engines: ["coreops", "shield", "sovereign"], setup: 25000, retainer: 5200 },
-  { id: "pipeline", name: "Pipeline Acceleration Stack", engines: ["intentpulse", "vanguard", "cortex"], setup: 40000, retainer: 9500 },
-  { id: "monetization", name: "Monetization Yield Optimizer", engines: ["cortex", "aether", "coreops"], setup: 35000, retainer: 8500 },
-  { id: "postsale", name: "Post-Sale Expansion Suite", engines: ["shield", "aether", "cortex"], setup: 40000, retainer: 11000 },
-  { id: "lifecycle", name: "Lifecycle Orchestration Stack", engines: ["intentpulse", "apex", "shield"], setup: 50000, retainer: 14500 },
-  { id: "os", name: "The Sovereign Revenue OS", engines: ["intentpulse", "vanguard", "apex", "cortex", "aether", "coreops", "shield", "sovereign"], setup: 85000, retainer: 35000 },
+  { id: "inbound", name: "Inbound Signal Collector", engines: ["intentpulse", "sovereign"], setup: 35000, retainer: 8500 },
+  { id: "outbound", name: "Autonomous Outbound Engine", engines: ["intentpulse", "vanguard", "apex"], setup: 50000, retainer: 14500 },
+  { id: "fullfunnel", name: "Full-Funnel Closing Suite", engines: ["vanguard", "cortex", "aether"], setup: 65000, retainer: 22000 },
+  { id: "retention", name: "Retention & Churn Shield", engines: ["shield", "aether", "sovereign"], setup: 45000, retainer: 12500 },
+  { id: "executive", name: "Executive Authority Engine", engines: ["coreops", "shield", "sovereign"], setup: 35000, retainer: 9500 },
+  { id: "pipeline", name: "Pipeline Acceleration Stack", engines: ["intentpulse", "vanguard", "cortex"], setup: 60000, retainer: 18500 },
+  { id: "monetization", name: "Monetization Yield Optimizer", engines: ["cortex", "aether", "coreops"], setup: 50000, retainer: 16000 },
+  { id: "postsale", name: "Post-Sale Expansion Suite", engines: ["shield", "aether", "cortex"], setup: 55000, retainer: 19500 },
+  { id: "lifecycle", name: "Lifecycle Orchestration Stack", engines: ["intentpulse", "apex", "shield"], setup: 75000, retainer: 28000 },
+  { id: "os", name: "The Sovereign Revenue OS", engines: ["intentpulse", "vanguard", "apex", "cortex", "aether", "coreops", "shield", "sovereign"], setup: 125000, retainer: 55000 },
 ];
 
 const FLAGSHIP = "os";
@@ -48,11 +48,11 @@ const en = {
   scope: "Setup scope",
   deploy: "Deploy Selected Architecture",
   note: "Prices in USD, excluding taxes. Final scope is confirmed on a discovery call before deployment.",
-  scopeRows: (n: number, retainer: number): [string, string][] => [
+  scopeRows: (n: number, retainer: number, flagship: boolean): [string, string][] => [
     ["Vector DB seeding", `Your docs, CRM history and call records embedded for ${n} engines`],
     ["CRM webhook wiring", `${n * 3} webhooks wired into your CRM, billing and inbox`],
     ["Engine calibration", `${n} engines calibrated to your rules, limits and voice`],
-    ["SLA guarantee", retainer >= 15000 ? "99.99% uptime · 1-hour response · named engineer" : retainer >= 7000 ? "99.95% uptime · 4-hour response" : "99.9% uptime · 8-hour response"],
+    ["SLA guarantee", flagship ? "99.99% uptime · 15-minute response · dedicated forward-deployed engineer" : retainer >= 25000 ? "99.99% uptime · 30-minute response · named engineer" : retainer >= 12000 ? "99.95% uptime · 1-hour response · named engineer" : "99.9% uptime · 4-hour response"],
     ["Go-live", n <= 2 ? "2 weeks" : n === 3 ? "3 to 4 weeks" : "6 to 8 weeks"],
   ],
   taglines: {
@@ -96,11 +96,11 @@ const es: Copy = {
   scope: "Alcance de la puesta en marcha",
   deploy: "Desplegar esta arquitectura",
   note: "Precios en USD, sin impuestos. El alcance final se confirma en una llamada de descubrimiento antes del despliegue.",
-  scopeRows: (n, retainer) => [
+  scopeRows: (n, retainer, flagship) => [
     ["Carga de la base vectorial", `Tus documentos, historial de CRM y llamadas indexados para ${n} motores`],
     ["Conexión de webhooks al CRM", `${n * 3} webhooks conectados a tu CRM, facturación y bandeja de entrada`],
     ["Calibración de motores", `${n} motores calibrados según tus reglas, límites y voz`],
-    ["Garantía de SLA", retainer >= 15000 ? "99,99% de disponibilidad · respuesta en 1 hora · ingeniero asignado" : retainer >= 7000 ? "99,95% de disponibilidad · respuesta en 4 horas" : "99,9% de disponibilidad · respuesta en 8 horas"],
+    ["Garantía de SLA", flagship ? "99,99% de disponibilidad · respuesta en 15 minutos · ingeniero desplegado en tu equipo en exclusiva" : retainer >= 25000 ? "99,99% de disponibilidad · respuesta en 30 minutos · ingeniero asignado" : retainer >= 12000 ? "99,95% de disponibilidad · respuesta en 1 hora · ingeniero asignado" : "99,9% de disponibilidad · respuesta en 4 horas"],
     ["Puesta en marcha", n <= 2 ? "2 semanas" : n === 3 ? "3 a 4 semanas" : "6 a 8 semanas"],
   ],
   taglines: {
@@ -142,11 +142,11 @@ const he: Copy = {
   scope: "היקף ההקמה",
   deploy: "פרסו את הארכיטקטורה הזו",
   note: "המחירים בדולרים, לא כולל מיסים. ההיקף הסופי מאושר בשיחת היכרות לפני הפריסה.",
-  scopeRows: (n, retainer) => [
+  scopeRows: (n, retainer, flagship) => [
     ["טעינת מסד הנתונים הווקטורי", `המסמכים, היסטוריית ה־CRM והשיחות שלכם מוטמעים עבור ${n} מנועים`],
     ["חיבור Webhooks ל־CRM", `${n * 3} Webhooks מחוברים ל־CRM, לחיוב ולתיבת הדואר שלכם`],
     ["כיול המנועים", `${n} מנועים מכוילים לחוקים, לגבולות ולקול שלכם`],
-    ["התחייבות SLA", retainer >= 15000 ? "‏99.99% זמינות · מענה תוך שעה · מהנדס ייעודי" : retainer >= 7000 ? "‏99.95% זמינות · מענה תוך 4 שעות" : "‏99.9% זמינות · מענה תוך 8 שעות"],
+    ["התחייבות SLA", flagship ? "‏99.99% זמינות · מענה תוך 15 דקות · מהנדס ייעודי המוצב אצלכם" : retainer >= 25000 ? "‏99.99% זמינות · מענה תוך 30 דקות · מהנדס ייעודי" : retainer >= 12000 ? "‏99.95% זמינות · מענה תוך שעה · מהנדס ייעודי" : "‏99.9% זמינות · מענה תוך 4 שעות"],
     ["עלייה לאוויר", n <= 2 ? "שבועיים" : n === 3 ? "3 עד 4 שבועות" : "6 עד 8 שבועות"],
   ],
   taglines: {
@@ -440,7 +440,7 @@ function ArchitectureDrawer({ product: p, n, c, onClose }: { product: Product | 
                   <Layers className="size-3.5" /> {c.scope}
                 </h3>
                 <dl className="mt-3 divide-y divide-white/[0.06] rounded-xl border border-white/10 bg-white/[0.02]">
-                  {c.scopeRows(p.engines.length, p.retainer).map(([k, v]) => (
+                  {c.scopeRows(p.engines.length, p.retainer, flagship).map(([k, v]) => (
                     <div key={k} className="grid gap-1 px-4 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
                       <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">{k}</dt>
                       <dd className="text-[13px] text-white/85">{v}</dd>
