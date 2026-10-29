@@ -94,7 +94,7 @@ export function Engines() {
                 className={cn(
                   "group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-[32px] border has-[a:focus-visible]:ring-2 sm:aspect-[5/6]",
                   themed
-                    ? "border-c-edge/60 shadow-[0_40px_100px_-50px_rgb(0_0_0/0.9),0_0_70px_-30px_var(--c-glow)] transition-shadow duration-700 hover:shadow-[0_40px_100px_-50px_rgb(0_0_0/0.9),0_0_90px_-20px_var(--c-glow)] has-[a:focus-visible]:ring-c-2/60"
+                    ? "border-c-edge/60 shadow-[0_40px_100px_-50px_rgb(0_0_0/0.9),0_0_70px_-30px_var(--c-glow)] has-[a:focus-visible]:ring-c-2/60"
                     : "border-[#f0d59a]/15 shadow-[0_40px_100px_-50px_rgb(0_0_0/0.9)] has-[a:focus-visible]:ring-[#f0d59a]/60",
                 )}
               >
@@ -107,6 +107,7 @@ export function Engines() {
                   style={{ objectPosition: art.focus }}
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(11_6_18/0.15)_0%,rgb(11_6_18/0.25)_40%,rgb(11_6_18/0.92)_100%)] transition-opacity duration-700 group-hover:opacity-90" />
+                {themed && <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-c-1/25 to-transparent opacity-0 transition-opacity duration-500 will-change-[opacity] group-hover:opacity-100" />}
                 <Link href={e.href} aria-label={`${t.engineCard.enter}: ${e.name}`} className="absolute inset-0 z-[1] outline-none" />
 
                 <div className="pointer-events-none relative z-[2] p-7 sm:p-9">

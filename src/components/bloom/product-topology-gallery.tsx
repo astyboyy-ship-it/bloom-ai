@@ -2,12 +2,13 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { ArrowRight, Cpu, Layers, Rocket, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ENGINES, type EngineKey } from "./command/engines";
 import { PALETTES, paletteVars } from "./command/theme";
 import { useI18n, type Lang } from "./i18n";
+import { FADE, SNAP } from "./motion";
 import { Accent, SectionHeading } from "./section-heading";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -231,13 +232,18 @@ function ProductCard({ product: p, n, c, onInspect }: { product: Product; n: num
     <article
       style={paletteVars(PALETTES[p.engines[0]])}
       className={cn(
-        "glass group relative flex h-full flex-col overflow-hidden rounded-[28px] p-6 transition-shadow duration-700 sm:p-7",
-        flagship
-          ? "border-[#f0d59a]/30 shadow-[0_0_90px_-40px_rgb(243_212_143/0.8)] hover:shadow-[0_0_110px_-30px_rgb(243_212_143/0.9)]"
-          : "shadow-[0_0_70px_-45px_var(--c-glow)] hover:shadow-[0_0_80px_-25px_var(--c-glow)]",
+        "glass group relative flex h-full flex-col overflow-hidden rounded-[28px] p-6 sm:p-7",
+        flagship ? "border-[#f0d59a]/30 shadow-[0_0_90px_-40px_rgb(243_212_143/0.8)]" : "shadow-[0_0_70px_-45px_var(--c-glow)]",
       )}
     >
-      <div className={cn("pointer-events-none absolute -end-20 -top-24 size-64 rounded-full blur-3xl", flagship ? "bg-[#f0d59a]/10" : "bg-c-1/10")} />
+      {/* Hover glow fades in on its own layer: animating opacity is compositor-only, animating a big shadow repaints. */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute -end-20 -top-24 size-72 rounded-full opacity-60 blur-3xl transition-opacity duration-300 will-change-[opacity] group-hover:opacity-100",
+          flagship ? "bg-[#f0d59a]/15" : "bg-c-1/20",
+        )}
+      />
 
       <div className="relative flex items-start justify-between gap-3">
         <p className={cn("font-mono text-[10px] uppercase tracking-[0.28em]", flagship ? "text-[#f0d59a]/85" : "text-c-2/85")}>
@@ -293,7 +299,10 @@ function ProductCard({ product: p, n, c, onInspect }: { product: Product; n: num
  */
 function Pipeline({ engines, className }: { engines: EngineKey[]; className?: string }) {
   const uid = useId().replace(/:/g, "");
-  const reduce = useReducedMotion();
+  const box = useRef<HTMLDivElement>(null);
+  // Ten cards of looping SMIL would keep repainting off-screen; they only run while visible.
+  const visible = useInView(box, { margin: "120px" });
+  const reduce = useReducedMotion() || !visible;
   const W = 320;
   const pad = 18;
   const step = (W - pad * 2) / Math.max(1, engines.length - 1);
@@ -302,7 +311,7 @@ function Pipeline({ engines, className }: { engines: EngineKey[]; className?: st
   const dur = 1.2 + engines.length * 0.35;
 
   return (
-    <div dir="ltr" className={cn("rounded-2xl border border-white/[0.06] bg-black/30 px-2 py-3", className)}>
+    <div ref={box} dir="ltr" className={cn("rounded-2xl border border-white/[0.06] bg-black/30 px-2 py-3", className)}>
       <svg viewBox={`0 0 ${W} 44`} className="h-11 w-full overflow-visible" aria-hidden>
         <defs>
           <linearGradient id={`${uid}-line`} x1="0" x2="1" y1="0" y2="0">
@@ -361,8 +370,8 @@ function ArchitectureDrawer({ product: p, n, c, onClose }: { product: Product | 
   return createPortal(
     <AnimatePresence>
       {p && (
-        <motion.div key="arch" className="fixed inset-0 z-[70]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <motion.div key="arch" className="fixed inset-0 z-[70]" exit={{ transition: { duration: 0.25 } }}>
+          <motion.div aria-hidden className="absolute inset-0 bg-black/70" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} />
           <motion.div
             ref={panel}
             tabIndex={-1}
@@ -370,11 +379,11 @@ function ArchitectureDrawer({ product: p, n, c, onClose }: { product: Product | 
             aria-modal="true"
             aria-labelledby="arch-title"
             style={paletteVars(PALETTES[p.engines[0]])}
-            initial={{ x: 48, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 48, opacity: 0 }}
-            transition={{ duration: 0.45, ease: EASE }}
-            className="absolute bottom-0 right-0 top-0 flex h-dvh w-full flex-col overflow-hidden border-l border-white/10 bg-ink/90 text-white shadow-[0_0_120px_-30px_rgb(0_0_0/0.95)] outline-none backdrop-blur-xl sm:w-[520px]"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={SNAP}
+            className="absolute bottom-0 right-0 top-0 flex h-dvh w-full flex-col overflow-hidden border-l border-white/10 bg-ink/95 text-white shadow-[0_0_120px_-30px_rgb(0_0_0/0.95)] outline-none will-change-transform backdrop-blur-md sm:w-[520px]"
           >
             <header className="flex shrink-0 items-start gap-3 border-b border-white/10 px-5 py-4 sm:px-6">
               <div className="min-w-0">

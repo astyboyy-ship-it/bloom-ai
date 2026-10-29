@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LANGUAGES, useI18n } from "./i18n";
+import { SNAP } from "./motion";
 
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { lang, setLang, t } = useI18n();
@@ -49,7 +50,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.16 }}
+            transition={SNAP}
             className="glass absolute right-0 top-full z-50 mt-2 w-44 origin-top-right overflow-hidden rounded-2xl p-1.5"
           >
             {LANGUAGES.map((l) => (

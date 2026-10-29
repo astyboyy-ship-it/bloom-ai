@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Send, Sparkles, X } from "lucide-react";
 import { ENGINES, isEngineKey, usdFmt, type Engine, type EngineKey } from "./engines";
+import { SNAP } from "../motion";
 import { localizePersona, useCommandCopy } from "./locale";
 import { CARD_MARKER, type QuickReply, type Scenario } from "./tutorial-script";
 
@@ -283,9 +284,9 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       initial={{ opacity: 0, x: 48 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 48 }}
-      transition={{ duration: 0.45, ease: EASE }}
+      transition={SNAP}
       // A full-height sidebar on the right: header and footer keep their size, only the messages scroll.
-      className="fixed bottom-0 right-0 top-0 z-50 flex h-dvh w-full flex-col overflow-hidden border-l border-c-edge/60 bg-black/80 shadow-[0_0_120px_-30px_rgb(0_0_0/0.95),0_0_40px_-12px_var(--c-glow-soft)] outline-none backdrop-blur-md sm:w-[500px] md:w-[600px] lg:w-[680px]"
+      className="fixed bottom-0 right-0 top-0 z-50 flex h-dvh w-full will-change-transform flex-col overflow-hidden border-l border-c-edge/60 bg-black/80 shadow-[0_0_120px_-30px_rgb(0_0_0/0.95),0_0_40px_-12px_var(--c-glow-soft)] outline-none backdrop-blur-md sm:w-[500px] md:w-[600px] lg:w-[680px]"
     >
       <span aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-c-2/70 to-transparent" />
       <header className="flex shrink-0 items-center gap-3 border-b border-c-edge/40 px-4 py-3">

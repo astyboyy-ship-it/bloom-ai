@@ -15,6 +15,7 @@ import { Inspector, type InspectTarget } from "./inspect";
 import { useCommandCopy, useCommandLocale } from "./locale";
 import { clearSnapshot, loadSnapshot, saveSnapshot, type WorkforceSnapshot } from "./storage";
 import { PALETTES, paletteVars } from "./theme";
+import { FADE, SNAP } from "../motion";
 import { EngineBadge, NeuralChat, NeuralNotice } from "./tutorial";
 import { taskOf, useWorkforce, type CardState, type FeedItem, type FlowState, type Workforce } from "./use-workforce";
 
@@ -834,7 +835,9 @@ function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onCl
   ];
 
   return (
-    <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" exit={{ transition: { duration: 0.25 } }} onClick={onClose}>
+      {/* A plain dimmer: a second blur under the frosted sheet would double the cost for no visible gain. */}
+      <motion.div aria-hidden className="absolute inset-0 bg-black/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} />
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -843,8 +846,8 @@ function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onCl
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="relative max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-c-edge/50 bg-black/75 p-6 shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9),0_0_60px_-30px_var(--c-glow)] backdrop-blur-md sm:p-8"
+        transition={SNAP}
+        className="relative max-h-[90dvh] will-change-transform w-full max-w-2xl overflow-y-auto rounded-2xl border border-c-edge/50 bg-black/75 p-6 shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9),0_0_60px_-30px_var(--c-glow)] backdrop-blur-md sm:p-8"
       >
         <span aria-hidden className="pointer-events-none absolute inset-x-12 -top-px h-px bg-linear-to-r from-transparent via-c-2/80 to-transparent" />
         <div className="flex items-start gap-4">

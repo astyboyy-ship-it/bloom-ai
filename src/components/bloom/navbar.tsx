@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "./i18n";
 import { LanguageSwitcher } from "./language-switcher";
 import { BloomLogo } from "./logo";
+import { SNAP } from "./motion";
 
 export function Navbar() {
   const { t, lang, dir } = useI18n();
@@ -99,7 +100,7 @@ export function Navbar() {
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.2 }}
+            transition={SNAP}
             lang={lang}
             dir={dir}
             className="glass mx-auto mt-2 max-w-6xl rounded-2xl p-2 lg:hidden"

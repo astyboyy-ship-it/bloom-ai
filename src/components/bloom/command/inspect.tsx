@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, CircleSlash, FileText, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CHANNELS, COMPANIES, ENGINES, usdFmt, type Answers, type Channel, type Engine, type EngineKey } from "./engines";
+import { FADE, SNAP } from "../motion";
 import type { FeedItem } from "./use-workforce";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -57,8 +58,8 @@ export function Drawer({ kicker, title, onClose, children }: { kicker: string; t
   }, [onClose]);
 
   return (
-    <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="absolute inset-0 bg-black/55 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+    <motion.div className="fixed inset-0 z-50" exit={{ transition: { duration: 0.25 } }}>
+      <motion.div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} />
       <motion.aside
         ref={ref}
         tabIndex={-1}
@@ -68,8 +69,8 @@ export function Drawer({ kicker, title, onClose, children }: { kicker: string; t
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="absolute inset-y-0 right-0 flex w-full flex-col border-l border-c-edge/50 bg-black/80 shadow-[-30px_0_80px_-20px_rgb(0_0_0/0.9)] outline-none backdrop-blur-md sm:max-w-[540px]"
+        transition={SNAP}
+        className="absolute inset-y-0 right-0 flex will-change-transform w-full flex-col border-l border-c-edge/50 bg-black/80 shadow-[-30px_0_80px_-20px_rgb(0_0_0/0.9)] outline-none backdrop-blur-md sm:max-w-[540px]"
       >
         <span aria-hidden className="pointer-events-none absolute inset-y-16 left-0 w-px bg-linear-to-b from-transparent via-c-2/60 to-transparent" />
         <header className="flex items-start gap-3 border-b border-c-edge/40 px-5 py-4">

@@ -23,7 +23,7 @@ const en = {
   },
   hero: {
     status: "In active development",
-    badge: "The Bloom AI Lab · 4 standalone apps",
+    badge: "The Bloom AI Lab · 8 specialized engines",
     titlePre: "Category-Defining ",
     titleAccent: "Autonomous Engines",
     titlePost: " for Creators, Founders, and High-End Enterprises.",
@@ -36,14 +36,14 @@ const en = {
     titlePre: "You log off. ",
     titleAccent: "Bloom clocks in.",
     description:
-      "The grand finale: 24/7 ambient execution across all four engines. Brief them once, the way you'd brief your best hires, and they work every hour you don't.",
+      "The grand finale: 24/7 ambient execution across all eight engines. Brief them once, the way you'd brief your best hires, and they work every hour you don't.",
   },
   engines: {
     eyebrow: "From the Bloom AI Lab",
-    titlePre: "Four standalone apps. ",
-    titleAccent: "Zero overhead.",
+    titlePre: "8 Specialized Engines. ",
+    titleAccent: "Pre-Engineered Enterprise Architecture.",
     description:
-      "Bloom AI is a technology lab and incubator. Each engine is its own category-defining app, built on Dynamic Awareness: no templates, no hardcoded rules, nothing for you to configure. It perceives, reasons, and builds its own execution path. All four are in active development, building toward 100% autonomy.",
+      "Bloom AI is a technology lab and incubator. Each engine is its own category-defining app, built on Dynamic Awareness: no templates, no hardcoded rules, nothing for you to configure. It perceives, reasons, and builds its own execution path. All eight are in active development, building toward 100% autonomy.",
     badgePre: "With More Game-Changing Engines & Services To Come ",
     badgeAccent: "That Will Bloom Your Business",
     devBanner: "All engines in active development · building toward 100% autonomy",
@@ -125,7 +125,7 @@ const es: Dictionary = {
   },
   hero: {
     status: "En desarrollo activo",
-    badge: "Bloom AI Lab · 4 apps independientes",
+    badge: "Bloom AI Lab · 8 motores especializados",
     titlePre: "",
     titleAccent: "Motores autónomos",
     titlePost: " que definen categorías para creadores, fundadores y empresas de alto nivel.",
@@ -138,14 +138,14 @@ const es: Dictionary = {
     titlePre: "Tú te desconectas. ",
     titleAccent: "Bloom entra a trabajar.",
     description:
-      "El gran final: ejecución ambiental 24/7 en los cuatro motores. Dales las instrucciones una vez, como a tus mejores fichajes, y trabajan cada hora que tú no.",
+      "El gran final: ejecución ambiental 24/7 en los ocho motores. Dales las instrucciones una vez, como a tus mejores fichajes, y trabajan cada hora que tú no.",
   },
   engines: {
     eyebrow: "Desde el laboratorio Bloom AI",
-    titlePre: "Cuatro apps independientes. ",
-    titleAccent: "Cero costes operativos.",
+    titlePre: "8 motores especializados. ",
+    titleAccent: "Arquitectura empresarial preingenierizada.",
     description:
-      "Bloom AI es un laboratorio e incubadora tecnológica. Cada motor es su propia app, construida sobre conciencia dinámica: sin plantillas, sin reglas fijas, nada que configurar. Percibe, razona y construye su propio camino de ejecución. Los cuatro están en desarrollo activo, rumbo al 100% de autonomía.",
+      "Bloom AI es un laboratorio e incubadora tecnológica. Cada motor es su propia app, construida sobre conciencia dinámica: sin plantillas, sin reglas fijas, nada que configurar. Percibe, razona y construye su propio camino de ejecución. Los ocho están en desarrollo activo, rumbo al 100% de autonomía.",
     badgePre: "Vienen más motores y servicios revolucionarios ",
     badgeAccent: "que harán florecer tu negocio",
     devBanner: "Todos los motores en desarrollo activo · rumbo al 100% de autonomía",
@@ -225,7 +225,7 @@ const he: Dictionary = {
   },
   hero: {
     status: "בפיתוח פעיל",
-    badge: "מעבדת Bloom AI · ‏4 אפליקציות עצמאיות",
+    badge: "מעבדת Bloom AI · ‏8 מנועים מתמחים",
     titlePre: "",
     titleAccent: "מנועים אוטונומיים",
     titlePost: " שמגדירים קטגוריה, ליוצרים, למייסדים ולארגונים מהשורה הראשונה.",
@@ -238,14 +238,14 @@ const he: Dictionary = {
     titlePre: "אתם מתנתקים. ",
     titleAccent: "Bloom נכנס למשמרת.",
     description:
-      "הגמר הגדול: ביצוע סביבתי 24/7 בכל ארבעת המנועים. תדרכו אותם פעם אחת, כמו את הגיוסים הכי טובים שלכם, והם עובדים בכל שעה שאתם לא.",
+      "הגמר הגדול: ביצוע סביבתי 24/7 בכל שמונת המנועים. תדרכו אותם פעם אחת, כמו את הגיוסים הכי טובים שלכם, והם עובדים בכל שעה שאתם לא.",
   },
   engines: {
     eyebrow: "ממעבדת Bloom AI",
-    titlePre: "ארבע אפליקציות עצמאיות. ",
-    titleAccent: "אפס תקורה.",
+    titlePre: "8 מנועים מתמחים. ",
+    titleAccent: "ארכיטקטורה ארגונית מתוכננת מראש.",
     description:
-      "Bloom AI היא מעבדה ואינקובטור טכנולוגי. כל מנוע הוא אפליקציה עצמאית שבנויה על מודעות דינמית: בלי תבניות, בלי חוקים קשיחים, בלי שום הגדרה מצדכם. הוא קולט, מנתח ובונה לעצמו את מסלול הביצוע. כל הארבעה בפיתוח פעיל, בדרך ל־100% אוטונומיה.",
+      "Bloom AI היא מעבדה ואינקובטור טכנולוגי. כל מנוע הוא אפליקציה עצמאית שבנויה על מודעות דינמית: בלי תבניות, בלי חוקים קשיחים, בלי שום הגדרה מצדכם. הוא קולט, מנתח ובונה לעצמו את מסלול הביצוע. כל השמונה בפיתוח פעיל, בדרך ל־100% אוטונומיה.",
     badgePre: "בדרך עוד מנועים ושירותים פורצי דרך ",
     badgeAccent: "שיגרמו לעסק שלכם לפרוח",
     devBanner: "כל המנועים בפיתוח פעיל · בדרך ל־100% אוטונומיה",
