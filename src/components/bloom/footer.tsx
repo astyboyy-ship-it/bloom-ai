@@ -1,5 +1,8 @@
+"use client";
+
 import { Github, Linkedin, Twitter, Youtube, type LucideIcon } from "lucide-react";
 import { BloomLogo } from "./logo";
+import { useSiteCopy } from "./site-copy";
 
 export type SocialLinks = {
   x?: string;
@@ -25,6 +28,7 @@ const platforms: { key: keyof SocialLinks; label: string; icon: LucideIcon }[] =
 
 export function Footer({ socials = defaultSocialLinks }: { socials?: SocialLinks }) {
   const links = platforms.filter((p) => socials[p.key]);
+  const { s } = useSiteCopy();
 
   return (
     <footer className="relative overflow-hidden bg-ink px-4 pb-10 pt-20">
@@ -49,7 +53,7 @@ export function Footer({ socials = defaultSocialLinks }: { socials?: SocialLinks
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-dusk/70" />
             <span className="relative inline-flex size-2 rounded-full bg-dusk" />
           </span>
-          All Systems Operational
+          {s.footer.operational}
         </div>
 
         <ul className="flex items-center gap-1">

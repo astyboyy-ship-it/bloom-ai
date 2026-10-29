@@ -5,13 +5,15 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Send, Sparkles, X } from "lucide-react";
 import { ENGINES, usdFmt, type Engine } from "./engines";
-import { PERSONAS, scenarioFor, type Scenario } from "./tutorial-script";
+import { localizePersona, useCommandCopy } from "./locale";
+import type { Scenario } from "./tutorial-script";
 
 const DISMISSED = "bloom.command.neural.dismissed";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /** The header prompt that opens the Neural Breakdown. Dismissing it is remembered in this browser. */
 export function NeuralNotice({ onLaunch }: { onLaunch: () => void }) {
+  const { c } = useCommandCopy();
   const [shown, setShown] = useState(false);
   useEffect(() => {
     try {
@@ -31,32 +33,47 @@ export function NeuralNotice({ onLaunch }: { onLaunch: () => void }) {
   };
   return (
     <div className="mt-3 inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-c-edge/60 bg-c-deep/50 text-[12.5px]">
-      <button type="button" onClick={onLaunch} className="group flex min-w-0 items-center gap-2 px-3 py-1.5 text-left text-white/75 transition-colors hover:bg-c-1/10 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
+      <button type="button" onClick={onLaunch} className="group flex min-w-0 items-center gap-2 px-3 py-1.5 text-start text-white/75 transition-colors hover:bg-c-1/10 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
         <Sparkles className="size-3.5 shrink-0 text-c-2" />
         <span className="min-w-0">
-          Confused by what you&apos;re seeing? <span className="font-medium text-c-2 underline decoration-c-2/40 underline-offset-2 group-hover:decoration-c-2">Launch Neural Breakdown</span>
+          {c.confused} <span className="font-medium text-c-2 underline decoration-c-2/40 underline-offset-2 group-hover:decoration-c-2">{c.launchNeural}</span>
         </span>
       </button>
-      <button type="button" onClick={dismiss} aria-label="Dismiss Neural Breakdown prompt" className="border-l border-c-edge/60 px-2 text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
+      <button type="button" onClick={dismiss} aria-label={c.dismissNeural} className="border-s border-c-edge/60 px-2 text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
         <X className="size-3.5" />
       </button>
     </div>
   );
 }
 
+/** The API's own error message ({ error: { message } }), or the status line when the body isn't JSON (e.g. a 404 page). */
+async function errorOf(res: Response) {
+  const body = await res.text().catch(() => "");
+  try {
+    const msg = JSON.parse(body)?.error?.message;
+    if (typeof msg === "string" && msg) return `HTTP ${res.status}: ${msg}`;
+  } catch {
+    // Not JSON.
+  }
+  return `HTTP ${res.status} ${res.statusText || ""}`.trim() + (res.status === 404 ? " (/api/chat is not deployed or is blocked)" : "");
+}
+
 type Msg = { id: number; from: "ai" | "user"; text?: string; scenario?: Scenario; echo?: string };
 
 /**
- * A scripted conversation with the engine's own persona: the hook, the challenge, the user's answer
- * (a quick reply or their own words), then the breakdown: execution, the bundle with a second engine,
- * and a preview of the notifications and capital they'd see once deployed.
+ * A conversation with the engine's own persona: the scripted hook and challenge, then the user's answer.
+ * Their own words always go to the live engine at /api/chat, which answers in the visitor's language.
+ * In English a quick reply plays its scripted breakdown (execution, the bundle with a second engine, and a
+ * preview of the notifications and capital they'd see once deployed); in other languages it goes live too.
  */
 export function NeuralChat({ engine, open, onClose }: { engine: Engine; open: boolean; onClose: () => void }) {
   return <AnimatePresence>{open && <Chat key="chat" engine={engine} onClose={onClose} />}</AnimatePresence>;
 }
 
 function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
-  const persona = PERSONAS[engine.key];
+  const { lang, c } = useCommandCopy();
+  // Fixed for this opening, so the script doesn't change language halfway through.
+  const [persona] = useState(() => localizePersona(engine.key, lang));
   const reduce = useReducedMotion();
   const pause = reduce ? 150 : 950;
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -67,6 +84,7 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
   const scroller = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const live = useRef<AbortController | null>(null);
 
   /** Queue AI messages, each preceded by a typing pause. */
   const say = (items: Omit<Msg, "id" | "from">[], then?: () => void) => {
@@ -88,7 +106,10 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
     panel.current?.focus();
     say([{ text: persona.hook }, { text: persona.challenge }], () => setStage("ask"));
     const ts = timers.current;
-    return () => ts.forEach(clearTimeout);
+    return () => {
+      ts.forEach(clearTimeout);
+      live.current?.abort();
+    };
     // Runs once per opening.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -108,15 +129,76 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
     setMsgs((ms) => [...ms, { id: ++seq.current, from: "user", text }]);
     say([{ scenario, echo: custom ? text : undefined }, { text: persona.closer }], () => setStage("done"));
   };
+  /**
+   * Sends the user's words, the conversation so far and their UI language to the live engine at /api/chat,
+   * streaming the reply into the usual AI bubbles (one per paragraph). There is no scripted fallback: if the
+   * engine can't answer, it says so and the visitor can send again.
+   */
+  const ask = async (t: string) => {
+    setStage("answer");
+    setMsgs((ms) => [...ms, { id: ++seq.current, from: "user", text: t }]);
+    setTyping(true);
+
+    const history = [...msgs.flatMap((m) => {
+      const content = m.scenario ? [m.scenario.read, ...m.scenario.steps, m.scenario.bundle.text].join(" ") : m.text;
+      return content ? [{ role: m.from === "user" ? "user" : "assistant", content }] : [];
+    }), { role: "user", content: t }].slice(-16);
+
+    const ids: number[] = [];
+    let acc = "";
+    const render = () => {
+      const paras = acc.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+      while (ids.length < paras.length) ids.push(++seq.current);
+      setMsgs((ms) => [...ms.filter((m) => !ids.includes(m.id)), ...paras.map((text, i) => ({ id: ids[i], from: "ai" as const, text }))]);
+    };
+
+    const ctrl = new AbortController();
+    live.current = ctrl;
+    try {
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ engine: engine.key, lang, messages: history }), signal: ctrl.signal });
+      if (!res.ok || !res.body) throw new Error(await errorOf(res));
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        if (acc.trim()) {
+          setTyping(false);
+          render();
+        }
+      }
+      if (!acc.trim()) throw new Error("The engine returned an empty reply.");
+      setTyping(false);
+      setStage("done");
+    } catch (err) {
+      if (ctrl.signal.aborted) return;
+      setTyping(false);
+      if (acc.trim()) {
+        // Cut off mid-reply: keep what arrived.
+        setStage("done");
+        return;
+      }
+      console.error("[neural breakdown] live chat failed:", err);
+      // Shown as-is so a misconfigured deployment says exactly what's wrong (missing key, 404, upstream error).
+      const reason = err instanceof Error ? err.message : String(err);
+      setMsgs((ms) => [...ms, { id: ++seq.current, from: "ai", text: `${c.liveError}
+
+⚠ ${reason}` }]);
+      setStage("ask");
+    }
+  };
   const submit = () => {
     const t = draft.trim().slice(0, 400);
     if (!t) return;
     setDraft("");
-    answer(t, scenarioFor(persona, t), true);
+    void ask(t);
   };
+  // The scripted breakdowns are written in English; in any other language the live engine answers instead.
+  const quick = (sc: Scenario) => (lang === "en" ? answer(sc.reply, sc, false) : void ask(sc.reply));
   const again = () => {
     setStage("answer");
-    say([{ text: "Again? Good. Winners test the machine. " + persona.challenge }], () => setStage("ask"));
+    say([{ text: c.againLine + persona.challenge }], () => setStage("ask"));
   };
 
   return (
@@ -124,7 +206,7 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       ref={panel}
       tabIndex={-1}
       role="dialog"
-      aria-label={`${engine.name} Neural Breakdown`}
+      aria-label={`${engine.name} ${c.neural}`}
       initial={{ opacity: 0, y: 24, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -139,9 +221,9 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
         </span>
         <div className="min-w-0">
           <p className="truncate font-logo text-[15px] font-medium leading-tight">{engine.name}</p>
-          <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-c-2/80">Neural Breakdown · Engine Nº {engine.index}</p>
+          <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-c-2/80">{c.neural} · {c.engineNo} {engine.index}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close Neural Breakdown" className="ml-auto rounded-md p-1.5 text-white/50 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-c-2">
+        <button type="button" onClick={onClose} aria-label={c.closeNeural} className="ms-auto rounded-md p-1.5 text-white/50 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-c-2">
           <X className="size-4" />
         </button>
       </header>
@@ -149,19 +231,19 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       <div ref={scroller} className="min-h-[200px] flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
         {msgs.map((m) =>
           m.from === "user" ? (
-            <motion.p key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm border border-c-1/30 bg-c-1/15 px-3.5 py-2 text-[13.5px] leading-snug text-white">
+            <motion.p key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="ms-auto max-w-[85%] rounded-2xl rounded-ee-sm border border-c-1/30 bg-c-1/15 px-3.5 py-2 text-[13.5px] leading-snug text-white">
               {m.text}
             </motion.p>
           ) : m.scenario ? (
             <Breakdown key={m.id} engine={engine} scenario={m.scenario} echo={m.echo} />
           ) : (
-            <motion.p key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-[92%] rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] leading-relaxed text-white/85">
+            <motion.p key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-[92%] whitespace-pre-line rounded-2xl rounded-es-sm border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[13.5px] leading-relaxed text-white/85">
               {m.text}
             </motion.p>
           ),
         )}
         {typing && (
-          <div className="flex w-fit gap-1 rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.04] px-3.5 py-3" aria-label={`${engine.name} is typing`}>
+          <div className="flex w-fit gap-1 rounded-2xl rounded-es-sm border border-white/10 bg-white/[0.04] px-3.5 py-3" aria-label={c.typing(engine.name)}>
             {[0, 1, 2].map((i) => (
               <motion.span key={i} className="size-1.5 rounded-full bg-c-2" animate={{ opacity: [0.25, 1, 0.25] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }} />
             ))}
@@ -176,8 +258,8 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
               <button
                 key={s.id}
                 type="button"
-                onClick={() => answer(s.reply, s, false)}
-                className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-[12.5px] leading-snug text-white/80 transition-colors hover:border-c-1/50 hover:bg-c-1/10 hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
+                onClick={() => quick(s)}
+                className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-start text-[12.5px] leading-snug text-white/80 transition-colors hover:border-c-1/50 hover:bg-c-1/10 hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
               >
                 {s.reply}
               </button>
@@ -188,11 +270,11 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
               e.preventDefault();
               submit();
             }}
-            className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 pl-3 focus-within:border-c-1/50"
+            className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 ps-3 focus-within:border-c-1/50"
           >
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Or tell it in your own words…" aria-label="Your answer" maxLength={400} className="h-10 min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/35 focus:outline-none" />
-            <button type="submit" disabled={!draft.trim()} aria-label="Send" className="mr-1 rounded-md p-2 text-c-2 transition-opacity disabled:opacity-30">
-              <Send className="size-4" />
+            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={c.ownWords} aria-label={c.yourAnswer} maxLength={400} className="h-10 min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/35 focus:outline-none" />
+            <button type="submit" disabled={!draft.trim()} aria-label={c.send} className="me-1 rounded-md p-2 text-c-2 transition-opacity disabled:opacity-30">
+              <Send className="size-4 rtl:-scale-x-100" />
             </button>
           </form>
         </div>
@@ -200,10 +282,10 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       {stage === "done" && (
         <div className="flex flex-wrap gap-2 border-t border-c-edge/40 p-3">
           <button type="button" onClick={again} className="h-9 flex-1 rounded-md border border-white/10 bg-white/[0.03] px-3 text-[12.5px] text-white/80 hover:border-c-1/50 hover:text-white">
-            Try another scenario
+            {c.again}
           </button>
           <button type="button" onClick={onClose} className="h-9 flex-1 rounded-md border border-c-1/50 bg-c-1/15 px-3 font-mono text-[11px] uppercase tracking-[0.16em] text-white hover:bg-c-1/25">
-            Back to command
+            {c.backToCommand}
           </button>
         </div>
       )}

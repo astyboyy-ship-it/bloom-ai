@@ -9,11 +9,12 @@ import { useI18n } from "../i18n";
 import { Accent, SectionHeading } from "../section-heading";
 import { StatusLed } from "../status-led";
 import { AwarenessCore } from "./awareness-core";
+import { localizeSiteEngine } from "../site-copy";
 import { engines } from "./data";
 
 /** The four engines as a gallery of living paintings; each opens its own full-screen view. */
 export function Engines() {
-  const { t } = useI18n();
+  const { t, lang, dir } = useI18n();
 
   return (
     <section id="engines" className="relative scroll-mt-16 px-4 py-32 sm:px-8 sm:py-44">
@@ -51,8 +52,9 @@ export function Engines() {
 
       <AwarenessCore />
 
-      <ul className="mx-auto mt-6 grid max-w-6xl gap-6 md:grid-cols-2">
-        {engines.map((e, i) => {
+      <ul lang={lang} dir={dir} className="mx-auto mt-6 grid max-w-6xl gap-6 md:grid-cols-2">
+        {engines.map((base, i) => {
+          const e = localizeSiteEngine(base, lang);
           const art = paintings[e.painting];
           return (
             <motion.li
@@ -76,19 +78,19 @@ export function Engines() {
                 <Link href={`/engines/${e.slug}`} aria-label={`Enter ${e.name}`} className="absolute inset-0 z-[1] outline-none" />
 
                 <div className="pointer-events-none relative z-[2] p-7 sm:p-9">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d59a]/80">Engine Nº {e.index}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d59a]/80">{t.engineCard.index} {e.index}</p>
                   <h3 className="text-gold-metal mt-3 font-display text-4xl font-light leading-[1.02] sm:text-5xl">{e.name}</h3>
                   <p className="mt-3 max-w-md text-[15px] leading-relaxed text-white/75">{e.teaser}</p>
 
                   <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
                     <span className="inline-flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[#ffc777]">
-                      <StatusLed /> In active development
+                      <StatusLed /> {t.engineCard.status}
                     </span>
                     <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">
                       <span className="relative h-1 w-16 overflow-hidden rounded-full bg-white/15">
                         <span className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#c99446] to-[#5ee7ff]" style={{ width: `${e.autonomy}%` }} />
                       </span>
-                      {e.autonomy}% autonomous
+                      {e.autonomy}% {t.engineCard.autonomous}
                     </span>
                   </div>
 
@@ -97,10 +99,10 @@ export function Engines() {
                       href={`/command/${e.command}`}
                       className="pointer-events-auto relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full bg-[#f3e2b8] px-5 text-sm font-semibold text-[#1a0f05] shadow-[0_0_50px_-12px_rgb(243_212_143/0.85)] transition-shadow hover:shadow-[0_0_60px_-8px_rgb(243_212_143/0.95)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0d59a]"
                     >
-                      Enter Command Center <ArrowRight className="size-4" />
+                      {t.engineCard.command} <ArrowRight className="size-4 rtl:-scale-x-100" />
                     </Link>
                     <span className="inline-flex items-center gap-2 border-b border-[#f0d59a]/40 pb-1 text-sm font-medium text-[#f3e2b8] transition-colors group-hover:border-[#f0d59a]">
-                      Enter the engine
+                      {t.engineCard.enter}
                       <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                     </span>
                   </div>

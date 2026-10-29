@@ -11,28 +11,19 @@ import { FloraField } from "./art/flora";
 import { ENGINE_IDS, ENGINE_LABELS, isEngineId, type EngineId } from "./engines/catalog";
 import { useI18n } from "./i18n";
 import { Accent } from "./section-heading";
+import { useSiteCopy } from "./site-copy";
 
-const roles = [
-  { value: "creator", label: "Creator" },
-  { value: "founder", label: "Founder" },
-  { value: "enterprise", label: "Enterprise" },
-  { value: "developer", label: "Developer" },
-] as const;
+const roles = ["creator", "founder", "enterprise", "developer"] as const;
 
-type Role = (typeof roles)[number]["value"];
-const isRole = (v: unknown): v is Role => roles.some((r) => r.value === v);
-
-const perks = [
-  "Priority onboarding when your cohort opens",
-  "A direct line to the team shaping the roadmap",
-  "First access to new engines and services as they launch",
-];
+type Role = (typeof roles)[number];
+const isRole = (v: unknown): v is Role => roles.some((r) => r === v);
 
 export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: EngineId } = {}) {
   const [state, formAction, pending] = useActionState<JoinState, FormData>(joinNetwork, { status: "idle" });
   const [role, setRole] = useState<Role>("creator");
   const [engine, setEngine] = useState<EngineId>(defaultEngine);
   const { t, lang, dir } = useI18n();
+  const w = useSiteCopy().s.waitlist;
   const [intent, setIntent] = useState<"access" | "updates">("access");
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -88,7 +79,7 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
               <p className="mt-6 max-w-lg text-pretty leading-relaxed text-white/55">{t.waitlist.description}</p>
             </div>
             <ul className="mt-8 space-y-3">
-              {perks.map((p, i) => (
+              {w.perks.map((p, i) => (
                 <motion.li
                   key={p}
                   initial={{ opacity: 0, x: -12 }}
@@ -122,18 +113,23 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                     <div className="relative size-28">
                       <FloraField blooms={[{ kind: "rose", x: "50%", y: "50%", size: 112 }]} />
                     </div>
-                    <h3 className="mt-4 font-serif text-3xl italic text-white">You&apos;re in the first bloom.</h3>
+                    <h3 className="mt-4 font-serif text-3xl italic text-white">{w.successTitle}</h3>
                     <p className="mt-3 max-w-xs text-sm text-white/55">
                       {state.intent === "updates" ? (
                         <>
-                          We&apos;ll send development updates on{" "}
-                          <span className="text-white">{ENGINE_LABELS[state.engine]}</span> to{" "}
-                          <span className="text-white">{state.email}</span>.
+                          {w.updatesMsg[0]}
+                          <span className="text-white">{ENGINE_LABELS[state.engine]}</span>
+                          {w.updatesMsg[1]}
+                          <span dir="ltr" className="text-white">{state.email}</span>
+                          {w.updatesMsg[2]}
                         </>
                       ) : (
                         <>
-                          We&apos;ll reach out to <span className="text-white">{state.email}</span> about{" "}
-                          <span className="text-white">{ENGINE_LABELS[state.engine]}</span> when your cohort opens.
+                          {w.accessMsg[0]}
+                          <span dir="ltr" className="text-white">{state.email}</span>
+                          {w.accessMsg[1]}
+                          <span className="text-white">{ENGINE_LABELS[state.engine]}</span>
+                          {w.accessMsg[2]}
                         </>
                       )}
                     </p>
@@ -151,16 +147,16 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                       <h3 className="flex items-center gap-2 text-lg font-medium text-white">
                         {intent === "updates" ? (
                           <>
-                            <BellRing className="size-4 text-[#5ee7ff]" /> Track development updates
+                            <BellRing className="size-4 text-[#5ee7ff]" /> {w.trackTitle}
                           </>
                         ) : (
                           <>
-                            <Sparkles className="size-4 text-sun" /> Claim early access
+                            <Sparkles className="size-4 text-sun" /> {w.claimTitle}
                           </>
                         )}
                       </h3>
                       <p className="mt-1 text-sm text-white/45">
-                        {intent === "updates" ? "Build progress, straight to your inbox." : "Seats open in small cohorts."}
+                        {intent === "updates" ? w.trackSub : w.claimSub}
                       </p>
                     </div>
 
@@ -168,7 +164,7 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                     <input type="hidden" name="intent" value={intent} />
 
                     <fieldset>
-                      <legend className="mb-2 text-xs text-white/40">Engine</legend>
+                      <legend className="mb-2 text-xs text-white/40">{w.engine}</legend>
                       <div className="flex flex-wrap gap-1.5">
                         {ENGINE_IDS.map((id) => (
                           <button
@@ -190,19 +186,19 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                     </fieldset>
 
                     <fieldset>
-                      <legend className="mb-2 text-xs text-white/40">I am a…</legend>
+                      <legend className="mb-2 text-xs text-white/40">{w.iAm}</legend>
                       <div className="grid grid-cols-4 gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1">
                         {roles.map((r) => (
-                          <label key={r.value} className="relative cursor-pointer">
+                          <label key={r} className="relative cursor-pointer">
                             <input
                               type="radio"
                               name="role"
-                              value={r.value}
-                              checked={role === r.value}
-                              onChange={() => setRole(r.value)}
+                              value={r}
+                              checked={role === r}
+                              onChange={() => setRole(r)}
                               className="peer sr-only"
                             />
-                            {role === r.value && (
+                            {role === r && (
                               <motion.span
                                 layoutId="role-pill"
                                 className="absolute inset-0 rounded-lg bg-gradient-to-r from-rose/25 to-sun/20"
@@ -212,10 +208,10 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                             <span
                               className={cn(
                                 "relative block rounded-lg py-2 text-center text-xs transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-rose/50",
-                                role === r.value ? "text-white" : "text-white/45 hover:text-white/70",
+                                role === r ? "text-white" : "text-white/45 hover:text-white/70",
                               )}
                             >
-                              {r.label}
+                              {w.roles[r]}
                             </span>
                           </label>
                         ))}
@@ -224,7 +220,7 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
 
                     <div>
                       <label htmlFor="bloom-email" className="mb-2 block text-xs text-white/40">
-                        Email
+                        {w.email}
                       </label>
                       <input
                         ref={emailRef}
@@ -234,6 +230,7 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                         required
                         autoComplete="email"
                         placeholder="you@company.com"
+                        dir="ltr"
                         defaultValue={state.status === "error" ? state.email : ""}
                         aria-invalid={state.status === "error"}
                         aria-describedby={state.status === "error" ? "bloom-email-error" : undefined}
@@ -265,18 +262,18 @@ export function Waitlist({ defaultEngine = "general" }: { defaultEngine?: Engine
                       <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-rose via-sun to-dusk transition-transform duration-700 ease-out group-hover:translate-x-0" />
                       {pending ? (
                         <span className="relative flex items-center gap-2">
-                          <Loader2 className="size-4 animate-spin" /> Planting your seat…
+                          <Loader2 className="size-4 animate-spin" /> {w.planting}
                         </span>
                       ) : (
                         <span className="relative flex items-center gap-2">
                           {intent === "updates" ? t.waitlist.trackUpdates : t.waitlist.submit}
-                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 rtl:-scale-x-100" />
                         </span>
                       )}
                     </button>
 
                     <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/30">
-                      <Lock className="size-3" /> No spam. Unsubscribe anytime.
+                      <Lock className="size-3" /> {w.noSpam}
                     </p>
                   </motion.form>
                 )}

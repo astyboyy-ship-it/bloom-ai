@@ -70,6 +70,37 @@ const en = {
     submit: "Claim Early Access",
     trackUpdates: "Track Development Updates",
   },
+  core: {
+    eyebrow: "Bloom's core architecture",
+    titlePre: "Not automation. ",
+    titleAccent: "Dynamic Awareness.",
+    body: "None of our engines run on static templates or hardcoded rules. Each one perceives its environment in real time, diagnoses the context on its own, and decides what to do next, with no human configuration.",
+    step: "Step",
+    loop: [
+      { title: "Real-Time Environmental Perception", body: "Every engine continuously senses live data from its environment: markets, inboxes, systems, and buyer behavior." },
+      { title: "Context Auto-Diagnosis", body: "It reasons about what that data means right now for your business, your floors, and your goals." },
+      { title: "Autonomous Decision-Making", body: "It constructs its own execution path, acts on it, and adapts the moment the situation changes." },
+    ],
+    loops: "Then it loops, continuously, 24/7.",
+    difference: "The difference",
+    colTemplate: "Template automation",
+    colAware: "Bloom aware engines",
+    contrast: [
+      { template: "You design the workflow", aware: "The engine designs its own path" },
+      { template: "Static templates and hardcoded rules", aware: "Dynamic reasoning over live data" },
+      { template: "Breaks when conditions change", aware: "Re-diagnoses and adapts in real time" },
+      { template: "Needs a human to configure and maintain", aware: "Zero configuration, self-maintaining" },
+    ],
+    closingLead: "You never build or configure a workflow.",
+    closing: " You tell an engine what matters (your goals, your limits, your voice), and it is aware enough to build and run everything else itself.",
+  },
+  engineCard: {
+    index: "Engine Nº",
+    status: "In active development",
+    autonomous: "autonomous",
+    command: "Enter Command Center",
+    enter: "Enter the engine",
+  },
 };
 
 export type Dictionary = typeof en;
@@ -134,6 +165,37 @@ const es: Dictionary = {
     submit: "Solicitar acceso anticipado",
     trackUpdates: "Seguir el desarrollo",
   },
+  core: {
+    eyebrow: "La arquitectura central de Bloom",
+    titlePre: "No es automatización. ",
+    titleAccent: "Es conciencia dinámica.",
+    body: "Ninguno de nuestros motores funciona con plantillas estáticas ni reglas fijas. Cada uno percibe su entorno en tiempo real, diagnostica el contexto por sí mismo y decide qué hacer a continuación, sin configuración humana.",
+    step: "Paso",
+    loop: [
+      { title: "Percepción del entorno en tiempo real", body: "Cada motor capta de forma continua datos en vivo de su entorno: mercados, bandejas de entrada, sistemas y comportamiento de compra." },
+      { title: "Autodiagnóstico del contexto", body: "Razona qué significan esos datos ahora mismo para tu negocio, tus mínimos y tus objetivos." },
+      { title: "Toma de decisiones autónoma", body: "Construye su propio camino de ejecución, actúa y se adapta en cuanto cambia la situación." },
+    ],
+    loops: "Y vuelve a empezar, sin parar, 24/7.",
+    difference: "La diferencia",
+    colTemplate: "Automatización por plantillas",
+    colAware: "Motores conscientes de Bloom",
+    contrast: [
+      { template: "Tú diseñas el flujo de trabajo", aware: "El motor diseña su propio camino" },
+      { template: "Plantillas estáticas y reglas fijas", aware: "Razonamiento dinámico sobre datos en vivo" },
+      { template: "Se rompe cuando cambian las condiciones", aware: "Se rediagnostica y se adapta en tiempo real" },
+      { template: "Necesita a una persona que lo configure y mantenga", aware: "Cero configuración, se mantiene solo" },
+    ],
+    closingLead: "Nunca construyes ni configuras un flujo de trabajo.",
+    closing: " Le dices al motor qué importa (tus objetivos, tus límites, tu voz) y es lo bastante consciente para construir y ejecutar todo lo demás por sí mismo.",
+  },
+  engineCard: {
+    index: "Motor Nº",
+    status: "En desarrollo activo",
+    autonomous: "autónomo",
+    command: "Entrar al Centro de Mando",
+    enter: "Entrar al motor",
+  },
 };
 
 const he: Dictionary = {
@@ -196,6 +258,37 @@ const he: Dictionary = {
     submit: "קבלו גישה מוקדמת",
     trackUpdates: "עקבו אחרי הפיתוח",
   },
+  core: {
+    eyebrow: "ארכיטקטורת הליבה של Bloom",
+    titlePre: "לא אוטומציה. ",
+    titleAccent: "מודעות דינמית.",
+    body: "אף אחד מהמנועים שלנו לא רץ על תבניות קבועות או חוקים מקודדים. כל אחד קולט את הסביבה שלו בזמן אמת, מאבחן את ההקשר בעצמו ומחליט מה הצעד הבא, בלי שום הגדרה אנושית.",
+    step: "שלב",
+    loop: [
+      { title: "קליטת סביבה בזמן אמת", body: "כל מנוע קולט ברציפות נתונים חיים מהסביבה שלו: שווקים, תיבות דואר, מערכות והתנהגות קונים." },
+      { title: "אבחון הקשר אוטומטי", body: "הוא מנתח מה הנתונים האלה אומרים עכשיו על העסק שלכם, על הרף שקבעתם ועל היעדים שלכם." },
+      { title: "קבלת החלטות אוטונומית", body: "הוא בונה לעצמו את מסלול הביצוע, פועל לפיו, ומתאים את עצמו ברגע שהמצב משתנה." },
+    ],
+    loops: "ואז חוזר על עצמו, ברציפות, 24/7.",
+    difference: "ההבדל",
+    colTemplate: "אוטומציה מבוססת תבניות",
+    colAware: "המנועים המודעים של Bloom",
+    contrast: [
+      { template: "אתם מתכננים את תהליך העבודה", aware: "המנוע מתכנן לעצמו את המסלול" },
+      { template: "תבניות קבועות וחוקים מקודדים", aware: "חשיבה דינמית על נתונים חיים" },
+      { template: "נשבר כשהתנאים משתנים", aware: "מאבחן מחדש ומסתגל בזמן אמת" },
+      { template: "צריך אדם שיגדיר ויתחזק", aware: "אפס הגדרות, מתחזק את עצמו" },
+    ],
+    closingLead: "אתם אף פעם לא בונים או מגדירים תהליך עבודה.",
+    closing: " אתם אומרים למנוע מה חשוב (היעדים, הגבולות והקול שלכם), והוא מודע מספיק כדי לבנות ולהריץ את כל השאר בעצמו.",
+  },
+  engineCard: {
+    index: "מנוע מס׳",
+    status: "בפיתוח פעיל",
+    autonomous: "אוטונומי",
+    command: "כניסה למרכז הפיקוד",
+    enter: "כניסה למנוע",
+  },
 };
 
 const dictionaries: Record<Lang, Dictionary> = { en, es, he };
@@ -219,8 +312,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // The whole document follows the language, so every page and overlay (portals included) flips for Hebrew.
   useEffect(() => {
     document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => {

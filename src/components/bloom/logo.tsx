@@ -57,12 +57,22 @@ function BloomO() {
   );
 }
 
-/** "Bloom AI" in Outfit Medium with the bloom woven into the first o. */
+/**
+ * Inline so no stylesheet or inherited `dir` can win: the pieces of the wordmark always run left to right,
+ * in the order they're written.
+ */
+const LTR_LOCK: React.CSSProperties = { direction: "ltr", unicodeBidi: "bidi-override", flexDirection: "row" };
+
+/**
+ * "Bloom AI" in Outfit Medium with the bloom woven into the first o.
+ * Always laid out left to right and isolated from the surrounding text direction: in an RTL page the flex
+ * row of letter groups would otherwise reverse into "AI omoBl".
+ */
 export function BloomWordmark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-baseline font-logo font-medium tracking-[-0.03em] text-white", className)}>
+    <span dir="ltr" style={LTR_LOCK} className={cn("inline-flex items-baseline font-logo font-medium tracking-[-0.03em] text-white", className)}>
       <span className="sr-only">Bloom AI</span>
-      <span aria-hidden className="inline-flex items-baseline">
+      <span aria-hidden dir="ltr" style={LTR_LOCK} className="inline-flex items-baseline">
         Bl
         <span className="mx-[0.012em] inline-flex">
           <BloomO />
@@ -76,7 +86,7 @@ export function BloomWordmark({ className }: { className?: string }) {
 
 export function BloomLogo({ className }: { className?: string }) {
   return (
-    <Link href="/" aria-label="Bloom AI home" className={cn("group relative inline-flex items-center", className)}>
+    <Link href="/" dir="ltr" style={LTR_LOCK} aria-label="Bloom AI home" className={cn("group relative inline-flex items-center", className)}>
       <BloomWordmark className="text-[22px]" />
     </Link>
   );

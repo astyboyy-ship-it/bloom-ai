@@ -6,19 +6,21 @@ import { ArrowRight, Check, Coffee, FileSignature, Handshake, PenLine, Send, Sun
 import { cn } from "@/lib/utils";
 import { Enso } from "./motifs/enso";
 import { useI18n } from "./i18n";
+import { useSiteCopy } from "./site-copy";
 import { Accent, SectionHeading } from "./section-heading";
 
+// Numbers and names; labels come from site-copy.ts in the same order.
 const tiles = [
-  { icon: Handshake, value: 3, label: "Deals negotiated", note: "avg. +118% vs. first offer" },
-  { icon: Send, value: 142, label: "High-ticket pitches sent", note: "11 replies so far" },
-  { icon: Target, value: 27, label: "Inbound leads scored", note: "6 VIPs on your calendar" },
-  { icon: Users, value: 3, label: "Collabs architected", note: "intros ready to send" },
+  { icon: Handshake, value: 3 },
+  { icon: Send, value: 142 },
+  { icon: Target, value: 27 },
+  { icon: Users, value: 3 },
 ];
 
 const approvals = [
-  { id: "lumen", who: "Lumen Labs", what: "Brand partnership · 30-day exclusivity", amount: 9200, engine: "Marketing Engine" },
-  { id: "aster", who: "Aster & Co.", what: "3-video sponsorship · usage rights 6 mo", amount: 12500, engine: "Shadow Workforce" },
-  { id: "kaze", who: "Studio Kaze × You", what: "Co-branded drop · 50/50 split", amount: 5700, engine: "Marketing Engine" },
+  { id: "lumen", who: "Lumen Labs", amount: 9200 },
+  { id: "aster", who: "Aster & Co.", amount: 12500 },
+  { id: "kaze", who: "Studio Kaze × You", amount: 5700 },
 ];
 
 const pipeline = approvals.reduce((sum, a) => sum + a.amount, 0);
@@ -44,6 +46,8 @@ function CountUp({ to, prefix = "" }: { to: number; prefix?: string }) {
 
 export function MorningBrief() {
   const { t } = useI18n();
+  const { s } = useSiteCopy();
+  const m = s.morning;
   const [signed, setSigned] = useState<Set<string>>(new Set());
   const signedTotal = approvals.filter((a) => signed.has(a.id)).reduce((s, a) => s + a.amount, 0);
 
@@ -87,25 +91,25 @@ export function MorningBrief() {
               <Sun className="size-5" />
             </span>
             <div>
-              <p className="font-serif text-xl italic text-white">Your overnight brief</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">07:00 · 9 hours autonomous</p>
+              <p className="font-serif text-xl italic text-white">{m.briefTitle}</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">{m.briefMeta}</p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-white/40">
-            <Coffee className="size-3" /> Sample brief
+            <Coffee className="size-3" /> {m.sample}
           </span>
         </div>
 
         {/* Revenue headline */}
         <div className="flex flex-col gap-2 border-b border-white/[0.06] py-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">Negotiated overnight</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">{m.negotiated}</p>
             <p className="mt-2 bg-gradient-to-r from-sun via-ember to-rose bg-clip-text font-serif text-6xl italic leading-none tabular-nums text-transparent sm:text-7xl">
               <CountUp to={pipeline} prefix="$" />
             </p>
           </div>
           <p className="text-sm text-white/55">
-            Signed so far:{" "}
+            {m.signedSoFar}{" "}
             <motion.span key={signedTotal} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="font-semibold text-sun tabular-nums">
               ${signedTotal.toLocaleString("en-US")}
             </motion.span>
@@ -115,7 +119,7 @@ export function MorningBrief() {
         <div className="grid grid-cols-2 gap-3 py-6 sm:grid-cols-4">
           {tiles.map((t, i) => (
             <motion.div
-              key={t.label}
+              key={i}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -127,15 +131,15 @@ export function MorningBrief() {
               <p className="mt-4 font-serif text-5xl italic leading-none tabular-nums text-white">
                 <CountUp to={t.value} />
               </p>
-              <p className="mt-2 text-xs text-white/70">{t.label}</p>
-              <p className="mt-1 text-[10px] text-white/35">{t.note}</p>
+              <p className="mt-2 text-xs text-white/70">{m.tiles[i][0]}</p>
+              <p className="mt-1 text-[10px] text-white/35">{m.tiles[i][1]}</p>
             </motion.div>
           ))}
         </div>
 
         {/* One-click approvals */}
         <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-sun/80">
-          <FileSignature className="size-3.5" /> Awaiting your signature
+          <FileSignature className="size-3.5" /> {m.awaiting}
         </p>
         <ul className="space-y-2.5">
           {approvals.map((a, i) => {
@@ -153,11 +157,11 @@ export function MorningBrief() {
                 )}
               >
                 <div className="min-w-0">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/35">{a.engine}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/35">{m.approvals[i].engine}</p>
                   <p className="mt-0.5 text-sm text-white">
                     {a.who} · <span className="font-semibold text-sun">${a.amount.toLocaleString("en-US")}</span>
                   </p>
-                  <p className="text-xs text-white/45">{a.what}</p>
+                  <p className="text-xs text-white/45">{m.approvals[i].what}</p>
                 </div>
                 <button
                   type="button"
@@ -171,11 +175,11 @@ export function MorningBrief() {
                   <AnimatePresence mode="wait" initial={false}>
                     {done ? (
                       <motion.span key="done" initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -16, opacity: 0 }} className="flex items-center gap-2">
-                        <Check className="size-4" /> Signed
+                        <Check className="size-4" /> {m.signed}
                       </motion.span>
                     ) : (
                       <motion.span key="approve" initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -16, opacity: 0 }} className="flex items-center gap-2">
-                        <PenLine className="size-4" /> Approve &amp; Sign
+                        <PenLine className="size-4" /> {m.approve}
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -188,8 +192,8 @@ export function MorningBrief() {
 
       <div className="mt-12 text-center">
         <a href="#waitlist" className="group inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white">
-          I want this brief tomorrow morning
-          <ArrowRight className="size-4 text-rose transition-transform group-hover:translate-x-1" />
+          {m.wantThis}
+          <ArrowRight className="size-4 text-rose transition-transform group-hover:translate-x-1 rtl:-scale-x-100" />
         </a>
       </div>
     </section>

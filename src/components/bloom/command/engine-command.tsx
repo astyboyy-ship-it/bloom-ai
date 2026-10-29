@@ -12,6 +12,7 @@ import { RoseFrame } from "../art/rose-frame";
 import { BloomWordmark } from "../logo";
 import { CHANNELS, ENGINES, defaultAnswers, usdFmt, type Answers, type Channel, type Engine, type EngineKey, type Stance, type Step } from "./engines";
 import { Inspector, type InspectTarget } from "./inspect";
+import { useCommandCopy, useCommandLocale } from "./locale";
 import { clearSnapshot, loadSnapshot, saveSnapshot, type WorkforceSnapshot } from "./storage";
 import { PALETTES, paletteVars } from "./theme";
 import { NeuralChat, NeuralNotice } from "./tutorial";
@@ -47,10 +48,13 @@ function Layer({ children }: { children: React.ReactNode }) {
  * the live command view. A calibrated engine is saved in this browser and reopens into its command view.
  */
 export function EngineCommand({ engineKey }: { engineKey: EngineKey }) {
-  const engine = ENGINES[engineKey];
+  // Saved state and the workforce run on the base engine; `engine` only swaps in the visitor's language,
+  // so switching language never restarts the intro or the workforce.
+  const base = ENGINES[engineKey];
+  const { engine, lang, dir } = useCommandLocale(engineKey);
   const palette = PALETTES[engineKey];
   const [phase, setPhase] = useState<Phase>("boot");
-  const [answers, setAnswers] = useState<Answers>(() => defaultAnswers(engine));
+  const [answers, setAnswers] = useState<Answers>(() => defaultAnswers(base));
   const [saved, setSaved] = useState<WorkforceSnapshot | undefined>(undefined);
   // Whether this engine was already calibrated and deployed: the intro then hands over to the command view.
   const [resume, setResume] = useState(false);
@@ -66,7 +70,7 @@ export function EngineCommand({ engineKey }: { engineKey: EngineKey }) {
   // replaces it); ?intro=0 skips the intro.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const snap = loadSnapshot(engine);
+    const snap = loadSnapshot(base);
     if (snap) setAnswers(snap.answers);
     const forced = q.get("intro") === "1" || q.get("setup") === "1";
     const resumable = Boolean(snap?.deployed) && !forced;
@@ -74,7 +78,7 @@ export function EngineCommand({ engineKey }: { engineKey: EngineKey }) {
     setResume(resumable);
     if (q.get("intro") === "0") return setPhase(resumable ? "command" : "setup");
     setPhase("intro");
-  }, [engine]);
+  }, [base]);
 
   const engage = () => {
     saveSnapshot(engine.key, { answers, deployed: true });
@@ -96,7 +100,7 @@ export function EngineCommand({ engineKey }: { engineKey: EngineKey }) {
   }, [phase]);
 
   return (
-    <div className="relative isolate min-h-dvh overflow-x-clip bg-ink font-sans text-white" style={paletteVars(palette)}>
+    <div lang={lang} dir={dir} className="relative isolate min-h-dvh overflow-x-clip bg-ink font-sans text-white" style={paletteVars(palette)}>
       <Backdrop engine={engine} vivid={phase === "intro"} />
 
       <LayerCtx.Provider value={layer}>
@@ -121,7 +125,7 @@ export function EngineCommand({ engineKey }: { engineKey: EngineKey }) {
               )}
             </AnimatePresence>
           </main>
-          <PaintingCaption painting={engine.painting} className="pointer-events-auto px-4 pb-5 text-right sm:px-6" />
+          <PaintingCaption painting={engine.painting} className="pointer-events-auto px-4 pb-5 text-end sm:px-6" />
         </div>
         <NeuralChat engine={engine} open={neural} onClose={closeNeural} />
       </LayerCtx.Provider>
@@ -179,16 +183,17 @@ function Glass({ wide, children }: { wide: boolean; children: React.ReactNode })
 
 /** The panel's header, identical in setup and command: identity and the Neural Breakdown prompt left, status right. */
 function PanelHeader({ engine, status, right, onNeural }: { engine: Engine; status: React.ReactNode; right?: React.ReactNode; onNeural: () => void }) {
+  const { c } = useCommandCopy();
   return (
     <div className="flex flex-wrap items-start gap-x-6 gap-y-3 border-b border-c-edge/40 pb-5">
       <div className="min-w-0">
         <p className="font-mono text-[10.5px] uppercase tracking-[0.3em] text-c-2/85">
-          Engine Nº {engine.index} <span className="mx-1.5 text-white/25">—</span> {engine.role}
+          {c.engineNo} {engine.index} <span className="mx-1.5 text-white/25">—</span> {engine.role}
         </p>
         <h1 className="mt-1.5 font-logo text-[28px] font-medium leading-none tracking-[-0.03em] sm:text-[34px]">{engine.name}</h1>
         <NeuralNotice onLaunch={onNeural} />
       </div>
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+      <div className="ms-auto flex flex-wrap items-center justify-end gap-3">
         {status}
         {right}
       </div>
@@ -260,6 +265,7 @@ function useTyped(text: string, cps = 38) {
 }
 
 function Intro({ engine, resuming, onDone }: { engine: Engine; resuming: boolean; onDone: () => void }) {
+  const { c } = useCommandCopy();
   const { shown, done } = useTyped(engine.greeting);
 
   useEffect(() => {
@@ -276,15 +282,15 @@ function Intro({ engine, resuming, onDone }: { engine: Engine; resuming: boolean
   return (
     <motion.div className="m-auto flex w-full max-w-3xl cursor-pointer flex-col items-center text-center" onClick={onDone} exit={{ opacity: 0, scale: 1.04, filter: "blur(10px)" }} transition={{ duration: 0.8, ease: EASE }}>
       <motion.p className="font-mono text-[10.5px] uppercase tracking-[0.36em] text-c-2/90" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3 }}>
-        Engine Nº {engine.index} <span className="mx-2 text-white/30">—</span> {engine.name}
+        {c.engineNo} {engine.index} <span className="mx-2 text-white/30">—</span> {engine.name}
       </motion.p>
       <motion.div className="mt-6 text-6xl drop-shadow-[0_8px_30px_rgb(0_0_0/0.85)] sm:text-8xl" initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ duration: 1.4, delay: 0.5, ease: EASE }}>
         <BloomWordmark />
       </motion.div>
-      <motion.div className="mt-10 w-full rounded-xl border border-c-edge/50 bg-black/50 px-5 py-4 text-left backdrop-blur-md" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1 }}>
+      <motion.div className="mt-10 w-full rounded-xl border border-c-edge/50 bg-black/50 px-5 py-4 text-start backdrop-blur-md" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1 }}>
         <p className="min-h-[3.2em] font-mono text-[12.5px] leading-relaxed text-white/90 sm:text-[13.5px]" aria-live="polite">
           {shown}
-          <span className="ml-0.5 inline-block h-[1.05em] w-[0.5em] translate-y-[0.15em] animate-pulse bg-c-2/80" />
+          <span className="ms-0.5 inline-block h-[1.05em] w-[0.5em] translate-y-[0.15em] animate-pulse bg-c-2/80" />
         </p>
       </motion.div>
       <button
@@ -295,12 +301,12 @@ function Intro({ engine, resuming, onDone }: { engine: Engine; resuming: boolean
         }}
         className="mt-8 inline-flex h-10 items-center gap-2 rounded-full border border-c-edge/60 bg-black/50 px-5 font-mono text-[10.5px] uppercase tracking-[0.24em] text-white/80 backdrop-blur-md transition-colors hover:border-c-2/80 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-c-2"
       >
-        Skip intro <ArrowRight className="size-3.5" />
+        {c.skipIntro} <ArrowRight className="size-3.5 rtl:-scale-x-100" />
       </button>
-      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-white/35">or click anywhere · Enter</p>
+      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-white/35">{c.skipHint}</p>
       {resuming && (
         <p className="mt-5 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-c-2/85">
-          <span className="size-1.5 animate-pulse rounded-full bg-c-1" /> Workforce active · resuming your command view
+          <span className="size-1.5 animate-pulse rounded-full bg-c-1" /> {c.resuming}
         </p>
       )}
     </motion.div>
@@ -310,6 +316,7 @@ function Intro({ engine, resuming, onDone }: { engine: Engine; resuming: boolean
 /* ───────────────────────────── Setup ───────────────────────────── */
 
 function Setup({ engine, answers, setAnswers, onEngage, onNeural }: { engine: Engine; answers: Answers; setAnswers: React.Dispatch<React.SetStateAction<Answers>>; onEngage: () => void; onNeural: () => void }) {
+  const { c } = useCommandCopy();
   const [i, setI] = useState(0);
   const step = engine.steps[i];
   const last = i === engine.steps.length - 1;
@@ -318,7 +325,7 @@ function Setup({ engine, answers, setAnswers, onEngage, onNeural }: { engine: En
 
   return (
     <motion.div {...fade}>
-      <PanelHeader engine={engine} status={<StatusPill>Setup · Step {i + 1} of 3</StatusPill>} onNeural={onNeural} />
+      <PanelHeader engine={engine} status={<StatusPill>{c.setupStep(i + 1)}</StatusPill>} onNeural={onNeural} />
       <div className="mt-5 flex gap-1.5" aria-hidden>
         {engine.steps.map((s, k) => (
           <span key={s.id} className={cn("h-[3px] flex-1 rounded-full transition-colors duration-500", k <= i ? "bg-linear-to-r from-c-1 to-c-2 shadow-[0_0_8px_var(--c-glow)]" : "bg-white/10")} />
@@ -338,17 +345,17 @@ function Setup({ engine, answers, setAnswers, onEngage, onNeural }: { engine: En
       <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-c-edge/40 pt-5">
         {i > 0 && (
           <GhostButton onClick={() => setI(i - 1)}>
-            <ArrowLeft className="size-3.5" /> Back
+            <ArrowLeft className="size-3.5 rtl:-scale-x-100" /> {c.back}
           </GhostButton>
         )}
-        <div className="ml-auto">
+        <div className="ms-auto">
           {last ? (
             <BracketButton onClick={onEngage} disabled={!ready}>
               {engine.cta}
             </BracketButton>
           ) : (
             <BracketButton onClick={() => setI(i + 1)} disabled={!ready} size="sm">
-              Next <ArrowRight className="size-3.5" />
+              {c.next} <ArrowRight className="size-3.5 rtl:-scale-x-100" />
             </BracketButton>
           )}
         </div>
@@ -383,7 +390,7 @@ function StepBody({ step, value, onChange }: { step: Step; value: Answers[string
                 key={o.value}
                 type="button"
                 onClick={() => onChange(o.value)}
-                className={cn("transition-colors", k === 0 ? "text-left" : k === step.options.length - 1 ? "text-right" : "text-center", k === idx ? "text-c-2" : "text-white/45 hover:text-white/75")}
+                className={cn("transition-colors", k === 0 ? "text-start" : k === step.options.length - 1 ? "text-end" : "text-center", k === idx ? "text-c-2" : "text-white/45 hover:text-white/75")}
               >
                 <span className="block font-mono text-[11px] uppercase tracking-[0.14em]">{level}</span>
                 {name && <span className="mt-0.5 block text-[12px] leading-snug">{name}</span>}
@@ -419,7 +426,7 @@ function StepBody({ step, value, onChange }: { step: Step; value: Answers[string
             aria-checked={on}
             onClick={() => toggle(o.value)}
             className={cn(
-              "group relative flex flex-col items-start rounded-xl border p-4 text-left transition-all focus-visible:outline-2 focus-visible:outline-c-2",
+              "group relative flex flex-col items-start rounded-xl border p-4 text-start transition-all focus-visible:outline-2 focus-visible:outline-c-2",
               on ? "border-c-1/60 bg-c-deep/60 shadow-[0_0_30px_-8px_var(--c-glow),inset_0_1px_0_rgb(255_255_255/0.08)]" : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.05]",
             )}
           >
@@ -438,8 +445,9 @@ function StepBody({ step, value, onChange }: { step: Step; value: Answers[string
 /* ───────────────────────────── Deploying ───────────────────────────── */
 
 function Deploying({ engine }: { engine: Engine }) {
-  const total = engine.cards.reduce((s, c) => s + c.agents, 0);
-  const lines = [`Assigning ${total} agents`, "Applying your setup", "Opening hand-off channels to the other engines"];
+  const { c } = useCommandCopy();
+  const total = engine.cards.reduce((s, card) => s + card.agents, 0);
+  const lines = c.deployLines(total);
   const [k, setK] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setK((v) => Math.min(v + 1, lines.length - 1)), DEPLOY_MS / lines.length);
@@ -453,12 +461,12 @@ function Deploying({ engine }: { engine: Engine }) {
         <span className="absolute inset-3 animate-pulse rounded-full bg-c-1/15 blur-md" />
         <span className="relative size-5 rotate-45 border border-c-2/90 bg-c-1/50 shadow-[0_0_24px_6px_var(--c-glow)]" />
       </div>
-      <p className="mt-8 font-mono text-[12px] uppercase tracking-[0.32em] text-white">Deploying Shadow Workforce...</p>
+      <p className="mt-8 font-mono text-[12px] uppercase tracking-[0.32em] text-white">{c.deploying}</p>
       <p className="mt-2 text-[13.5px] text-white/60">{lines[k]}</p>
       <div className="mt-6 h-[3px] w-64 max-w-full overflow-hidden rounded-full bg-white/10">
         <motion.div className="h-full bg-linear-to-r from-c-1 to-c-2 shadow-[0_0_10px_var(--c-glow)]" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: DEPLOY_MS / 1000, ease: "easeInOut" }} />
       </div>
-      <p className="sr-only">Engine Nº {engine.index} is deploying.</p>
+      <p className="sr-only">{c.deployingSr(engine.index)}</p>
     </motion.div>
   );
 }
@@ -466,7 +474,9 @@ function Deploying({ engine }: { engine: Engine }) {
 /* ───────────────────────────── Command view ───────────────────────────── */
 
 function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engine: Engine; answers: Answers; saved?: WorkforceSnapshot; onRecalibrate: () => void; onNeural: () => void }) {
-  const w = useWorkforce(engine, answers, saved);
+  const { c } = useCommandCopy();
+  // The base engine: the workforce must not restart when only the display language changes.
+  const w = useWorkforce(ENGINES[engine.key], answers, saved);
   const [open, setOpen] = useState<string | null>(null);
   const [brief, setBrief] = useState<"closed" | "compiling" | "open">("closed");
   const [confirming, setConfirming] = useState(false);
@@ -502,9 +512,9 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
         onNeural={onNeural}
         status={
           <>
-            <StatusPill live={w.deployed > 0}>Shadow Workforce: {w.deployed > 0 ? "Active" : "Standing by"}</StatusPill>
+            <StatusPill live={w.deployed > 0}>{c.workforceStatus(w.deployed > 0)}</StatusPill>
             <span className="font-mono text-[10.5px] uppercase tracking-[0.2em] tabular-nums text-white/60">
-              {w.deployed}/{w.total} agents deployed
+              {c.deployed(w.deployed, w.total)}
             </span>
           </>
         }
@@ -524,11 +534,11 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
               )}
             >
               <RotateCcw className="size-3.5" />
-              {confirming ? "Confirm: restart setup" : "Re-Calibrate Engine"}
+              {confirming ? c.confirmRestart : c.recalibrate}
             </button>
             <BracketButton size="sm" onClick={() => setBrief("compiling")} disabled={brief === "compiling"}>
               {brief === "compiling" ? <Loader2 className="size-3.5 animate-spin" /> : <FileText className="size-3.5" />}
-              Generate 24-Hour Executive Brief
+              {c.generateBrief}
             </BracketButton>
           </>
         }
@@ -537,13 +547,13 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
       <p className="mt-4 flex gap-2.5 rounded-lg border border-c-edge/40 bg-c-deep/40 px-3 py-2 text-[11.5px] leading-relaxed text-white/60">
         <Info className="mt-0.5 size-3.5 shrink-0 text-c-2/80" />
         <span>
-          <span className="font-mono uppercase tracking-[0.16em] text-c-2/90">Demo environment:</span> Active agent performance, volume, and routing adapt dynamically to your precise business duties, operational parameters, and allocated budget upon live deployment.
+          <span className="font-mono uppercase tracking-[0.16em] text-c-2/90">{c.demoLabel}</span> {c.demoNote}
         </span>
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Calibration">
-        {summary.map((s) => (
-          <span key={s} className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11.5px] text-white/65">
+      <div className="mt-4 flex flex-wrap items-center gap-2" aria-label={c.calibration}>
+        {summary.map((s, k) => (
+          <span key={k} className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11.5px] text-white/65">
             {s}
           </span>
         ))}
@@ -552,8 +562,8 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
       <Flows engine={engine} flows={w.flows} />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_minmax(300px,0.8fr)]">
-        <section aria-label="Workforce" className="min-w-0">
-          <h2 className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.26em] text-white/50">Workforce</h2>
+        <section aria-label={c.workforce} className="min-w-0">
+          <h2 className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.26em] text-white/50">{c.workforce}</h2>
           <motion.div layout className="grid gap-3 sm:grid-cols-2">
             {w.cards.map((c) => (
               <WorkforceCard key={c.id} engine={engine} card={c} w={w} open={open === c.id} onToggle={() => setOpen((o) => (o === c.id ? null : c.id))} onInspect={() => inspectCard(c.id)} />
@@ -561,7 +571,7 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
           </motion.div>
           {w.reserve > 0 && (
             <p className="mt-3 text-[12px] text-white/50">
-              {w.reserve} {w.reserve === 1 ? "agent" : "agents"} in reserve. Open a card&apos;s controls to put {w.reserve === 1 ? "it" : "them"} to work.
+              {c.reserve(w.reserve)}
             </p>
           )}
         </section>
@@ -571,7 +581,7 @@ function CommandView({ engine, answers, saved, onRecalibrate, onNeural }: { engi
       <Layer>
         <AnimatePresence>
           {brief === "open" && <BriefSheet key="brief" engine={engine} w={w} onClose={() => setBrief("closed")} />}
-          {inspect && <Inspector key="inspect" engine={engine} answers={answers} target={inspect} onClose={closeInspect} />}
+          {inspect && <Inspector key="inspect" engine={ENGINES[engine.key]} answers={answers} target={inspect} onClose={closeInspect} />}
         </AnimatePresence>
       </Layer>
     </motion.div>
@@ -629,25 +639,21 @@ function Flows({ engine, flows }: { engine: Engine; flows: FlowState[] }) {
 
 const flowKeyOf = (f: FlowState) => `${f.from}-${f.to ?? f.toLabel}`;
 
-const STANCES: { v: Stance; label: string }[] = [
-  { v: "stealth", label: "Stealth" },
-  { v: "aggressive", label: "Aggressive" },
-  { v: "balanced", label: "Balanced" },
-];
-
-const INSPECT_LABEL: Record<EngineKey, string> = { intentpulse: "Open signal sheet", apex: "Watch the deal live", coreops: "See the automation proof", sovereign: "Open decision tree" };
+const STANCES: Stance[] = ["stealth", "aggressive", "balanced"];
 
 function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine: Engine; card: CardState; w: Workforce; open: boolean; onToggle: () => void; onInspect: () => void }) {
+  const { c } = useCommandCopy();
+  const inspectLabel = c.inspect[engine.key];
   const def = engine.cards.find((d) => d.id === card.id)!;
   const Icon = def.icon;
   const max = card.agents + w.reserve;
-  const state = card.human ? "With your team" : card.paused ? "Paused" : card.agents === 0 ? "Unstaffed" : STANCES.find((s) => s.v === card.stance)!.label;
+  const state = card.human ? c.withTeam : card.paused ? c.paused : card.agents === 0 ? c.unstaffed : c.stances[card.stance];
   const title = def.title(card.agents, card.count);
 
   return (
     <motion.article layout transition={{ layout: { duration: 0.45, ease: EASE } }} className={cn("min-w-0 rounded-xl border bg-white/[0.03] transition-colors", open ? "border-c-1/50 sm:col-span-2" : "border-white/10 hover:border-white/25", (card.paused || card.human) && "opacity-80")}>
       <div className="flex items-start gap-1 p-2">
-        <button type="button" onClick={onInspect} aria-label={`${INSPECT_LABEL[engine.key]}: ${title}`} className="group flex min-w-0 flex-1 items-start gap-3 rounded-lg p-2 text-left transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-c-2">
+        <button type="button" onClick={onInspect} aria-label={`${inspectLabel}: ${title}`} className="group flex min-w-0 flex-1 items-start gap-3 rounded-lg p-2 text-start transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-c-2">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-c-edge/60 bg-c-deep/70 text-c-2">
             <Icon className="size-4" />
           </span>
@@ -660,7 +666,7 @@ function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine:
               {state}
             </span>
             <span className="mt-2 inline-flex items-center gap-1 text-[11.5px] text-c-2/90 group-hover:text-c-2">
-              <Eye className="size-3" /> {INSPECT_LABEL[engine.key]}
+              <Eye className="size-3" /> {inspectLabel}
             </span>
           </span>
         </button>
@@ -675,9 +681,9 @@ function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine:
             <div className="grid gap-5 border-t border-c-edge/40 p-4 sm:grid-cols-2">
               <div>
                 <p className="flex items-baseline justify-between font-mono text-[10.5px] uppercase tracking-[0.18em] text-white/55">
-                  Agent allocation
+                  {c.agentAllocation}
                   <span className="tabular-nums text-c-2">
-                    {card.agents} <span className="text-white/40">/ {max} available</span>
+                    {card.agents} <span className="text-white/40">{c.available(max)}</span>
                   </span>
                 </p>
                 <input
@@ -690,21 +696,21 @@ function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine:
                   className="cmd-range mt-4 w-full"
                   style={{ "--fill": `${max ? (card.agents / max) * 100 : 0}%` } as React.CSSProperties}
                 />
-                <p className="mt-2 text-[12px] text-white/50">Lower it to free agents for other tasks. Raise it to pull from reserve.</p>
+                <p className="mt-2 text-[12px] text-white/50">{c.allocationHint}</p>
               </div>
               <div>
-                <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-white/55">Stance</p>
-                <div role="radiogroup" aria-label="Stance" className="mt-3 grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-black/30 p-1">
+                <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-white/55">{c.stance}</p>
+                <div role="radiogroup" aria-label={c.stance} className="mt-3 grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-black/30 p-1">
                   {STANCES.map((s) => (
                     <button
-                      key={s.v}
+                      key={s}
                       type="button"
                       role="radio"
-                      aria-checked={card.stance === s.v}
-                      onClick={() => card.stance !== s.v && w.setStance(card.id, s.v)}
-                      className={cn("h-8 rounded-md text-[12.5px] transition-colors", card.stance === s.v ? "bg-c-1/25 text-white shadow-[inset_0_0_0_1px_var(--c-glow)]" : "text-white/55 hover:text-white")}
+                      aria-checked={card.stance === s}
+                      onClick={() => card.stance !== s && w.setStance(card.id, s)}
+                      className={cn("h-8 rounded-md text-[12.5px] transition-colors", card.stance === s ? "bg-c-1/25 text-white shadow-[inset_0_0_0_1px_var(--c-glow)]" : "text-white/55 hover:text-white")}
                     >
-                      {s.label}
+                      {c.stances[s]}
                     </button>
                   ))}
                 </div>
@@ -712,11 +718,11 @@ function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine:
               <div className="flex flex-wrap gap-2 sm:col-span-2">
                 <GhostButton onClick={() => w.togglePause(card.id)} active={card.paused}>
                   {card.paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-                  {card.paused ? "Resume Agents" : "Pause Selected Agents"}
+                  {card.paused ? c.resumeAgents : c.pauseAgents}
                 </GhostButton>
                 <GhostButton onClick={() => w.toggleHuman(card.id)} active={card.human}>
                   <Hand className="size-3.5" />
-                  {card.human ? "Return to Agents" : "Force Hand-Off to Human"}
+                  {card.human ? c.returnToAgents : c.handOff}
                 </GhostButton>
               </div>
             </div>
@@ -728,6 +734,7 @@ function WorkforceCard({ engine, card, w, open, onToggle, onInspect }: { engine:
 }
 
 function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: FeedItem[]; onOpen: (f: FeedItem) => void; setFocus: (c: Channel | null) => void }) {
+  const { c: copy } = useCommandCopy();
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<Channel | null>(null);
   useEffect(() => {
@@ -747,10 +754,10 @@ function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: Feed
   const chName = (c?: Channel) => CHANNELS.find((x) => x.id === c)?.label;
 
   return (
-    <section aria-label="Live activity" className="flex min-w-0 flex-col">
+    <section aria-label={copy.liveFeed} className="flex min-w-0 flex-col">
       <h2 className="mb-3 flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.26em] text-white/50">
-        <span className="size-1.5 animate-pulse rounded-full bg-c-1" /> Live feed
-        <span className="ml-auto normal-case tracking-normal text-white/40">Tap any line to inspect</span>
+        <span className="size-1.5 animate-pulse rounded-full bg-c-1" /> {copy.liveFeed}
+        <span className="ms-auto normal-case tracking-normal text-white/40">{copy.tapToInspect}</span>
       </h2>
       {engine.channels && (
         <div role="tablist" aria-label="Filter by channel" className="mb-2 flex gap-1 overflow-x-auto rounded-lg border border-white/10 bg-black/30 p-1 [scrollbar-width:none]">
@@ -763,7 +770,7 @@ function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: Feed
               onClick={() => choose(c)}
               className={cn("h-7 shrink-0 rounded-md px-2.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors", filter === c ? "bg-c-1/25 text-white shadow-[inset_0_0_0_1px_var(--c-glow)]" : "text-white/50 hover:text-white")}
             >
-              {c ? chName(c) : "All"}
+              {c ? chName(c) : copy.all}
             </button>
           ))}
         </div>
@@ -775,8 +782,8 @@ function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: Feed
               <>
                 <span className="w-7 shrink-0 pt-px font-mono text-[10.5px] tabular-nums text-white/40">{ago(f.at)}</span>
                 <span className={cn("min-w-0 flex-1 text-[13px] leading-snug", f.system ? "text-white/90" : "text-white/80")}>
-                  {f.ch && <span className="mr-1.5 inline-block rounded border border-c-edge/60 px-1 py-px align-[1px] font-mono text-[9px] uppercase tracking-[0.12em] text-c-2">{chName(f.ch)}</span>}
-                  {f.system ? <span className="mr-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-c-2">You</span> : <AgentText text={f.text} />}
+                  {f.ch && <span className="me-1.5 inline-block rounded border border-c-edge/60 px-1 py-px align-[1px] font-mono text-[9px] uppercase tracking-[0.12em] text-c-2">{chName(f.ch)}</span>}
+                  {f.system ? <span className="me-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-c-2">{copy.you}</span> : <AgentText text={f.text} />}
                   {f.system && f.text}
                 </span>
               </>
@@ -784,7 +791,7 @@ function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: Feed
             return (
               <motion.li key={f.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: EASE }}>
                 {f.card && !f.system ? (
-                  <button type="button" onClick={() => onOpen(f)} className="flex w-full gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-c-1/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
+                  <button type="button" onClick={() => onOpen(f)} className="flex w-full gap-3 rounded-lg px-2.5 py-2 text-start transition-colors hover:bg-c-1/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-c-2">
                     {content}
                   </button>
                 ) : (
@@ -794,7 +801,7 @@ function Ticker({ engine, feed, onOpen, setFocus }: { engine: Engine; feed: Feed
             );
           })}
         </AnimatePresence>
-        {!shown.length && <li className="px-2.5 py-6 text-center text-[12.5px] text-white/50">Listening on {chName(filter ?? undefined) ?? "every channel"}. New signals arrive in seconds.</li>}
+        {!shown.length && <li className="px-2.5 py-6 text-center text-[12.5px] text-white/50">{copy.listening(chName(filter ?? undefined))}</li>}
       </ol>
     </section>
   );
@@ -811,6 +818,7 @@ function AgentText({ text }: { text: string }) {
 }
 
 function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onClose: () => void }) {
+  const { c } = useCommandCopy();
   const b = w.brief;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -819,9 +827,9 @@ function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onCl
   }, [onClose]);
 
   const stats = [
-    { label: "Leads secured", value: b.leads.toLocaleString("en-US") },
-    { label: "Pipeline revenue locked", value: usdFmt(b.pipeline) },
-    { label: "Admin hours saved", value: `${Math.round(b.hours)} hrs` },
+    { label: c.stats[0], value: b.leads.toLocaleString("en-US") },
+    { label: c.stats[1], value: usdFmt(b.pipeline) },
+    { label: c.stats[2], value: `${Math.round(b.hours)} ${c.hrs}` },
   ];
 
   return (
@@ -841,13 +849,13 @@ function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onCl
         <div className="flex items-start gap-4">
           <div>
             <p className="font-mono text-[10.5px] uppercase tracking-[0.3em] text-c-2/85">
-              Bloom AI · Engine Nº {engine.index} {engine.name}
+              Bloom AI · {c.engineNo} {engine.index} {engine.name}
             </p>
             <h2 id="brief-title" className="mt-2 font-display text-[32px] font-medium leading-tight">
-              Your last 24 hours
+              {c.briefTitle}
             </h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close brief" className="ml-auto rounded-md p-1.5 text-white/50 hover:bg-white/5 hover:text-white">
+          <button type="button" onClick={onClose} aria-label={c.closeBrief} className="ms-auto rounded-md p-1.5 text-white/50 hover:bg-white/5 hover:text-white">
             <X className="size-4" />
           </button>
         </div>
@@ -868,7 +876,7 @@ function BriefSheet({ engine, w, onClose }: { engine: Engine; w: Workforce; onCl
           ))}
         </ul>
         <p className="mt-6 border-t border-c-edge/40 pt-4 text-[12px] text-white/45">
-          {w.deployed} of {w.total} agents active right now. Figures are simulated sample data for this demo.
+          {c.briefFoot(w.deployed, w.total)}
         </p>
       </motion.div>
     </motion.div>
