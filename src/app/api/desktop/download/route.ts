@@ -1,49 +1,27 @@
 import { NextResponse } from "next/server";
+import { assetDownloadUrl, desktopConfig, latestRelease, pickAsset, type DesktopOs } from "@/lib/desktop/releases";
 
 export const dynamic = "force-dynamic";
 
-type Os = "windows" | "mac";
-
-/** Installer suffixes per OS, best first: the NSIS setup.exe, then an MSI; one universal .dmg for both Mac chips. */
-const PATTERNS: Record<Os, RegExp[]> = {
-  windows: [/-setup\.exe$/i, /\.exe$/i, /\.msi$/i],
-  mac: [/universal\.dmg$/i, /\.dmg$/i],
-};
-
-type Release = { assets?: { name: string; browser_download_url: string }[] };
-
 /**
- * Sends the visitor to the right desktop installer. In order:
- *   1. DESKTOP_DOWNLOAD_WINDOWS_URL / DESKTOP_DOWNLOAD_MAC_URL, when set (any public host: a CDN, Blob storage).
- *   2. The matching asset on the latest GitHub release of DESKTOP_RELEASES_REPO (owner/name). The repo must be
- *      public for visitors to download from it; GITHUB_TOKEN only helps the lookup, not the download.
- *   3. Otherwise /download, which says the build for their OS isn't published yet.
+ * Sends the visitor straight to the right desktop installer (see src/lib/desktop/releases.ts for sources).
+ * When no installer is published for their OS yet, they land on /download, which says so.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const os: Os = url.searchParams.get("os") === "mac" ? "mac" : "windows";
+  const os: DesktopOs = url.searchParams.get("os") === "mac" ? "mac" : "windows";
+  const cfg = desktopConfig();
 
-  const direct = (os === "mac" ? process.env.DESKTOP_DOWNLOAD_MAC_URL : process.env.DESKTOP_DOWNLOAD_WINDOWS_URL)?.trim();
+  const direct = cfg.direct[os];
   if (direct) return NextResponse.redirect(direct, 302);
 
-  const repo = process.env.DESKTOP_RELEASES_REPO?.trim();
-  if (repo && /^[\w.-]+\/[\w.-]+$/.test(repo)) {
-    try {
-      const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-        headers: { Accept: "application/vnd.github+json", ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) },
-        // A new release shows up within five minutes without hitting GitHub's rate limit on every click.
-        next: { revalidate: 300 },
-      });
-      if (res.ok) {
-        const release = (await res.json()) as Release;
-        for (const re of PATTERNS[os]) {
-          const asset = release.assets?.find((a) => re.test(a.name));
-          if (asset) return NextResponse.redirect(asset.browser_download_url, 302);
-        }
-      }
-    } catch (err) {
-      console.error("[desktop-download] release lookup failed:", err);
-    }
+  try {
+    // Release metadata is cached for five minutes; the signed URL below is minted fresh on every click.
+    const asset = pickAsset(await latestRelease(cfg, { next: { revalidate: 300 } }), os);
+    const target = asset && (await assetDownloadUrl(cfg, asset));
+    if (target) return NextResponse.redirect(target, { status: 302, headers: { "Cache-Control": "no-store" } });
+  } catch (err) {
+    console.error("[desktop-download] release lookup failed:", err);
   }
 
   return NextResponse.redirect(new URL(`/download?os=${os}`, url), 302);
