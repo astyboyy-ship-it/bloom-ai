@@ -1,4 +1,5 @@
 import { useI18n, type Lang } from "./i18n";
+import type { EngineKey } from "./command/engines";
 import type { Engine, EngineSlug } from "./engines/data";
 
 /**
@@ -156,6 +157,13 @@ const en = {
     noSpam: "No spam. Unsubscribe anytime.",
   },
   footer: { operational: "All Systems Operational" },
+  /** Gallery teasers for engines 05–08, which have no marketing page of their own. */
+  galleryTeasers: {
+    vanguard: "Finds in-market accounts before they raise their hand and books the meeting.",
+    cortex: "Reads every lost call, then hands your closer the words that win the next one.",
+    shield: "Sees a customer leaving weeks early and runs the save before renewal.",
+    aether: "Rebuilds your pricing around what buyers will really pay, and stops margin leaks.",
+  } as Partial<Record<EngineKey, string>>,
   engines: null as Record<EngineSlug, EngineText> | null,
 };
 
@@ -294,6 +302,12 @@ const es: SiteCopy = {
     noSpam: "Sin spam. Date de baja cuando quieras.",
   },
   footer: { operational: "Todos los sistemas operativos" },
+  galleryTeasers: {
+    vanguard: "Encuentra cuentas listas para comprar antes de que levanten la mano y agenda la reunión.",
+    cortex: "Lee cada llamada perdida y le da a tu closer las palabras que ganan la siguiente.",
+    shield: "Ve a un cliente irse semanas antes y ejecuta el rescate antes de la renovación.",
+    aether: "Rehace tus precios según lo que los compradores pagarían de verdad y frena las fugas de margen.",
+  },
   engines: {
     marketing: {
       subtitle: "Operaciones conscientes y negociación · generación de riqueza para creadores y fundadores",
@@ -495,6 +509,12 @@ const he: SiteCopy = {
     noSpam: "בלי ספאם. אפשר לבטל בכל רגע.",
   },
   footer: { operational: "כל המערכות פועלות" },
+  galleryTeasers: {
+    vanguard: "מוצא חשבונות שמוכנים לקנות עוד לפני שהם מרימים יד, וקובע את הפגישה.",
+    cortex: "קורא כל שיחה שהפסדתם ונותן לסוגר שלכם את המילים שמנצחות את הבאה.",
+    shield: "רואה לקוח עוזב שבועות מראש ומריץ את ההצלה לפני החידוש.",
+    aether: "בונה מחדש את התמחור לפי מה שקונים באמת ישלמו, ועוצר דליפות מרווח.",
+  },
   engines: {
     marketing: {
       subtitle: "תפעול מודע וסגירת עסקאות · יצירת עושר ליוצרים ולמייסדים",

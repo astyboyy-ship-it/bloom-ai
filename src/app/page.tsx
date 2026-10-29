@@ -4,6 +4,7 @@ import { MorningBrief } from "@/components/bloom/morning-brief";
 import { Navbar } from "@/components/bloom/navbar";
 import { NightShift } from "@/components/bloom/night-shift";
 import { PartnerProgram } from "@/components/bloom/partner-program";
+import { ProductTopologyGallery } from "@/components/bloom/product-topology-gallery";
 import { Engines } from "@/components/bloom/engines/engines";
 import { Waitlist } from "@/components/bloom/waitlist";
 
@@ -16,6 +17,7 @@ export default function Home() {
       <main>
         <Hero />
         <Engines />
+        <ProductTopologyGallery />
         <PartnerProgram />
         <MorningBrief />
         <NightShift />

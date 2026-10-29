@@ -15,6 +15,7 @@ const en = {
     nightShift: "The Night Shift",
     engines: "Engines",
     partners: "Developers",
+    architectures: "Architectures",
     morning: "Morning Brief",
     waitlist: "Early Access",
     cta: "Enter Command Center",
@@ -46,6 +47,12 @@ const en = {
     badgePre: "With More Game-Changing Engines & Services To Come ",
     badgeAccent: "That Will Bloom Your Business",
     devBanner: "All engines in active development · building toward 100% autonomy",
+  },
+  architectures: {
+    eyebrow: "Enterprise architectures",
+    titlePre: "Ten architectures. ",
+    titleAccent: "Deployed for you.",
+    description: "Pre-packaged combinations of Bloom engines, wired together and deployed by our team: a one-time setup that seeds your data, wires your CRM and locks in an SLA, then a monthly retainer for the platform compute that runs it 24/7.",
   },
   partner: {
     eyebrow: "For indie developers & technical founders",
@@ -110,6 +117,7 @@ const es: Dictionary = {
     nightShift: "El turno de noche",
     engines: "Motores",
     partners: "Desarrolladores",
+    architectures: "Arquitecturas",
     morning: "Informe matutino",
     waitlist: "Acceso anticipado",
     cta: "Entrar al Centro de Mando",
@@ -141,6 +149,12 @@ const es: Dictionary = {
     badgePre: "Vienen más motores y servicios revolucionarios ",
     badgeAccent: "que harán florecer tu negocio",
     devBanner: "Todos los motores en desarrollo activo · rumbo al 100% de autonomía",
+  },
+  architectures: {
+    eyebrow: "Arquitecturas empresariales",
+    titlePre: "Diez arquitecturas. ",
+    titleAccent: "Desplegadas para ti.",
+    description: "Combinaciones de motores Bloom listas para usar, conectadas y desplegadas por nuestro equipo: una puesta en marcha única que carga tus datos, conecta tu CRM y fija un SLA, y después un retainer mensual por la capacidad de cómputo que lo ejecuta 24/7.",
   },
   partner: {
     eyebrow: "Para desarrolladores independientes y fundadores técnicos",
@@ -203,6 +217,7 @@ const he: Dictionary = {
     nightShift: "משמרת הלילה",
     engines: "המנועים",
     partners: "מפתחים",
+    architectures: "ארכיטקטורות",
     morning: "תדריך הבוקר",
     waitlist: "גישה מוקדמת",
     cta: "כניסה למרכז הפיקוד",
@@ -234,6 +249,12 @@ const he: Dictionary = {
     badgePre: "בדרך עוד מנועים ושירותים פורצי דרך ",
     badgeAccent: "שיגרמו לעסק שלכם לפרוח",
     devBanner: "כל המנועים בפיתוח פעיל · בדרך ל־100% אוטונומיה",
+  },
+  architectures: {
+    eyebrow: "ארכיטקטורות לארגונים",
+    titlePre: "עשר ארכיטקטורות. ",
+    titleAccent: "נפרסות בשבילכם.",
+    description: "שילובים ארוזים מראש של מנועי Bloom, מחוברים ונפרסים על ידי הצוות שלנו: הקמה חד־פעמית שטוענת את הנתונים שלכם, מחברת את ה־CRM ונועלת SLA, ואחריה ריטיינר חודשי על כוח המחשוב שמריץ הכול 24/7.",
   },
   partner: {
     eyebrow: "למפתחים עצמאיים ולמייסדים טכניים",

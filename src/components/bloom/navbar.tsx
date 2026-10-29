@@ -20,6 +20,7 @@ export function Navbar() {
   const home = usePathname() === "/" ? "" : "/";
   const links = [
     { href: `${home}#engines`, label: t.nav.engines },
+    { href: `${home}#architectures`, label: t.nav.architectures },
     { href: `${home}#developers`, label: t.nav.partners },
     { href: `${home}#morning`, label: t.nav.morning },
     { href: `${home}#night-shift`, label: t.nav.nightShift },
