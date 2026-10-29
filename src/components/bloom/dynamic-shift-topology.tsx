@@ -8,31 +8,13 @@ import { ENGINES, ENGINE_ORDER, type EngineKey } from "./command/engines";
 import { PALETTES, paletteVars } from "./command/theme";
 import { useI18n } from "./i18n";
 import { SNAP } from "./motion";
+import { SHIFTS, SHIFT_MODES, allocate, clockShift, gridCells, type ShiftMode } from "./shift-plan";
 import { Accent, SectionHeading } from "./section-heading";
 
-type Mode = "prime" | "dark" | "surge";
+type Mode = ShiftMode;
 
-/**
- * How each shift spreads its compute across the engines (shares sum to 100), and how many nodes it runs.
- * Prime leans on closing, Dark on ingestion and hygiene, Surge doubles capacity toward signals and closers.
- */
-const SHIFTS: Record<Mode, { icon: LucideIcon; nodes: number; share: Record<EngineKey, number> }> = {
-  prime: { icon: Sun, nodes: 64, share: { intentpulse: 10, vanguard: 12, apex: 22, cortex: 20, aether: 8, coreops: 10, shield: 8, sovereign: 10 } },
-  dark: { icon: Moon, nodes: 48, share: { intentpulse: 22, vanguard: 18, apex: 4, cortex: 8, aether: 10, coreops: 16, shield: 14, sovereign: 8 } },
-  surge: { icon: Zap, nodes: 128, share: { intentpulse: 24, vanguard: 6, apex: 26, cortex: 18, aether: 8, coreops: 6, shield: 4, sovereign: 8 } },
-};
-const MODES: Mode[] = ["prime", "dark", "surge"];
-const GRID = 128;
-
-/** Whole-node counts per engine that add up to the shift's total (largest remainders get the leftovers). */
-function allocate(mode: Mode): Record<EngineKey, number> {
-  const { nodes, share } = SHIFTS[mode];
-  const raw = ENGINE_ORDER.map((k) => ({ k, v: (share[k] / 100) * nodes }));
-  const out = Object.fromEntries(raw.map(({ k, v }) => [k, Math.floor(v)])) as Record<EngineKey, number>;
-  let left = nodes - raw.reduce((s, { v }) => s + Math.floor(v), 0);
-  for (const { k } of [...raw].sort((a, b) => (b.v % 1) - (a.v % 1))) if (left-- > 0) out[k]++;
-  return out;
-}
+const ICONS: Record<Mode, LucideIcon> = { prime: Sun, dark: Moon, surge: Zap };
+const MODES = SHIFT_MODES;
 
 /** The engine operating system's shift planner: three modes, a live compute grid and per-engine node allocation. */
 export function DynamicShiftTopology() {
@@ -42,8 +24,7 @@ export function DynamicShiftTopology() {
   // The shift that would be running for this visitor right now; Surge is event-driven, never on the clock.
   const [liveMode, setLiveMode] = useState<Mode | null>(null);
   useEffect(() => {
-    const h = new Date().getHours();
-    const m: Mode = h >= 8 && h < 19 ? "prime" : "dark";
+    const m = clockShift(new Date().getHours());
     setLiveMode(m);
     setMode(m);
   }, []);
@@ -53,16 +34,10 @@ export function DynamicShiftTopology() {
   const live = useLiveCounts(base, section);
   const total = ENGINE_ORDER.reduce((s, k) => s + live[k], 0);
 
-  // The grid lists engines' nodes in order; cells past the shift's total stay dark.
-  const cells = useMemo(() => {
-    const out: (EngineKey | null)[] = [];
-    for (const k of ENGINE_ORDER) for (let i = 0; i < base[k]; i++) out.push(k);
-    while (out.length < GRID) out.push(null);
-    return out.slice(0, GRID);
-  }, [base]);
+  const cells = useMemo(() => gridCells(base), [base]);
 
   const shift = c.modes[mode];
-  const Icon = SHIFTS[mode].icon;
+  const Icon = ICONS[mode];
 
   return (
     <section ref={section} id="shifts" className="relative scroll-mt-16 px-4 py-32 sm:px-8 sm:py-44">
@@ -81,7 +56,7 @@ export function DynamicShiftTopology() {
       <div className="mx-auto mt-16 max-w-6xl">
         <div role="tablist" aria-label={c.eyebrow} className="grid gap-2 sm:grid-cols-3">
           {MODES.map((m) => {
-            const M = SHIFTS[m].icon;
+            const M = ICONS[m];
             const on = m === mode;
             return (
               <button

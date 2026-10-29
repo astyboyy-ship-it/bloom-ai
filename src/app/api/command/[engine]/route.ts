@@ -1,0 +1,64 @@
+import { z } from "zod";
+import { isEngineKey } from "@/components/bloom/command/engines";
+import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
+import type { RunEvent } from "@/lib/engines/events";
+import { runCommand } from "@/lib/orchestrator";
+
+export const dynamic = "force-dynamic";
+// A Sovereign command can fan out to four engines, each with its own tool loop.
+export const maxDuration = 300;
+
+const Body = z.object({
+  command: z.string().trim().min(3).max(4000),
+  params: z.record(z.string(), z.unknown()).default({}),
+  lang: z.enum(["en", "es", "he"]).default("en"),
+});
+
+export const OPTIONS = preflight;
+
+/** Runs one engine command and streams its execution as server-sent events (see RunEvent). */
+export async function POST(req: Request, { params }: { params: Promise<{ engine: string }> }) {
+  const { engine } = await params;
+  if (!isEngineKey(engine)) return fail(404, `Unknown engine "${engine}".`);
+  if (rateLimited(req, "command-run", 6)) return fail(429, "Too many runs. Try again in a minute.");
+  const json = await readJson(req);
+  if (!json.ok) return fail(400, "Request body must be valid JSON.");
+  const body = Body.safeParse(json.body);
+  if (!body.success) return fail(422, "Invalid command payload.", body.error.issues.map((i) => i.message));
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let open = true;
+      const send = (chunk: string) => {
+        if (!open) return;
+        try {
+          controller.enqueue(encoder.encode(chunk));
+        } catch {
+          open = false;
+        }
+      };
+      // Keeps proxies from closing the connection while a model thinks between events.
+      const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
+      try {
+        await runCommand(engine, { command: body.data.command, params: body.data.params }, {
+          emit: (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`),
+          signal: req.signal,
+          lang: body.data.lang,
+        });
+      } finally {
+        clearInterval(keepAlive);
+        open = false;
+        try {
+          controller.close();
+        } catch {
+          // Already closed by a client disconnect.
+        }
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { ...CORS, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", Connection: "keep-alive", "X-Accel-Buffering": "no" },
+  });
+}
