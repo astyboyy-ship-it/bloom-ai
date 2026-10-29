@@ -18,7 +18,13 @@ export type Scenario = {
 /** Separates a live reply's spoken pitch from its execution card's JSON; the drawer never shows what follows it. */
 export const CARD_MARKER = "<<<CARD>>>";
 
-export type Persona = { hook: string; challenge: string; closer: string; scenarios: [Scenario, Scenario, Scenario] };
+/**
+ * A quick-reply button: what the user says, sent to the live engine. Engines 01–04 still carry their original
+ * scripted breakdowns alongside; the drawer only uses the reply.
+ */
+export type QuickReply = Pick<Scenario, "id" | "reply"> & Partial<Scenario>;
+
+export type Persona = { hook: string; challenge: string; closer: string; scenarios: [QuickReply, QuickReply, QuickReply] };
 
 const CHALLENGE = "Tell me what you're working on, what your daily bottleneck is, and what you expect this engine to conquer for you.";
 
@@ -270,15 +276,44 @@ export const PERSONAS: Record<EngineKey, Persona> = {
       },
     ],
   },
+  vanguard: {
+    hook: "Hi, I'm Vanguard. I see you pressed this because you're lost or want to see how the real magic works. Good. I'm the one who goes out first. While your competitors wait for inbound, I'm already in the inbox of the buyer who signs next month.",
+    challenge: CHALLENGE,
+    closer: "Pipeline doesn't appear. It's hunted. Launch me and your calendar fills itself.",
+    scenarios: [
+      { id: "referrals", reply: "I run a B2B agency. Our pipeline is all referrals and it's drying up." },
+      { id: "ignored", reply: "I'm a SaaS founder. Our cold outreach gets ignored." },
+      { id: "targeting", reply: "I sell high-ticket services and I don't know who to target." },
+    ],
+  },
+  cortex: {
+    hook: "Hi, I'm Cortex. I see you pressed this because you're lost or want to see how the real magic works. I've read every call you've lost. I know the exact sentence that killed the deal, and what should have been said instead.",
+    challenge: CHALLENGE,
+    closer: "Deals aren't lost at the end. They're lost in the moment nobody noticed. I notice. Engage me.",
+    scenarios: [
+      { id: "quiet", reply: "Prospects love the demo, then go quiet." },
+      { id: "price", reply: "Everyone tells us we're too expensive." },
+      { id: "competitor", reply: "We keep losing to a cheaper competitor at the last minute." },
+    ],
+  },
+  shield: {
+    hook: "Hi, I'm Shield. I see you pressed this because you're lost or want to see how the real magic works. Everyone celebrates the new deal. I'm the one making sure it's still paying you next year. I see a customer leaving weeks before they do.",
+    challenge: CHALLENGE,
+    closer: "Growth is a leaky bucket until I seal it. Raise me and keep every dollar you've earned.",
+    scenarios: [
+      { id: "churn", reply: "We're a SaaS company and churn is eating our growth." },
+      { id: "silent", reply: "Clients leave quietly and we only find out at renewal." },
+      { id: "flat", reply: "Our customers stay, but they never upgrade." },
+    ],
+  },
+  aether: {
+    hook: "Hi, I'm Aether. I see you pressed this because you're lost or want to see how the real magic works. Most founders priced their product once, on a guess, and never looked back. I look at nothing else. There's money on your pricing page you've never collected.",
+    challenge: CHALLENGE,
+    closer: "You don't need more customers to grow. You need to charge right. Activate me.",
+    scenarios: [
+      { id: "stale", reply: "We haven't changed our prices in two years." },
+      { id: "discounts", reply: "My sales team discounts everything to close." },
+      { id: "oneplan", reply: "We have one plan and everyone is on it." },
+    ],
+  },
 };
-
-/** Free text lands on the scenario whose keywords it mentions most, or the first one. */
-export function scenarioFor(p: Persona, text: string): Scenario {
-  let best = p.scenarios[0];
-  let score = 0;
-  for (const s of p.scenarios) {
-    const n = (text.match(new RegExp(s.match.source, "gi")) ?? []).length;
-    if (n > score) [best, score] = [s, n];
-  }
-  return best;
-}

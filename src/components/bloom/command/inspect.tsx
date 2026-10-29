@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, CircleSlash, FileText, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CHANNELS, COMPANIES, ENGINES, usdFmt, type Answers, type Channel, type Engine } from "./engines";
+import { CHANNELS, COMPANIES, ENGINES, usdFmt, type Answers, type Channel, type Engine, type EngineKey } from "./engines";
 import type { FeedItem } from "./use-workforce";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -96,14 +96,94 @@ const Panel = ({ className, children }: { className?: string; children: React.Re
 
 /** One drawer for whatever was clicked, in the form that suits the engine. */
 export function Inspector({ engine, answers, target, onClose }: { engine: Engine; answers: Answers; target: InspectTarget; onClose: () => void }) {
-  const title = { intentpulse: "Signal Sheet", apex: "Live Deal Simulator", coreops: "Automation Proof Window", sovereign: "System Decision Tree" }[engine.key];
+  const title: Record<EngineKey, string> = {
+    intentpulse: "Signal Sheet",
+    apex: "Live Deal Simulator",
+    coreops: "Automation Proof Window",
+    sovereign: "System Decision Tree",
+    vanguard: "Outreach Trace",
+    cortex: "Deal Brief",
+    shield: "Account Health Trace",
+    aether: "Pricing Trace",
+  };
   return (
-    <Drawer kicker={`Engine Nº ${engine.index} · ${engine.name}`} title={title} onClose={onClose}>
+    <Drawer kicker={`Engine Nº ${engine.index} · ${engine.name}`} title={title[engine.key]} onClose={onClose}>
       {engine.key === "intentpulse" && <SignalSheet answers={answers} target={target} />}
       {engine.key === "apex" && <DealSimulator answers={answers} target={target} />}
       {engine.key === "coreops" && <ProofWindow target={target} />}
       {engine.key === "sovereign" && <DecisionTree answers={answers} target={target} />}
+      {engine.key in TRACE && <ActionTrace engine={engine} target={target} />}
     </Drawer>
+  );
+}
+
+/* ───────────────────────────── Engines 05–08 · Action Trace ───────────────────────────── */
+
+/** How each of engines 05–08 got from a signal to the action that was clicked: what it saw, weighed and did. */
+const TRACE: Partial<Record<EngineKey, { signal: string[]; decision: string[]; action: string[]; value: string }>> = {
+  vanguard: {
+    signal: ["Hiring three account executives", "Closed a funding round last week", "Publicly asked for vendor recommendations", "Visited the pricing page twice"],
+    decision: ["Fits the ideal account profile and has budget now", "Decision-maker identified and email verified", "Timing beats every competitor still waiting for inbound"],
+    action: ["Personal first touch written in the founder's voice", "Meeting slot offered for this week", "Research pack attached for Apex"],
+    value: "Projected pipeline",
+  },
+  cortex: {
+    signal: ["Raised price three times on the last call", "Asked who else uses the product", "Went quiet nine days after the demo", "Mentioned a cheaper competitor by name"],
+    decision: ["The real objection is risk, not price", "The economic buyer hasn't been on a call yet", "A side-by-side beats a discount here"],
+    action: ["Closing brief sent to the closer before the call", "Value-first reply drafted to the objection", "Decision call proposed with the economic buyer"],
+    value: "Deal velocity recovered",
+  },
+  shield: {
+    signal: ["Active users down 30% in two weeks", "Internal champion left the company", "Two support tickets unanswered for 48 hours", "Renewal due in 45 days"],
+    decision: ["Churn risk high: act before the renewal conversation", "The fix is onboarding, not a discount", "Healthy usage elsewhere supports an expansion later"],
+    action: ["Personal check-in from the account lead", "Fix plan sent with dates", "Executive save call booked"],
+    value: "Revenue protected",
+  },
+  aether: {
+    signal: ["Buyers in this segment accept 22% higher annual prices", "Discount requests up 40% this month", "Heavy users hitting plan limits", "Competitor raised prices last quarter"],
+    decision: ["Package the most-used feature into the higher tier", "Trade discount for term length, never for nothing", "Price the upgrade at the value metric, not per seat"],
+    action: ["New price sheet sent to Apex", "Discount replaced with a two-year term", "Upgrade offer queued for Shield"],
+    value: "Contract value unlocked",
+  },
+};
+
+function ActionTrace({ engine, target }: { engine: Engine; target: InspectTarget }) {
+  const t = TRACE[engine.key]!;
+  const r = rng(target.seed);
+  const p = person(r, target.item?.co);
+  const value = target.item?.amt ?? r.int(40, 320) * 100;
+  const stages: [string, string][] = [
+    ["Signal", r.pick(t.signal)],
+    ["Decision", r.pick(t.decision)],
+    ["Action", r.pick(t.action)],
+  ];
+  return (
+    <div className="space-y-4">
+      {target.item && <p className="text-[13.5px] text-white/70">{target.item.text.replace(/^Agent #\d+ /, "")}</p>}
+      <Panel>
+        <Label>Account</Label>
+        <p className="mt-1.5 text-[15px] text-white">{p.company}</p>
+        <p className="text-[12.5px] text-white/55">
+          {p.name}, {p.role}
+        </p>
+      </Panel>
+      <ol className="space-y-2">
+        {stages.map(([k, v], i) => (
+          <motion.li key={k} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.3, duration: 0.4, ease: EASE }} className="flex gap-3 rounded-xl border border-white/10 bg-black/40 p-3">
+            <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-c-1/50 font-mono text-[10px] text-c-2">{i + 1}</span>
+            <span className="min-w-0">
+              <span className="block font-mono text-[10px] uppercase tracking-[0.18em] text-c-2/80">{k}</span>
+              <span className="mt-0.5 block text-[13.5px] text-white/85">{v}</span>
+            </span>
+          </motion.li>
+        ))}
+      </ol>
+      <Panel className="text-center">
+        <p className="font-logo text-[26px] font-medium tabular-nums tracking-[-0.02em] text-c-2">{usdFmt(value)}</p>
+        <p className="text-[12px] text-white/60">{t.value}</p>
+        <p className="mt-1 text-[10.5px] text-white/40">Simulated sample data for this demo.</p>
+      </Panel>
+    </div>
   );
 }
 

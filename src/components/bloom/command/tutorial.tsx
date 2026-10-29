@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Send, Sparkles, X } from "lucide-react";
 import { ENGINES, isEngineKey, usdFmt, type Engine, type EngineKey } from "./engines";
 import { localizePersona, useCommandCopy } from "./locale";
-import { CARD_MARKER, type Scenario } from "./tutorial-script";
+import { CARD_MARKER, type QuickReply, type Scenario } from "./tutorial-script";
 
 const DISMISSED = "bloom.command.neural.dismissed";
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -59,7 +59,7 @@ async function errorOf(res: Response) {
 }
 
 // If the engine names itself or an unknown engine as its bundle partner, the card pairs it with this one.
-const PARTNER: Record<EngineKey, EngineKey> = { sovereign: "apex", apex: "intentpulse", coreops: "sovereign", intentpulse: "apex" };
+const PARTNER: Record<EngineKey, EngineKey> = { sovereign: "apex", apex: "intentpulse", coreops: "sovereign", intentpulse: "apex", vanguard: "apex", cortex: "apex", shield: "aether", aether: "shield" };
 
 const str = (v: unknown, max = 400) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
 
@@ -67,7 +67,7 @@ const str = (v: unknown, max = 400) => (typeof v === "string" && v.trim() ? v.tr
  * The execution card the live engine writes after its pitch (see CARD_MARKER in the system prompt), as the
  * same Scenario the card renders. Anything malformed means no card rather than a made-up one.
  */
-function parseCard(raw: string, engine: EngineKey): Scenario | undefined {
+function parseCard(raw: string, engine: Engine): Scenario | undefined {
   const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
   if (!json) return undefined;
   let d: Record<string, unknown>;
@@ -86,9 +86,10 @@ function parseCard(raw: string, engine: EngineKey): Scenario | undefined {
     .slice(0, 3);
   const read = str(d.read);
   const bundleText = str(bundle.text);
-  const label = str(capital.label, 160);
+  // Engines with a headline metric (05–08) always report it under the number, in the visitor's language.
+  const label = engine.metric ?? str(capital.label, 160);
   if (!read || steps.length < 2 || !bundleText || !notifications.length || !Number.isFinite(value) || value <= 0 || !label) return undefined;
-  const partner = typeof bundle.with === "string" && isEngineKey(bundle.with) && bundle.with !== engine ? bundle.with : PARTNER[engine];
+  const partner = typeof bundle.with === "string" && isEngineKey(bundle.with) && bundle.with !== engine.key ? bundle.with : PARTNER[engine.key];
   return {
     id: "live",
     reply: "",
@@ -225,7 +226,7 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       setTyping(false);
       // Only a closing reply carries a card; a discovery reply ends here with just its bubbles.
       const at = cardAt();
-      const card = at === Infinity ? undefined : parseCard(acc.slice(at).replace(CARD_MARKER, ""), engine.key);
+      const card = at === Infinity ? undefined : parseCard(acc.slice(at).replace(CARD_MARKER, ""), engine);
       if (card) setMsgs((ms) => [...ms, { id: ++seq.current, from: "ai", scenario: card }]);
       else if (at !== Infinity) console.warn("[neural breakdown] the engine's execution card was incomplete or malformed; showing the pitch only.");
       setStage("done");
@@ -252,7 +253,7 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
     setDraft("");
     void ask(t);
   };
-  const quick = (sc: Scenario) => void ask(sc.reply);
+  const quick = (sc: QuickReply) => void ask(sc.reply);
 
   const form = (
     <form
@@ -294,7 +295,10 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
         </span>
         <div className="min-w-0">
           <p className="truncate font-logo text-[15px] font-medium leading-tight">{engine.name}</p>
-          <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-c-2/80">{c.neural} · {c.engineNo} {engine.index}</p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9.5px] uppercase tracking-[0.2em] text-c-2/80">
+            {c.neural} · {c.engineNo} {engine.index}
+            {engine.badge && <EngineBadge>{engine.badge}</EngineBadge>}
+          </p>
         </div>
         <button type="button" onClick={onClose} aria-label={c.closeNeural} className="ms-auto rounded-md p-1.5 text-white/50 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-c-2">
           <X className="size-4" />
@@ -357,6 +361,11 @@ function Chat({ engine, onClose }: { engine: Engine; onClose: () => void }) {
       )}
     </motion.div>
   );
+}
+
+/** The engine's domain tag (PIPELINE, CLOSING…), in its palette. */
+export function EngineBadge({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full border border-c-2/40 bg-c-1/15 px-2 py-px font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-c-2">{children}</span>;
 }
 
 function Breakdown({ engine, scenario: s, echo }: { engine: Engine; scenario: Scenario; echo?: string }) {

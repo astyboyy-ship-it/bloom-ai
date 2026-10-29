@@ -18,6 +18,15 @@ export const PALETTES: Record<EngineKey, Palette> = {
   coreops: { name: "Forge amber · molten ember · obsidian", c1: "#f0a03a", c2: "#ff7a3a", c3: "#a8a196", edge: "#8a4410", deep: "#170c05", rose: "ember", tint: "40 16 4" },
   // Vernet, Shipwreck: storm-dark sea, electric sky, foam on the rocks.
   intentpulse: { name: "Oceanic teal · storm blue · radar seafoam", c1: "#2ec4b6", c2: "#8ff5c8", c3: "#5b9bff", edge: "#1a6a72", deep: "#05181e", rose: "tide", tint: "4 30 38" },
+  // Engines 05–08 carry their own theme colors (Tailwind's 400/500 tones) over their paintings.
+  // Friedrich, Wanderer above the Sea of Fog: the scout on the ridge, read in emerald and cyan.
+  vanguard: { name: "Emerald · cyan", c1: "#10b981", c2: "#67e8f9", c3: "#22d3ee", edge: "#047857", deep: "#03140f", rose: "emerald", tint: "4 38 30" },
+  // Heilmayer, Venice, the Grand Canal in the Moonlight: violet and fuchsia over the night canal.
+  cortex: { name: "Violet · fuchsia", c1: "#8b5cf6", c2: "#e879f9", c3: "#c4b5fd", edge: "#5b21b6", deep: "#120a24", rose: "frost", tint: "30 14 52" },
+  // Turner, The Fighting Temeraire: a rose and amber sunset over the old ship being guarded home.
+  shield: { name: "Rose · amber", c1: "#f43f5e", c2: "#fbbf24", c3: "#fda4af", edge: "#9f1239", deep: "#1f0710", rose: "crimson", tint: "52 8 18" },
+  // Cole, The Consummation of Empire: gilded prosperity in amber and yellow.
+  aether: { name: "Gold · amber", c1: "#fbbf24", c2: "#fde047", c3: "#fcd34d", edge: "#b45309", deep: "#1c1305", rose: "solar", tint: "48 32 6" },
 };
 
 const rgb = (hex: string) => {

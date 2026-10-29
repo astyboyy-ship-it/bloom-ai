@@ -15,7 +15,7 @@ import { Inspector, type InspectTarget } from "./inspect";
 import { useCommandCopy, useCommandLocale } from "./locale";
 import { clearSnapshot, loadSnapshot, saveSnapshot, type WorkforceSnapshot } from "./storage";
 import { PALETTES, paletteVars } from "./theme";
-import { NeuralChat, NeuralNotice } from "./tutorial";
+import { EngineBadge, NeuralChat, NeuralNotice } from "./tutorial";
 import { taskOf, useWorkforce, type CardState, type FeedItem, type FlowState, type Workforce } from "./use-workforce";
 
 /** "boot" covers the first client frame, before saved state has been read. */
@@ -187,8 +187,9 @@ function PanelHeader({ engine, status, right, onNeural }: { engine: Engine; stat
   return (
     <div className="flex flex-wrap items-start gap-x-6 gap-y-3 border-b border-c-edge/40 pb-5">
       <div className="min-w-0">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.3em] text-c-2/85">
-          {c.engineNo} {engine.index} <span className="mx-1.5 text-white/25">—</span> {engine.role}
+        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] uppercase tracking-[0.3em] text-c-2/85">
+          {c.engineNo} {engine.index} <span className="text-white/25">—</span> {engine.role}
+          {engine.badge && <EngineBadge>{engine.badge}</EngineBadge>}
         </p>
         <h1 className="mt-1.5 font-logo text-[28px] font-medium leading-none tracking-[-0.03em] sm:text-[34px]">{engine.name}</h1>
         <NeuralNotice onLaunch={onNeural} />

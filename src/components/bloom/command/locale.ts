@@ -49,7 +49,7 @@ const en = {
   pauseAgents: "Pause Selected Agents",
   returnToAgents: "Return to Agents",
   handOff: "Force Hand-Off to Human",
-  inspect: { intentpulse: "Open signal sheet", apex: "Watch the deal live", coreops: "See the automation proof", sovereign: "Open decision tree" } as Record<EngineKey, string>,
+  inspect: { intentpulse: "Open signal sheet", apex: "Watch the deal live", coreops: "See the automation proof", sovereign: "Open decision tree", vanguard: "Trace the outreach", cortex: "Open the deal brief", shield: "Open the account health trace", aether: "Open the pricing trace" } as Record<EngineKey, string>,
   briefTitle: "Your last 24 hours",
   closeBrief: "Close brief",
   stats: ["Leads secured", "Pipeline revenue locked", "Admin hours saved"],
@@ -119,7 +119,7 @@ const es: CommandCopy = {
   pauseAgents: "Pausar agentes seleccionados",
   returnToAgents: "Devolver a los agentes",
   handOff: "Forzar traspaso a una persona",
-  inspect: { intentpulse: "Abrir la ficha de la señal", apex: "Ver el acuerdo en vivo", coreops: "Ver la prueba de automatización", sovereign: "Abrir el árbol de decisión" },
+  inspect: { intentpulse: "Abrir la ficha de la señal", apex: "Ver el acuerdo en vivo", coreops: "Ver la prueba de automatización", sovereign: "Abrir el árbol de decisión", vanguard: "Rastrear el outreach", cortex: "Abrir el brief del acuerdo", shield: "Ver la salud de la cuenta", aether: "Ver el rastro de precios" },
   briefTitle: "Tus últimas 24 horas",
   closeBrief: "Cerrar informe",
   stats: ["Leads asegurados", "Ingresos de pipeline asegurados", "Horas administrativas ahorradas"],
@@ -186,7 +186,7 @@ const he: CommandCopy = {
   pauseAgents: "השהיית הסוכנים שנבחרו",
   returnToAgents: "החזרה לסוכנים",
   handOff: "העברה כפויה לאדם",
-  inspect: { intentpulse: "פתיחת גיליון האות", apex: "צפייה בעסקה בשידור חי", coreops: "הוכחת האוטומציה", sovereign: "פתיחת עץ ההחלטות" },
+  inspect: { intentpulse: "פתיחת גיליון האות", apex: "צפייה בעסקה בשידור חי", coreops: "הוכחת האוטומציה", sovereign: "פתיחת עץ ההחלטות", vanguard: "מעקב אחרי הפנייה", cortex: "פתיחת תדריך העסקה", shield: "בריאות החשבון", aether: "מעקב התמחור" },
   briefTitle: "24 השעות האחרונות שלכם",
   closeBrief: "סגירת התדריך",
   stats: ["לידים שהובטחו", "הכנסות צנרת שננעלו", "שעות אדמיניסטרציה שנחסכו"],
@@ -216,7 +216,7 @@ const he: CommandCopy = {
 const COPY: Record<Lang, CommandCopy> = { en, es, he };
 
 type StepText = { title: string; hint: string; options: [label: string, detail: string][] };
-type EngineText = { role: string; greeting: string; cta: string; steps: [StepText, StepText, StepText] };
+type EngineText = { role: string; greeting: string; cta: string; steps: [StepText, StepText, StepText]; badge?: string; metric?: string };
 type PersonaText = { hook: string; challenge: string; closer: string; replies: [string, string, string] };
 
 // Level options keep "Level · Name": the slider splits the label on " · ".
@@ -262,6 +262,54 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
         { title: "Elige un protocolo de enrutamiento", hint: "Qué pasa con un lead cuando IntentPulse lo encuentra.", options: [["Pasar el lead a Apex al instante", "Apex, el motor de cierre, abre la conversación en segundos."], ["Registrar en el panel de IntentPulse", "Los leads esperan aquí a que los revises."]] },
       ],
     },
+    vanguard: {
+      role: "Pipeline outbound y prospección",
+      badge: "PIPELINE",
+      metric: "Pipeline proyectado a 30 días ($)",
+      greeting: "Inicializando el motor Nº 05: Vanguard... Explorando el horizonte en busca de cuentas listas para comprar. Armando secuencias outbound.",
+      cta: "Lanzar la ofensiva Vanguard",
+      steps: [
+        { title: "Define tu cuenta objetivo ideal", hint: "Vanguard caza donde ya viven tus mejores clientes.", options: [["Pymes en rápido crecimiento", "Equipos de 10 a 200 personas, liderados por fundadores, que deciden rápido."], ["Empresas medianas", "Responsables de área con presupuesto real y un proceso de compra."], ["Cuentas enterprise", "Acuerdos con muchos decisores que valen el juego largo."]] },
+        { title: "Fija tu cadencia outbound", hint: "Cuánto presiona Vanguard cuando encuentra un buen encaje.", options: [["Nivel 1 · Quirúrgico", "Pocos toques afinados a mano, solo para las cuentas más calientes."], ["Nivel 2 · Constante", "Una secuencia completa para cada buen encaje, al ritmo de una persona."], ["Nivel 3 · Blitz", "Cada cuenta lista para comprar recibe hoy una secuencia multicanal."]] },
+        { title: "Elige tus canales de prospección", hint: "Vanguard solo contacta donde tú lo permites.", options: [["Email en frío", "Primeras líneas personales e investigadas, a escala."], ["LinkedIn", "Solicitudes de conexión y DMs a quienes deciden."], ["Señales sociales", "Respuestas a quien pide públicamente lo que vendes."]] },
+      ],
+    },
+    cortex: {
+      role: "Cierre de acuerdos e inteligencia de objeciones",
+      badge: "CIERRE",
+      metric: "Velocidad de acuerdos recuperada ($)",
+      greeting: "Inicializando el motor Nº 06: Cortex... Cargando transcripciones de llamadas. Asignando a cada objeción su respuesta ganadora.",
+      cta: "Activar la inteligencia de Cortex",
+      steps: [
+        { title: "Elige tu modelo de venta", hint: "Cortex estudia cómo se ganan y se pierden realmente tus acuerdos.", options: [["Venta por llamadas", "Llamadas de descubrimiento y demo, grabadas y transcritas."], ["Acuerdos por email", "Acuerdos que se ganan por hilos de email y propuestas."], ["Pipeline híbrido", "Una mezcla de llamadas, email y DMs."]] },
+        { title: "Fija el nivel de intervención de Cortex", hint: "Cuánto entra Cortex directamente en los acuerdos en vivo.", options: [["Nivel 1 · Asesorar", "Prepara a tu closer antes de cada llamada; tú decides qué usar."], ["Nivel 2 · Copiloto", "Redacta seguimientos y respuestas a objeciones para tu aprobación."], ["Nivel 3 · Closer autónomo", "Envía réplicas y condiciones de cierre dentro de tus límites."]] },
+        { title: "Elige la fuga que tapar primero", hint: "Dónde pone Cortex la mayoría de sus agentes.", options: [["Objeciones de precio", "Acuerdos que se atascan en 'es muy caro'."], ["Acuerdos estancados", "Oportunidades que se enfriaron tras la demo."], ["Pérdidas ante la competencia", "Compradores que eligen a un rival en el último momento."]] },
+      ],
+    },
+    shield: {
+      role: "Retención y defensa contra la pérdida de clientes",
+      badge: "RETENCIÓN",
+      metric: "ARR retenido y churn evitado ($)",
+      greeting: "Inicializando el motor Nº 07: Shield... Transmitiendo la telemetría de las cuentas. Armando los protocolos de rescate.",
+      cta: "Activar las defensas de Shield",
+      steps: [
+        { title: "Elige tu alerta temprana de abandono", hint: "Lo que vigila Shield para detectar una cuenta que se enfría.", options: [["Uso del producto", "Caen los accesos, los puestos y la adopción de funciones."], ["Soporte y sentimiento", "Volumen de tickets, tono y quejas sin respuesta."], ["Señales de facturación", "Pagos fallidos, rebajas de plan y facturas atrasadas."]] },
+        { title: "Fija el protocolo de rescate", hint: "Cuánto actúa Shield cuando una cuenta está en riesgo.", options: [["Nivel 1 · Alerta", "Avisa a tu equipo de las cuentas en riesgo, con el motivo."], ["Nivel 2 · Intervenir", "Envía un contacto personal y un plan de solución, con tu aprobación."], ["Nivel 3 · Defensa total", "Ejecuta todo el rescate: contacto, oferta y escalado a dirección."]] },
+        { title: "Elige tu postura de expansión", hint: "Qué hace Shield con tus cuentas más sanas.", options: [["Proteger primero", "Todos los agentes centrados en conservar ingresos, no en crecer."], ["Proteger y crecer", "Salva las cuentas en riesgo y amplía las que prosperan."], ["Impulso de expansión", "Propone activamente mejoras de plan y más puestos."]] },
+      ],
+    },
+    aether: {
+      role: "Precios dinámicos y monetización",
+      badge: "PRECIOS",
+      metric: "Expansión de ACV desbloqueada ($)",
+      greeting: "Inicializando el motor Nº 08: Aether... Modelando la disposición a pagar. Calibrando métricas de valor.",
+      cta: "Activar el motor de precios Aether",
+      steps: [
+        { title: "Elige tu modelo de precios actual", hint: "Aether parte de cómo cobras hoy.", options: [["Planes fijos", "Unos pocos niveles fijos entre los que todos eligen."], ["Por usuario", "El precio crece con el número de usuarios."], ["Por uso", "Los clientes pagan por lo que consumen."]] },
+        { title: "Fija tu apetito de riesgo en precios", hint: "Con qué audacia prueba Aether nuevos precios.", options: [["Nivel 1 · Prudente", "Pruebas pequeñas, solo con clientes nuevos."], ["Nivel 2 · Medido", "Pruebas por segmentos, sin tocar contratos existentes."], ["Nivel 3 · Audaz", "Rehace niveles y métricas de valor donde los datos lo indiquen."]] },
+        { title: "Elige tu palanca principal de monetización", hint: "Dónde busca Aether ingresos primero.", options: [["Subir el ACV", "Primeros contratos más grandes gracias a un mejor empaquetado."], ["Expansión y complementos", "Mejoras de pago que los clientes de verdad quieren."], ["Disciplina de descuentos", "Deja de regalar margen para cerrar acuerdos."]] },
+      ],
+    },
   },
   he: {
     sovereign: {
@@ -304,6 +352,54 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
         { title: "בחרו פרוטוקול ניתוב", hint: "מה קורה לליד ברגע ש־IntentPulse מוצא אותו.", options: [["העברה מיידית של הליד ל־Apex", "Apex, מנוע הסגירה, פותח שיחה תוך שניות."], ["רישום בדשבורד של IntentPulse", "הלידים ממתינים כאן לבדיקה שלכם."]] },
       ],
     },
+    vanguard: {
+      role: "צנרת פנייה יזומה ואיתור לקוחות",
+      badge: "צנרת",
+      metric: "צנרת חזויה ל־30 יום ($)",
+      greeting: "מאתחל את מנוע מס׳ 05: Vanguard... סורק את האופק אחר חשבונות שמוכנים לקנות. מחמש רצפי פנייה יזומה.",
+      cta: "שגרו את המתקפה של Vanguard",
+      steps: [
+        { title: "הגדירו את חשבון היעד האידיאלי", hint: "Vanguard צד היכן שהלקוחות הכי טובים שלכם כבר נמצאים.", options: [["עסקים קטנים בצמיחה מהירה", "צוותים של 10 עד 200 איש, בהובלת מייסדים, שמחליטים מהר."], ["חברות בינוניות", "מנהלי מחלקות עם תקציב אמיתי ותהליך רכש."], ["חשבונות אנטרפרייז", "עסקאות עם הרבה מקבלי החלטות, ששוות את המשחק הארוך."]] },
+        { title: "קבעו את קצב הפנייה היזומה", hint: "כמה חזק Vanguard לוחץ ברגע שהוא מוצא התאמה.", options: [["רמה 1 · כירורגי", "מעט פניות מכווננות ידנית, רק לחשבונות הכי חמים."], ["רמה 2 · יציב", "רצף מלא לכל התאמה טובה, בקצב של אדם."], ["רמה 3 · בליץ", "כל חשבון שמוכן לקנות מקבל היום רצף רב־ערוצי."]] },
+        { title: "בחרו את ערוצי האיתור", hint: "Vanguard פונה רק היכן שאתם מרשים.", options: [["מייל קר", "שורות פתיחה אישיות ומחוקרות, בהיקף גדול."], ["LinkedIn", "בקשות חיבור והודעות למקבלי החלטות."], ["אותות ברשתות", "תגובות לאנשים שמבקשים בפומבי את מה שאתם מוכרים."]] },
+      ],
+    },
+    cortex: {
+      role: "סגירת עסקאות ומודיעין התנגדויות",
+      badge: "סגירה",
+      metric: "מהירות עסקאות שהושבה ($)",
+      greeting: "מאתחל את מנוע מס׳ 06: Cortex... טוען תמלולי שיחות. ממפה לכל התנגדות את התשובה שמנצחת אותה.",
+      cta: "הפעילו את המודיעין של Cortex",
+      steps: [
+        { title: "בחרו את מודל המכירה שלכם", hint: "Cortex לומד איך העסקאות שלכם באמת נסגרות ונופלות.", options: [["מכירה בשיחות", "שיחות היכרות והדגמה, מוקלטות ומתומללות."], ["עסקאות במייל", "עסקאות שנסגרות בשרשורי מיילים והצעות מחיר."], ["צנרת היברידית", "שילוב של שיחות, מיילים והודעות."]] },
+        { title: "קבעו את רמת ההתערבות של Cortex", hint: "עד כמה Cortex נכנס ישירות לעסקאות חיות.", options: [["רמה 1 · ייעוץ", "מתדרך את הסוגר שלכם לפני כל שיחה; אתם מחליטים מה לקחת."], ["רמה 2 · טייס משנה", "מנסח מעקבים ותשובות להתנגדויות לאישורכם."], ["רמה 3 · סוגר אוטונומי", "שולח תשובות ותנאי סגירה בתוך הגבולות שקבעתם."]] },
+        { title: "בחרו איזו דליפה לסתום קודם", hint: "איפה Cortex מציב את רוב הסוכנים שלו.", options: [["התנגדויות מחיר", "עסקאות שנתקעות על 'יקר מדי'."], ["עסקאות תקועות", "הזדמנויות שהשתתקו אחרי ההדגמה."], ["הפסדים למתחרים", "קונים שבוחרים במתחרה ברגע האחרון."]] },
+      ],
+    },
+    shield: {
+      role: "שימור לקוחות והגנה מפני נטישה",
+      badge: "שימור",
+      metric: "ARR שנשמר ונטישה שנמנעה ($)",
+      greeting: "מאתחל את מנוע מס׳ 07: Shield... מזרים טלמטריה של חשבונות. מחמש פרוטוקולי חילוץ מנטישה.",
+      cta: "הרימו את המגן של Shield",
+      steps: [
+        { title: "בחרו את מקור ההתרעה המוקדמת לנטישה", hint: "על מה Shield מסתכל כדי לזהות חשבון שמתקרר.", options: [["שימוש במוצר", "כניסות, משתמשים ואימוץ פיצ׳רים בירידה."], ["תמיכה וסנטימנט", "כמות פניות, טון ותלונות שלא נענו."], ["אותות חיוב", "תשלומים שנכשלו, הורדות חבילה וחשבוניות באיחור."]] },
+        { title: "קבעו את פרוטוקול החילוץ", hint: "כמה חזק Shield פועל ברגע שחשבון בסיכון.", options: [["רמה 1 · התרעה", "מסמן לצוות שלכם חשבונות בסיכון, עם הסיבה."], ["רמה 2 · התערבות", "שולח פנייה אישית ותוכנית תיקון, באישורכם."], ["רמה 3 · הגנה מלאה", "מריץ את כל מהלך ההצלה: פנייה, הצעה והסלמה להנהלה."]] },
+        { title: "בחרו את עמדת ההרחבה", hint: "מה Shield עושה עם החשבונות הכי בריאים שלכם.", options: [["קודם כול להגן", "כל הסוכנים מתמקדים בשמירה על ההכנסות, לא בהגדלתן."], ["להגן ולצמוח", "להציל את החשבונות בסיכון ולהרחיב את המשגשגים."], ["דחיפה להרחבה", "מציע באופן יזום שדרוגים ומשתמשים נוספים."]] },
+      ],
+    },
+    aether: {
+      role: "תמחור דינמי ומונטיזציה",
+      badge: "תמחור",
+      metric: "הרחבת ACV שנפתחה ($)",
+      greeting: "מאתחל את מנוע מס׳ 08: Aether... ממדל את הנכונות לשלם. מכייל מדדי ערך.",
+      cta: "הפעילו את מנוע התמחור Aether",
+      steps: [
+        { title: "בחרו את מודל התמחור הנוכחי שלכם", hint: "Aether מתחיל מהאופן שבו אתם גובים היום.", options: [["חבילות קבועות", "כמה רמות קבועות שכולם בוחרים מהן."], ["לפי משתמש", "המחיר עולה עם מספר המשתמשים."], ["לפי שימוש", "הלקוחות משלמים על מה שהם צורכים."]] },
+        { title: "קבעו את תיאבון הסיכון בתמחור", hint: "באיזו נועזות Aether בודק מחירים חדשים.", options: [["רמה 1 · זהיר", "בדיקות קטנות, רק על לקוחות חדשים."], ["רמה 2 · מדוד", "בדיקות לפי פלחים, בלי לגעת בחוזים קיימים."], ["רמה 3 · נועז", "בונה מחדש רמות ומדדי ערך בכל מקום שהנתונים מראים."]] },
+        { title: "בחרו את מנוף המונטיזציה העיקרי", hint: "איפה Aether מחפש הכנסות קודם.", options: [["להעלות את ה־ACV", "חוזים ראשונים גדולים יותר בזכות אריזה חכמה יותר."], ["הרחבות ותוספות", "שדרוגים בתשלום שלקוחות באמת רוצים."], ["משמעת הנחות", "להפסיק לוותר על מרווח כדי לסגור עסקאות."]] },
+      ],
+    },
   },
 };
 
@@ -333,6 +429,30 @@ const PERSONA_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, PersonaText>> 
       closer: "Todos los demás están pescando. Yo leo el sonar. Iníciame y nunca más te preguntarás dónde está tu próximo comprador.",
       replies: ["Dirijo una empresa SaaS. No tengo ni idea de quién está realmente listo para comprar.", "Tengo una marca premium. No encuentro compradores de alto gasto.", "Estamos en el sector inmobiliario. Los leads llegan de todas partes y se nos escapan los buenos."],
     },
+    vanguard: {
+      hook: "Hola, soy Vanguard. Has pulsado esto porque estás perdido o quieres ver cómo funciona la magia de verdad. Bien. Yo soy el que sale primero. Mientras tu competencia espera leads entrantes, yo ya estoy en la bandeja del comprador que firma el mes que viene.",
+      challenge: "Cuéntame en qué estás trabajando, cuál es tu cuello de botella diario y qué esperas que este motor conquiste por ti.",
+      closer: "El pipeline no aparece. Se caza. Lánzame y tu calendario se llena solo.",
+      replies: ["Dirijo una agencia B2B. Todo nuestro pipeline viene de referidos y se está secando.", "Soy fundador de un SaaS. Nadie responde a nuestro outreach en frío.", "Vendo servicios de alto valor y no sé a quién dirigirme."],
+    },
+    cortex: {
+      hook: "Hola, soy Cortex. Has pulsado esto porque estás perdido o quieres ver cómo funciona la magia de verdad. He leído cada llamada que has perdido. Sé la frase exacta que mató el acuerdo y lo que debió decirse en su lugar.",
+      challenge: "Cuéntame en qué estás trabajando, cuál es tu cuello de botella diario y qué esperas que este motor conquiste por ti.",
+      closer: "Los acuerdos no se pierden al final. Se pierden en el momento que nadie notó. Yo lo noto. Actívame.",
+      replies: ["A los prospectos les encanta la demo y luego desaparecen.", "Todos nos dicen que somos demasiado caros.", "Seguimos perdiendo en el último momento ante un competidor más barato."],
+    },
+    shield: {
+      hook: "Hola, soy Shield. Has pulsado esto porque estás perdido o quieres ver cómo funciona la magia de verdad. Todos celebran el nuevo acuerdo. Yo me aseguro de que te siga pagando el año que viene. Veo a un cliente irse semanas antes de que lo haga.",
+      challenge: "Cuéntame en qué estás trabajando, cuál es tu cuello de botella diario y qué esperas que este motor conquiste por ti.",
+      closer: "El crecimiento es un cubo con fugas hasta que yo lo sello. Actívame y conserva cada dólar que has ganado.",
+      replies: ["Somos una empresa SaaS y el churn se está comiendo nuestro crecimiento.", "Los clientes se van en silencio y solo nos enteramos en la renovación.", "Nuestros clientes se quedan, pero nunca mejoran su plan."],
+    },
+    aether: {
+      hook: "Hola, soy Aether. Has pulsado esto porque estás perdido o quieres ver cómo funciona la magia de verdad. La mayoría de los fundadores pusieron precio a su producto una vez, a ojo, y nunca miraron atrás. Yo no miro otra cosa. Hay dinero en tu página de precios que nunca has cobrado.",
+      challenge: "Cuéntame en qué estás trabajando, cuál es tu cuello de botella diario y qué esperas que este motor conquiste por ti.",
+      closer: "No necesitas más clientes para crecer. Necesitas cobrar bien. Actívame.",
+      replies: ["No hemos cambiado nuestros precios en dos años.", "Mi equipo de ventas lo descuenta todo para cerrar.", "Tenemos un solo plan y todos están en él."],
+    },
   },
   he: {
     sovereign: {
@@ -359,6 +479,30 @@ const PERSONA_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, PersonaText>> 
       closer: "כל השאר דגים. אני קורא את הסונאר. הפעילו אותי ולא תתהו יותר איפה הקונה הבא שלכם.",
       replies: ["אני מנהל חברת SaaS. אין לי מושג מי באמת מוכן לקנות.", "יש לי מותג פרימיום. אני לא מצליח למצוא קונים שמוציאים הרבה.", "אנחנו בנדל״ן. לידים מגיעים מכל מקום ואנחנו מפספסים את הטובים."],
     },
+    vanguard: {
+      hook: "היי, אני Vanguard. לחצתם כאן כי הלכתם לאיבוד, או כי אתם רוצים לראות איך הקסם האמיתי עובד. מצוין. אני זה שיוצא ראשון. בזמן שהמתחרים שלכם מחכים לפניות נכנסות, אני כבר בתיבת הדואר של הקונה שיחתום בחודש הבא.",
+      challenge: "ספרו לי על מה אתם עובדים, מה צוואר הבקבוק היומיומי שלכם, ומה אתם מצפים שהמנוע הזה יכבוש בשבילכם.",
+      closer: "צנרת לא מופיעה מעצמה. צדים אותה. שגרו אותי והיומן שלכם יתמלא לבד.",
+      replies: ["אני מנהל סוכנות B2B. כל הצנרת שלנו מגיעה מהמלצות והיא מתייבשת.", "אני מייסד SaaS. אף אחד לא עונה לפניות הקרות שלנו.", "אני מוכר שירותים יקרים ולא יודע למי לפנות."],
+    },
+    cortex: {
+      hook: "היי, אני Cortex. לחצתם כאן כי הלכתם לאיבוד, או כי אתם רוצים לראות איך הקסם האמיתי עובד. קראתי כל שיחה שהפסדתם. אני יודע בדיוק איזה משפט הרג את העסקה, ומה היה צריך להגיד במקומו.",
+      challenge: "ספרו לי על מה אתם עובדים, מה צוואר הבקבוק היומיומי שלכם, ומה אתם מצפים שהמנוע הזה יכבוש בשבילכם.",
+      closer: "עסקאות לא נופלות בסוף. הן נופלות ברגע שאף אחד לא שם לב אליו. אני שם לב. הפעילו אותי.",
+      replies: ["לקוחות מתלהבים מההדגמה ואז נעלמים.", "כולם אומרים לנו שאנחנו יקרים מדי.", "אנחנו ממשיכים להפסיד ברגע האחרון למתחרה זול יותר."],
+    },
+    shield: {
+      hook: "היי, אני Shield. לחצתם כאן כי הלכתם לאיבוד, או כי אתם רוצים לראות איך הקסם האמיתי עובד. כולם חוגגים את העסקה החדשה. אני זה שדואג שהיא עדיין תשלם לכם בשנה הבאה. אני רואה לקוח עוזב שבועות לפני שהוא עושה את זה.",
+      challenge: "ספרו לי על מה אתם עובדים, מה צוואר הבקבוק היומיומי שלכם, ומה אתם מצפים שהמנוע הזה יכבוש בשבילכם.",
+      closer: "צמיחה היא דלי דולף עד שאני אוטם אותו. הרימו אותי ושמרו על כל דולר שהרווחתם.",
+      replies: ["אנחנו חברת SaaS והנטישה אוכלת לנו את הצמיחה.", "לקוחות עוזבים בשקט ואנחנו מגלים רק בחידוש.", "הלקוחות שלנו נשארים, אבל אף פעם לא משדרגים."],
+    },
+    aether: {
+      hook: "היי, אני Aether. לחצתם כאן כי הלכתם לאיבוד, או כי אתם רוצים לראות איך הקסם האמיתי עובד. רוב המייסדים תמחרו את המוצר פעם אחת, לפי תחושה, ולא הסתכלו אחורה. אני לא מסתכל על שום דבר אחר. יש כסף בעמוד המחירים שלכם שמעולם לא גביתם.",
+      challenge: "ספרו לי על מה אתם עובדים, מה צוואר הבקבוק היומיומי שלכם, ומה אתם מצפים שהמנוע הזה יכבוש בשבילכם.",
+      closer: "אתם לא צריכים עוד לקוחות כדי לצמוח. אתם צריכים לגבות נכון. הפעילו אותי.",
+      replies: ["לא שינינו את המחירים שלנו כבר שנתיים.", "צוות המכירות שלי נותן הנחות על הכול כדי לסגור.", "יש לנו חבילה אחת וכולם עליה."],
+    },
   },
 };
 
@@ -371,6 +515,8 @@ export function localizeEngine(e: Engine, lang: Lang): Engine {
     role: tx.role,
     greeting: tx.greeting,
     cta: tx.cta,
+    badge: tx.badge ?? e.badge,
+    metric: tx.metric ?? e.metric,
     steps: e.steps.map((st, i) => ({
       ...st,
       title: tx.steps[i].title,

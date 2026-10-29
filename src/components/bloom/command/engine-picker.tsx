@@ -8,8 +8,9 @@ import { EngineStatus } from "./engine-status";
 import { ENGINE_ORDER, ENGINES } from "./engines";
 import { localizeEngine, useCommandCopy } from "./locale";
 import { PALETTES, paletteVars } from "./theme";
+import { EngineBadge } from "./tutorial";
 
-/** The four engines, each tile a window onto its painting, in the same frosted glass as the engines. */
+/** Every engine, 01 through 08, each tile a window onto its painting, in the same frosted glass as the engines. */
 export function EnginePicker() {
   const { lang, dir, c } = useCommandCopy();
   return (
@@ -30,11 +31,13 @@ export function EnginePicker() {
                   <EngineStatus engine={k} />
                 </div>
                 <div className="absolute inset-x-3 bottom-3 rounded-xl border border-c-edge/50 bg-black/55 p-4 backdrop-blur-md">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-c-2/90">
+                  <p className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-c-2/90">
                     {c.engineNo} {e.index}
+                    {e.badge && <EngineBadge>{e.badge}</EngineBadge>}
                   </p>
                   <p className="mt-1 font-logo text-[24px] font-medium leading-none tracking-[-0.03em]">{e.name}</p>
                   <p className="mt-1.5 text-[13px] text-white/60">{e.role}</p>
+                  {e.metric && <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-c-2/70">{e.metric}</p>}
                 </div>
               </Link>
             );

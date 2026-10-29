@@ -1,7 +1,7 @@
-import { Activity, Crown, Eye, FileText, Mail, MessageCircle, Radar, RefreshCw, Route, Scale, ShieldCheck, Swords, Target, UserPlus, type LucideIcon } from "lucide-react";
+import { Activity, AudioLines, BrainCircuit, Calculator, Crown, Eye, FileText, Gauge, Gem, LifeBuoy, Mail, MessageCircle, Radar, RefreshCw, Route, Scale, Send, ShieldCheck, Swords, Tags, Target, Telescope, TrendingUp, UserPlus, type LucideIcon } from "lucide-react";
 import type { PaintingKey } from "../art/paintings";
 
-export type EngineKey = "sovereign" | "apex" | "coreops" | "intentpulse";
+export type EngineKey = "sovereign" | "apex" | "coreops" | "intentpulse" | "vanguard" | "cortex" | "shield" | "aether";
 export type Stance = "stealth" | "aggressive" | "balanced";
 
 export type Option = {
@@ -64,6 +64,10 @@ export type Engine = {
   /** Engines that listen on public channels tag every signal with one; {ch} names it in feed lines. */
   channels?: boolean;
   brief: { base: Brief; lines: (b: Brief) => string[] };
+  /** Short domain tag shown beside the engine's number (engines 05–08). */
+  badge?: string;
+  /** The headline number its execution card reports, e.g. "Projected 30-Day Pipeline ($)". */
+  metric?: string;
 };
 
 const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -507,9 +511,455 @@ export const ENGINES: Record<EngineKey, Engine> = {
       ],
     },
   },
+
+  vanguard: {
+    key: "vanguard",
+    index: "05",
+    name: "Vanguard",
+    role: "Outbound Pipeline & Prospecting",
+    badge: "PIPELINE",
+    metric: "Projected 30-Day Pipeline ($)",
+    painting: "wanderer",
+    greeting: "Initializing Engine Nº 05: Vanguard... Scanning the horizon for in-market accounts. Arming outbound sequences.",
+    steps: [
+      {
+        id: "icp",
+        kind: "choice",
+        title: "Define your ideal target account",
+        hint: "Vanguard hunts where your best customers already live.",
+        options: [
+          { value: "smb", label: "Fast-Growing SMBs", detail: "Founder-led teams of 10 to 200 people who decide quickly.", tempo: 1.2 },
+          { value: "midmarket", label: "Mid-Market Operators", detail: "Department heads with real budget and a buying process." },
+          { value: "enterprise", label: "Enterprise Accounts", detail: "Multi-stakeholder deals worth the long game.", stance: "stealth" },
+        ],
+      },
+      {
+        id: "cadence",
+        kind: "level",
+        title: "Set your outbound cadence",
+        hint: "How hard Vanguard pushes once it finds a fit.",
+        options: [
+          { value: "1", label: "Level 1 · Surgical", detail: "A few hand-tuned touches to the hottest accounts only.", stance: "stealth" },
+          { value: "2", label: "Level 2 · Steady", detail: "A full sequence for every good fit, paced like a person would." },
+          { value: "3", label: "Level 3 · Blitz", detail: "Every in-market account gets a multi-channel sequence today.", stance: "aggressive", tempo: 1.3 },
+        ],
+      },
+      {
+        id: "channels",
+        kind: "multi",
+        title: "Choose your prospecting channels",
+        hint: "Vanguard only reaches out where you allow it.",
+        options: [
+          { value: "email", label: "Cold Email", detail: "Personal, researched first lines at scale." },
+          { value: "linkedin", label: "LinkedIn", detail: "Connection requests and DMs to decision-makers." },
+          { value: "social", label: "Social Signals", detail: "Replies to people publicly asking for what you sell." },
+        ],
+      },
+    ],
+    cta: "Launch Vanguard Offensive",
+    channels: true,
+    cards: [
+      {
+        id: "research",
+        icon: Telescope,
+        agents: 6,
+        count: 240,
+        title: (a, n) => `${agents(a)} researching ${s(n, "target account")}`,
+        events: [
+          { text: "{agent} found {co} hiring three sales reps, a classic buying trigger", lead: true },
+          { text: "{agent} mapped four decision-makers at {co} and verified their emails" },
+          { text: "{agent} flagged {co}'s new funding round as an opening" },
+        ],
+      },
+      {
+        id: "sequences",
+        icon: Send,
+        agents: 7,
+        count: 38,
+        title: (a, n) => `${agents(a)} running ${s(n, "outbound sequence")}`,
+        events: [
+          { text: "{agent} sent a personal first touch to the VP of Sales at {co}" },
+          { text: "{agent} booked a discovery call with {co} from a cold email reply", lead: true },
+          { text: "{agent} opened a LinkedIn conversation with {co}'s founder", requires: ["channels", "linkedin"] },
+          { text: "{agent} paused a sequence after {co} replied 'not this quarter'" },
+        ],
+      },
+      {
+        id: "signals",
+        icon: Radar,
+        agents: 5,
+        count: 64,
+        title: (a, n) => `${agents(a)} tracking ${s(n, "intent signal")}`,
+        events: [
+          { text: "{agent} caught a post asking for exactly what you sell and replied within minutes", requires: ["channels", "social"], lead: true },
+          { text: "{agent} spotted {co} comparing your competitors on a review site" },
+          { text: "{agent} logged {amt} in new pipeline from this morning's replies", amt: [8000, 42000], deal: true },
+        ],
+      },
+      {
+        id: "pipeline",
+        icon: Target,
+        agents: 4,
+        count: 22,
+        title: (a, n) => `${agents(a)} qualifying ${s(n, "booked meeting")}`,
+        events: [
+          { text: "{agent} qualified {co}: budget confirmed, decision within 30 days", lead: true },
+          { text: "{agent} handed a warm {co} meeting to Apex with full research attached" },
+          { text: "{agent} added {amt} to your 30-day pipeline", amt: [12000, 60000], deal: true },
+        ],
+      },
+    ],
+    flows: [
+      { from: "vanguard", to: "apex", n: 6, text: (n) => `Handing off ${s(n, "booked meeting")}` },
+      { from: "intentpulse", to: "vanguard", n: 14, text: (n) => `Passing ${s(n, "warm signal")} for outreach` },
+      { from: "vanguard", to: "coreops", n: 3, text: (n) => `Syncing ${s(n, "new account")} into the CRM` },
+    ],
+    brief: {
+      base: { leads: 214, pipeline: 386000, hours: 71 },
+      lines: (b) => [
+        `${b.leads} target accounts were researched and contacted in your voice.`,
+        `${usd(b.pipeline)} in projected pipeline was opened from cold outreach.`,
+        `The warmest replies were booked as meetings and handed to Apex the same hour.`,
+        `About ${Math.round(b.hours)} hours of list-building, research and follow-up were done for you.`,
+      ],
+    },
+  },
+
+  cortex: {
+    key: "cortex",
+    index: "06",
+    name: "Cortex",
+    role: "Deal Closing & Objection Intelligence",
+    badge: "CLOSING",
+    metric: "Recovered Deal Velocity ($)",
+    painting: "venice",
+    greeting: "Initializing Engine Nº 06: Cortex... Loading call transcripts. Mapping every objection to its winning response.",
+    steps: [
+      {
+        id: "motion",
+        kind: "choice",
+        title: "Choose your sales motion",
+        hint: "Cortex studies how your deals are actually won and lost.",
+        options: [
+          { value: "calls", label: "Call-Led Sales", detail: "Discovery and demo calls, recorded and transcribed." },
+          { value: "async", label: "Async & Email Deals", detail: "Deals won over email threads and proposals.", stance: "stealth" },
+          { value: "hybrid", label: "Hybrid Pipeline", detail: "A mix of calls, email and DMs.", stance: "balanced" },
+        ],
+      },
+      {
+        id: "coaching",
+        kind: "level",
+        title: "Set Cortex's intervention level",
+        hint: "How directly Cortex steps into live deals.",
+        options: [
+          { value: "1", label: "Level 1 · Advise", detail: "Briefs your closer before every call; you decide what to use." },
+          { value: "2", label: "Level 2 · Co-Pilot", detail: "Drafts follow-ups and objection replies for your approval." },
+          { value: "3", label: "Level 3 · Autonomous Closer", detail: "Sends rebuttals and closing terms within the limits you set.", stance: "aggressive", tempo: 1.2 },
+        ],
+      },
+      {
+        id: "focus",
+        kind: "choice",
+        title: "Pick the leak to plug first",
+        hint: "Where Cortex puts most of its agents.",
+        options: [
+          { value: "price", label: "Price Objections", detail: "Deals that stall on 'too expensive'." },
+          { value: "stalled", label: "Stalled Deals", detail: "Opportunities that went quiet after the demo." },
+          { value: "competitor", label: "Competitor Losses", detail: "Buyers who pick a rival at the last minute." },
+        ],
+      },
+    ],
+    cta: "Engage Cortex Intelligence",
+    cards: [
+      {
+        id: "transcripts",
+        icon: AudioLines,
+        agents: 6,
+        count: 48,
+        title: (a, n) => `${agents(a)} analysing ${s(n, "call transcript")}`,
+        events: [
+          { text: "{agent} found {co} raised budget concerns three times on yesterday's call" },
+          { text: "{agent} flagged a buying signal: {co} asked about onboarding timelines", lead: true },
+          { text: "{agent} scored the {co} demo: strong fit, weak urgency" },
+        ],
+      },
+      {
+        id: "objections",
+        icon: Swords,
+        agents: 7,
+        count: 19,
+        title: (a, n) => `${agents(a)} countering ${s(n, "live objection")}`,
+        events: [
+          { text: "{agent} drafted a value-first answer to {co}'s pricing pushback" },
+          { text: "{agent} turned 'we need to think about it' at {co} into a booked decision call", lead: true },
+          { text: "{agent} built a side-by-side for {co} against the competitor they mentioned" },
+        ],
+      },
+      {
+        id: "briefs",
+        icon: BrainCircuit,
+        agents: 5,
+        count: 11,
+        title: (a, n) => `${agents(a)} writing ${s(n, "closing brief")}`,
+        events: [
+          { text: "{agent} briefed your closer on {co}: the decision-maker, the budget and the one risk to defuse" },
+          { text: "{agent} predicted {co} will ask for a discount and prepared the trade-off" },
+          { text: "{agent} recovered {amt} by reviving a deal that went quiet after the demo", amt: [6000, 38000], deal: true },
+        ],
+      },
+      {
+        id: "velocity",
+        icon: Gauge,
+        agents: 4,
+        count: 26,
+        title: (a, n) => `${agents(a)} accelerating ${s(n, "open deal")}`,
+        events: [
+          { text: "{agent} shortened {co}'s cycle by sending the security pack before they asked" },
+          { text: "{agent} moved {co} to contract stage, worth {amt}", amt: [9000, 52000], deal: true },
+          { text: "{agent} warned Shield that {co} signed only a short-term commitment" },
+        ],
+      },
+    ],
+    flows: [
+      { from: "apex", to: "cortex", n: 5, text: (n) => `Requested ${s(n, "objection brief")}` },
+      { from: "cortex", to: "apex", n: 4, text: (n) => `Sent ${s(n, "closing script")}` },
+      { from: "cortex", to: "aether", n: 2, text: (n) => `Flagged ${s(n, "price objection pattern")}` },
+    ],
+    brief: {
+      base: { leads: 64, pipeline: 298000, hours: 48 },
+      lines: (b) => [
+        `${b.leads} live deals were analysed, each with an objection plan.`,
+        `${usd(b.pipeline)} in deal velocity was recovered from stalled and at-risk deals.`,
+        `Every closer went into their calls with a one-page brief on what will make or break the deal.`,
+        `About ${Math.round(b.hours)} hours of call review, note-taking and follow-up writing were saved.`,
+      ],
+    },
+  },
+
+  shield: {
+    key: "shield",
+    index: "07",
+    name: "Shield",
+    role: "Retention & Anti-Churn Defense",
+    badge: "RETENTION",
+    metric: "Retained ARR & Churn Saved ($)",
+    painting: "temeraire",
+    greeting: "Initializing Engine Nº 07: Shield... Streaming account telemetry. Arming churn-rescue protocols.",
+    steps: [
+      {
+        id: "signals",
+        kind: "choice",
+        title: "Choose your churn early-warning source",
+        hint: "What Shield watches to spot an account cooling off.",
+        options: [
+          { value: "usage", label: "Product Usage", detail: "Logins, seats and feature adoption dropping." },
+          { value: "support", label: "Support & Sentiment", detail: "Ticket volume, tone and unanswered complaints.", stance: "stealth" },
+          { value: "billing", label: "Billing Signals", detail: "Failed payments, downgrades and late invoices." },
+        ],
+      },
+      {
+        id: "rescue",
+        kind: "level",
+        title: "Set the rescue protocol",
+        hint: "How hard Shield moves once an account is at risk.",
+        options: [
+          { value: "1", label: "Level 1 · Alert", detail: "Flags at-risk accounts to your team, with the reason." },
+          { value: "2", label: "Level 2 · Intervene", detail: "Sends a personal check-in and a fix plan, with your approval." },
+          { value: "3", label: "Level 3 · Full Defense", detail: "Runs the whole save play: outreach, offer and executive escalation.", stance: "aggressive", tempo: 1.2 },
+        ],
+      },
+      {
+        id: "expansion",
+        kind: "choice",
+        title: "Pick your expansion stance",
+        hint: "What Shield does with your healthiest accounts.",
+        options: [
+          { value: "protect", label: "Protect First", detail: "Every agent focused on keeping revenue, not growing it.", stance: "stealth" },
+          { value: "balanced", label: "Protect & Grow", detail: "Save the risky accounts, upsell the thriving ones." },
+          { value: "expand", label: "Expansion Push", detail: "Actively pitch upgrades and seat expansions.", tempo: 1.2 },
+        ],
+      },
+    ],
+    cta: "Raise Shield Defenses",
+    cards: [
+      {
+        id: "telemetry",
+        icon: Activity,
+        agents: 6,
+        count: 312,
+        title: (a, n) => `${agents(a)} monitoring ${s(n, "customer account")}`,
+        events: [
+          { text: "{agent} noticed {co}'s active users fell 30% in two weeks" },
+          { text: "{agent} flagged {co}: their internal champion just left the company" },
+          { text: "{agent} confirmed {co} adopted the new feature after onboarding" },
+        ],
+      },
+      {
+        id: "rescue",
+        icon: LifeBuoy,
+        agents: 7,
+        count: 9,
+        title: (a, n) => `${agents(a)} rescuing ${s(n, "at-risk account")}`,
+        events: [
+          { text: "{agent} booked a save call with {co}'s COO before their renewal", lead: true },
+          { text: "{agent} rescued {co} and protected {amt} in annual revenue", amt: [8000, 64000], deal: true },
+          { text: "{agent} sent {co} a fix plan for the issue they complained about" },
+        ],
+      },
+      {
+        id: "renewals",
+        icon: RefreshCw,
+        agents: 5,
+        count: 27,
+        title: (a, n) => `${agents(a)} securing ${s(n, "upcoming renewal")}`,
+        events: [
+          { text: "{agent} renewed {co} for another year, 60 days early" },
+          { text: "{agent} prepared a renewal brief for {co} with proof of usage" },
+          { text: "{agent} caught a failed payment from {co} and fixed it before service stopped" },
+        ],
+      },
+      {
+        id: "expansion",
+        icon: TrendingUp,
+        agents: 4,
+        count: 14,
+        title: (a, n) => `${agents(a)} expanding ${s(n, "healthy account")}`,
+        events: [
+          { text: "{agent} spotted {co} hitting their seat limit and proposed an upgrade", lead: true },
+          { text: "{agent} closed a {amt} expansion with {co}", amt: [4000, 30000], deal: true },
+          { text: "{agent} asked Aether for the best upgrade price for {co}" },
+        ],
+      },
+    ],
+    flows: [
+      { from: "coreops", to: "shield", n: 11, text: (n) => `Handed over ${s(n, "newly onboarded account")}` },
+      { from: "shield", to: "aether", n: 4, text: (n) => `Requested ${s(n, "upgrade price")}` },
+      { from: "shield", to: "cortex", n: 3, text: (n) => `Sent ${s(n, "at-risk renewal")} for a closing brief` },
+    ],
+    brief: {
+      base: { leads: 312, pipeline: 274000, hours: 52 },
+      lines: (b) => [
+        `${b.leads} customer accounts were watched around the clock for early signs of churn.`,
+        `${usd(b.pipeline)} in recurring revenue was retained or saved from cancellation.`,
+        `Every at-risk account got a personal response before it could slip away.`,
+        `About ${Math.round(b.hours)} hours of account reviews, renewal prep and save calls were handled for you.`,
+      ],
+    },
+  },
+
+  aether: {
+    key: "aether",
+    index: "08",
+    name: "Aether",
+    role: "Dynamic Pricing & Monetization",
+    badge: "PRICING",
+    metric: "Unlocked ACV Expansion ($)",
+    painting: "consummation",
+    greeting: "Initializing Engine Nº 08: Aether... Modelling willingness to pay. Calibrating value metrics.",
+    steps: [
+      {
+        id: "model",
+        kind: "choice",
+        title: "Choose your current pricing model",
+        hint: "Aether starts from how you charge today.",
+        options: [
+          { value: "flat", label: "Flat Plans", detail: "A few fixed tiers everyone picks from." },
+          { value: "seat", label: "Per Seat", detail: "Price grows with the number of users." },
+          { value: "usage", label: "Usage-Based", detail: "Customers pay for what they consume." },
+        ],
+      },
+      {
+        id: "appetite",
+        kind: "level",
+        title: "Set your pricing risk appetite",
+        hint: "How boldly Aether tests new prices.",
+        options: [
+          { value: "1", label: "Level 1 · Guarded", detail: "Small tests on new customers only.", stance: "stealth" },
+          { value: "2", label: "Level 2 · Measured", detail: "Tests across segments, never touching existing contracts." },
+          { value: "3", label: "Level 3 · Bold", detail: "Rebuilds tiers and value metrics wherever the data says so.", stance: "aggressive", tempo: 1.25 },
+        ],
+      },
+      {
+        id: "lever",
+        kind: "choice",
+        title: "Pick your main monetization lever",
+        hint: "Where Aether looks for revenue first.",
+        options: [
+          { value: "acv", label: "Raise ACV", detail: "Bigger first contracts through smarter packaging." },
+          { value: "upsell", label: "Expansion & Add-Ons", detail: "Paid upgrades customers actually want." },
+          { value: "discount", label: "Discount Discipline", detail: "Stop giving away margin to close deals." },
+        ],
+      },
+    ],
+    cta: "Activate Aether Pricing Engine",
+    cards: [
+      {
+        id: "wtp",
+        icon: Calculator,
+        agents: 6,
+        count: 18,
+        title: (a, n) => `${agents(a)} modelling ${s(n, "price point")}`,
+        events: [
+          { text: "{agent} found buyers like {co} would pay 22% more for the annual plan" },
+          { text: "{agent} tested a new Growth tier on 40 visitors and conversions held steady" },
+          { text: "{agent} mapped which features {co} uses most, to price them properly" },
+        ],
+      },
+      {
+        id: "packaging",
+        icon: Gem,
+        agents: 5,
+        count: 6,
+        title: (a, n) => `${agents(a)} restructuring ${s(n, "pricing tier")}`,
+        events: [
+          { text: "{agent} moved reporting into the Pro tier, where it lifts upgrades" },
+          { text: "{agent} proposed a usage-based add-on for heavy accounts like {co}" },
+          { text: "{agent} unlocked {amt} in expansion by repackaging the Pro plan", amt: [6000, 40000], deal: true },
+        ],
+      },
+      {
+        id: "discounts",
+        icon: Tags,
+        agents: 5,
+        count: 23,
+        title: (a, n) => `${agents(a)} policing ${s(n, "discount request")}`,
+        events: [
+          { text: "{agent} blocked an unneeded 25% discount for {co} and offered a two-year term instead" },
+          { text: "{agent} approved a 10% discount for {co} in exchange for a case study" },
+          { text: "{agent} saved {amt} in margin across this week's deals", amt: [3000, 18000], deal: true },
+        ],
+      },
+      {
+        id: "expansion",
+        icon: TrendingUp,
+        agents: 4,
+        count: 31,
+        title: (a, n) => `${agents(a)} pricing ${s(n, "expansion offer")}`,
+        events: [
+          { text: "{agent} priced {co}'s seat expansion at a rate they accepted in a day", lead: true },
+          { text: "{agent} sent Shield the right upgrade offer for {co}" },
+          { text: "{agent} raised {co}'s contract value by {amt} at renewal", amt: [5000, 36000], deal: true },
+        ],
+      },
+    ],
+    flows: [
+      { from: "aether", to: "apex", n: 3, text: (n) => `Sent ${s(n, "new price sheet")}` },
+      { from: "shield", to: "aether", n: 4, text: (n) => `Requested ${s(n, "upgrade price")}` },
+      { from: "aether", to: "sovereign", n: 1, text: (n) => `Submitted ${s(n, "pricing change")} for approval` },
+    ],
+    brief: {
+      base: { leads: 46, pipeline: 228000, hours: 39 },
+      lines: (b) => [
+        `${b.leads} pricing tests and discount requests were handled without a meeting.`,
+        `${usd(b.pipeline)} in contract value was unlocked through packaging, upgrades and discount discipline.`,
+        `No deal closed below the margin floor you set.`,
+        `About ${Math.round(b.hours)} hours of spreadsheet modelling and pricing debates were saved.`,
+      ],
+    },
+  },
 };
 
-export const ENGINE_ORDER: EngineKey[] = ["sovereign", "apex", "coreops", "intentpulse"];
+export const ENGINE_ORDER: EngineKey[] = ["sovereign", "apex", "coreops", "intentpulse", "vanguard", "cortex", "shield", "aether"];
 
 export const isEngineKey = (v: string): v is EngineKey => v in ENGINES;
 
