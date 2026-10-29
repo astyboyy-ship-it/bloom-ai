@@ -111,9 +111,9 @@ function normalize(messages: ChatMessage[]) {
 /** Streams the reply as plain text chunks. */
 export async function streamReply(p: Provider, engine: EngineKey, history: ChatMessage[], lang: ChatLang, signal: AbortSignal): Promise<ReadableStream<Uint8Array>> {
   const { opening, messages } = normalize(history);
-  // Capped to fit the current OpenRouter credit limit. A closing reply (pitch plus card JSON) can run past
-  // this, especially in Hebrew; a cut-off card is dropped by the drawer and only the pitch shows.
-  const maxTokens = 500;
+  // Room for a closing reply (pitch plus card JSON) to always finish; Hebrew and Spanish take noticeably
+  // more tokens than English for the same text.
+  const maxTokens = lang === "en" ? 900 : 1200;
   const system = systemPrompt(engine, lang) + (opening ? `\n\nYou opened this conversation by saying:\n"""\n${opening}\n"""` : "");
 
   const res =
