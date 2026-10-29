@@ -1,11 +1,11 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Bloom AI",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "ai.bloom.desktop",
   "build": {
     "devUrl": "http://localhost:3000",
-    "frontendDist": "https://workflow-architect.vercel.app",
+    "frontendDist": "https://workflow-architect-two.vercel.app",
     "beforeDevCommand": "npm run dev"
   },
   "app": {
