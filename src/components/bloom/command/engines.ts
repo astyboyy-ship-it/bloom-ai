@@ -64,7 +64,7 @@ export type Engine = {
   /** Engines that listen on public channels tag every signal with one; {ch} names it in feed lines. */
   channels?: boolean;
   brief: { base: Brief; lines: (b: Brief) => string[] };
-  /** Short domain tag shown beside the engine's number (engines 05–08). */
+  /** Short domain tag shown beside the engine's number. */
   badge?: string;
   /** The headline number its execution card reports, e.g. "Projected 30-Day Pipeline ($)". */
   metric?: string;
@@ -80,6 +80,8 @@ export const ENGINES: Record<EngineKey, Engine> = {
     index: "01",
     name: "Sovereign",
     role: "Master Command & Security",
+    badge: "GOVERNANCE",
+    metric: "Active Governance Capacity ($)",
     painting: "destruction",
     greeting: "Initializing Engine Nº 01: Sovereign... Establishing subterranean governance link. Syncing master neural key.",
     steps: [
@@ -189,6 +191,8 @@ export const ENGINES: Record<EngineKey, Engine> = {
     index: "02",
     name: "Apex",
     role: "High-Value Acquisition & Closing",
+    badge: "ORCHESTRATION",
+    metric: "Orchestrated Deal Velocity ($)",
     painting: "issus",
     greeting: "Initializing Engine Nº 02: Apex... Calibrating high-precision automated sales strike algorithms.",
     steps: [
@@ -299,6 +303,8 @@ export const ENGINES: Record<EngineKey, Engine> = {
     index: "03",
     name: "CoreOps",
     role: "Shadow Administration & Infrastructure",
+    badge: "INFRASTRUCTURE",
+    metric: "Infrastructure Savings ($)",
     painting: "forge",
     greeting: "Initializing Engine Nº 03: CoreOps... Linking database architectures and automated administrative pipelines.",
     steps: [
@@ -407,6 +413,8 @@ export const ENGINES: Record<EngineKey, Engine> = {
     index: "04",
     name: "IntentPulse",
     role: "Market Intelligence & Lead Radar",
+    badge: "SIGNALS",
+    metric: "Inbound Intent Capture Value ($)",
     painting: "storm",
     greeting: "Initializing Engine Nº 04: IntentPulse... Booting global signal radar and behavioral intent scanners.",
     steps: [

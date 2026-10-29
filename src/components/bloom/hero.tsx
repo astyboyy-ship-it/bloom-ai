@@ -17,8 +17,8 @@ const container: Variants = {
 };
 
 const item: Variants = {
-  hidden: { opacity: 0, y: 26, filter: "blur(8px)" },
-  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.3, ease: [0.16, 1, 0.3, 1] } },
+  hidden: { opacity: 0, y: 26 },
+  show: { opacity: 1, y: 0, transition: { duration: 1.3, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export function Hero() {

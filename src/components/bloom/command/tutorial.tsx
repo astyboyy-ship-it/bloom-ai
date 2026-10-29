@@ -87,7 +87,7 @@ function parseCard(raw: string, engine: Engine): Scenario | undefined {
     .slice(0, 3);
   const read = str(d.read);
   const bundleText = str(bundle.text);
-  // Engines with a headline metric (05–08) always report it under the number, in the visitor's language.
+  // Each engine's headline metric is always the label under the number, in the visitor's language.
   const label = engine.metric ?? str(capital.label, 160);
   if (!read || steps.length < 2 || !bundleText || !notifications.length || !Number.isFinite(value) || value <= 0 || !label) return undefined;
   const partner = typeof bundle.with === "string" && isEngineKey(bundle.with) && bundle.with !== engine.key ? bundle.with : PARTNER[engine.key];

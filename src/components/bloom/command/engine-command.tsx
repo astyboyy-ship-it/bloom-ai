@@ -162,8 +162,8 @@ function Glass({ wide, children }: { wide: boolean; children: React.ReactNode })
   return (
     <motion.section
       layout
-      initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } }}
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.9, ease: EASE, layout: { duration: 0.7, ease: EASE } }}
       className={cn(
@@ -286,7 +286,7 @@ function Intro({ engine, resuming, onDone }: { engine: Engine; resuming: boolean
       <motion.p className="font-mono text-[10.5px] uppercase tracking-[0.36em] text-c-2/90" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3 }}>
         {c.engineNo} {engine.index} <span className="mx-2 text-white/30">—</span> {engine.name}
       </motion.p>
-      <motion.div className="mt-6 text-6xl drop-shadow-[0_8px_30px_rgb(0_0_0/0.85)] sm:text-8xl" initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ duration: 1.4, delay: 0.5, ease: EASE }}>
+      <motion.div className="mt-6 text-6xl drop-shadow-[0_8px_30px_rgb(0_0_0/0.85)] sm:text-8xl" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.4, delay: 0.5, ease: EASE }}>
         <BloomWordmark />
       </motion.div>
       <motion.div className="mt-10 w-full rounded-xl border border-c-edge/50 bg-black/50 px-5 py-4 text-start backdrop-blur-md" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1 }}>

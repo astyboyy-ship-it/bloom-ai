@@ -75,7 +75,7 @@ export function StudioIntro({ meta, leaving, onSkip, onExited }: { meta: StudioM
         <motion.p className="font-mono text-[10px] uppercase tracking-[0.36em] text-white/70" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, delay: 0.6 }}>
           Engine Nº {meta.index} <span className="mx-2 text-white/30">—</span> {meta.kicker}
         </motion.p>
-        <motion.div className="mt-6" initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ duration: 1.6, delay: 1, ease: [0.16, 1, 0.3, 1] }}>
+        <motion.div className="mt-6" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.6, delay: 1, ease: [0.16, 1, 0.3, 1] }}>
           <p className="text-6xl drop-shadow-[0_8px_30px_rgb(0_0_0/0.85)] sm:text-8xl">
             <BloomWordmark />
           </p>
@@ -139,8 +139,8 @@ export function EngineShell({ meta, base, sections, children }: { meta: StudioMe
       <motion.div
         key={skipped ? "skipped" : "revealed"}
         className="flex min-h-dvh flex-col lg:h-dvh"
-        initial={skipped ? false : { opacity: 0, scale: 1.04, filter: "blur(10px)" }}
-        animate={phase !== "playing" ? { opacity: 1, scale: 1, filter: "blur(0px)", transitionEnd: { filter: "none", transform: "none" } } : undefined}
+        initial={skipped ? false : { opacity: 0, scale: 1.04 }}
+        animate={phase !== "playing" ? { opacity: 1, scale: 1, transitionEnd: { transform: "none" } } : undefined}
         transition={{ duration: EXIT_S, ease: EASE }}
       >
         <header className="z-10 flex min-h-14 shrink-0 flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/[0.07] bg-[#0d0c10]/90 px-4 py-2 backdrop-blur-xl">

@@ -224,6 +224,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
   es: {
     sovereign: {
       role: "Mando maestro y seguridad",
+      badge: "GOBIERNO",
+      metric: "Capacidad de gobierno activa ($)",
       greeting: "Inicializando el motor Nº 01: Sovereign... Estableciendo el enlace de gobierno subterráneo. Sincronizando la llave neural maestra.",
       cta: "Activar el protocolo Sovereign",
       steps: [
@@ -234,6 +236,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     apex: {
       role: "Captación y cierre de alto valor",
+      badge: "ORQUESTACIÓN",
+      metric: "Velocidad de acuerdos orquestada ($)",
       greeting: "Inicializando el motor Nº 02: Apex... Calibrando algoritmos de ataque comercial automatizado de alta precisión.",
       cta: "Activar a los closers de Apex",
       steps: [
@@ -244,6 +248,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     coreops: {
       role: "Administración en la sombra e infraestructura",
+      badge: "INFRAESTRUCTURA",
+      metric: "Ahorro en infraestructura ($)",
       greeting: "Inicializando el motor Nº 03: CoreOps... Enlazando arquitecturas de datos y flujos administrativos automatizados.",
       cta: "Inicializar la fuerza de CoreOps",
       steps: [
@@ -254,6 +260,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     intentpulse: {
       role: "Inteligencia de mercado y radar de leads",
+      badge: "SEÑALES",
+      metric: "Valor de intención entrante capturada ($)",
       greeting: "Inicializando el motor Nº 04: IntentPulse... Arrancando el radar global de señales y los escáneres de intención.",
       cta: "Iniciar el radar en la sombra",
       steps: [
@@ -314,6 +322,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
   he: {
     sovereign: {
       role: "פיקוד עליון ואבטחה",
+      badge: "משילות",
+      metric: "יכולת משילות פעילה ($)",
       greeting: "מאתחל את מנוע מס׳ 01: Sovereign... מקים קישור משילות תת־קרקעי. מסנכרן את המפתח הנוירוני הראשי.",
       cta: "הפעילו את פרוטוקול Sovereign",
       steps: [
@@ -324,6 +334,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     apex: {
       role: "רכישה וסגירה של עסקאות בשווי גבוה",
+      badge: "תזמור",
+      metric: "מהירות עסקאות מתוזמרת ($)",
       greeting: "מאתחל את מנוע מס׳ 02: Apex... מכייל אלגוריתמי תקיפה מכירתיים אוטומטיים בדיוק גבוה.",
       cta: "הפעילו את הסוגרים של Apex",
       steps: [
@@ -334,6 +346,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     coreops: {
       role: "אדמיניסטרציה שקטה ותשתיות",
+      badge: "תשתיות",
+      metric: "חיסכון בתשתיות ($)",
       greeting: "מאתחל את מנוע מס׳ 03: CoreOps... מקשר ארכיטקטורות נתונים וצנרת אדמיניסטרטיבית אוטומטית.",
       cta: "אתחלו את כוח העבודה של CoreOps",
       steps: [
@@ -344,6 +358,8 @@ const ENGINE_TEXT: Record<Exclude<Lang, "en">, Record<EngineKey, EngineText>> = 
     },
     intentpulse: {
       role: "מודיעין שוק ומכ״ם לידים",
+      badge: "אותות",
+      metric: "שווי כוונת הקנייה הנכנסת שנתפסה ($)",
       greeting: "מאתחל את מנוע מס׳ 04: IntentPulse... מעלה את מכ״ם האותות הגלובלי ואת סורקי הכוונה ההתנהגותית.",
       cta: "הפעילו את המכ״ם השקט",
       steps: [

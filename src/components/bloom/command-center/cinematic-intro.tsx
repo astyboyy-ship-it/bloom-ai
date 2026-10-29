@@ -114,8 +114,8 @@ export function CinematicIntro({ leaving, onSkip, onExited }: { leaving: boolean
         </motion.p>
         <motion.div
           className="mt-6 flex flex-col items-center"
-          initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.6, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="text-6xl drop-shadow-[0_8px_30px_rgb(0_0_0/0.85)] sm:text-8xl">

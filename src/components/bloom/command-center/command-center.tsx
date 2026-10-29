@@ -91,8 +91,8 @@ export function IntentPulseApp({ children }: { children: React.ReactNode }) {
 
       <motion.div
         key={skipped ? "skipped" : "revealed"}
-        initial={skipped ? false : { opacity: 0, scale: 1.04, filter: "blur(10px)" }}
-        animate={phase !== "playing" ? { opacity: 1, scale: 1, filter: "blur(0px)", transitionEnd: { filter: "none", transform: "none" } } : undefined}
+        initial={skipped ? false : { opacity: 0, scale: 1.04 }}
+        animate={phase !== "playing" ? { opacity: 1, scale: 1, transitionEnd: { transform: "none" } } : undefined}
         transition={{ duration: INTRO_EXIT_S, ease: [0.65, 0, 0.35, 1] }}
       >
         <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-white/[0.07] bg-[#0d0c10]/90 backdrop-blur-xl lg:flex">
