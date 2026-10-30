@@ -56,7 +56,7 @@ function respond(input: string, c: Ctx): Reply {
     };
 
   if (/^(open|go to|goto|show)\b/.test(q)) {
-    const target = OS_NAV.find((n) => q.includes(n.label.toLowerCase()) || q.includes(n.href.split("/").pop()!.replace("-", " ")));
+    const target = OS_NAV.find((n) => q.includes(n.name.toLowerCase()) || q.includes(n.href.split("/").pop()!.replace("-", " ")));
     if (target) return { text: `Opening ${target.label}.`, go: target.href };
     const a = ARCHITECTURES.find((x) => q.includes(x.name.toLowerCase()) || q.includes(x.slug.replace(/-/g, " ")));
     if (a) return { text: `Opening the ${a.name} workspace.`, go: `/desk/architectures/${a.slug}` };

@@ -8,7 +8,7 @@ import { ENGINES, isEngineKey, type EngineKey } from "@/components/bloom/command
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import type { Metric } from "@/lib/engines/brief";
 import { can } from "./rbac";
-import { activeMember, audit, useDeskSettings } from "./settings";
+import { activeMember, audit, decideApproval, registerApprovals, useDeskSettings } from "./settings";
 
 type Action = { title: string; owner: string; priority: "p0" | "p1" | "p2"; detail: string };
 type Decision = "approved" | "rejected";
@@ -29,23 +29,33 @@ export function BriefPanel({
   runId,
   output,
   brief,
+  source,
 }: {
   engine: EngineKey;
   runId: string | null;
   output: unknown;
   brief: { markdown: string; metrics: Metric[]; approvals: number[] } | null;
+  /** What raised the approvals (an engine or an architecture product); defaults to the engine's name. */
+  source?: string;
 }) {
   const { settings } = useDeskSettings();
   const member = activeMember(settings);
   const mayApprove = can(member.role, "approve");
-  const [decisions, setDecisions] = useState<Record<number, { decision: Decision; by: string; at: number }>>({});
   const o = (output && typeof output === "object" ? output : {}) as { confidence?: number; actions?: Action[] };
   const actions = o.actions ?? [];
   const typed = useTypewriter(brief?.markdown ?? "");
 
+  // Approval-gated actions join the workspace queue, so the Home approval bay sees the same decisions.
+  useEffect(() => {
+    if (runId && brief?.approvals.length) registerApprovals(runId, source ?? ENGINES[engine].name, engine, actions, brief.approvals);
+    // Registered once per run; the queue ignores repeats.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId]);
+  const decisions: Record<number, { decision: Decision; by: string; at: number }> = Object.fromEntries(
+    settings.approvals.filter((a) => a.runId === runId && a.status !== "pending").map((a) => [Number(a.id.split(":")[1]), { decision: a.status as Decision, by: a.by ?? "", at: a.decidedAt ?? a.at }]),
+  );
   const decide = (i: number, decision: Decision) => {
-    setDecisions((d) => ({ ...d, [i]: { decision, by: member.name, at: Date.now() } }));
-    audit("approval", `${decision === "approved" ? "Approved" : "Rejected"} "${actions[i]?.title}" (${ENGINES[engine].name}${runId ? `, ${runId}` : ""})`);
+    if (runId) decideApproval(`${runId}:${i}`, decision);
   };
 
   const download = (kind: "json" | "md") => {

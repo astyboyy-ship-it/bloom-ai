@@ -43,9 +43,9 @@ export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackS
     if (!state.runId || recorded.current === state.runId || (state.status !== "done" && state.status !== "failed")) return;
     recorded.current = state.runId;
     const summary = (state.output as { summary?: string } | null)?.summary ?? "";
-    recordRun({ runId: state.runId, at: Date.now(), kind, target: spec.id, label: spec.label, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary });
+    recordRun({ runId: state.runId, at: Date.now(), kind, target: spec.id, label: spec.label, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary, brief: state.brief?.markdown });
     audit("run", `${spec.label} run ${state.runId} ${state.status === "done" ? `completed in ${((state.ms ?? 0) / 1000).toFixed(1)}s` : "failed"}`);
-  }, [state.runId, state.status, state.output, state.command, state.ms, state.usage, kind, spec.id, spec.label]);
+  }, [state.runId, state.status, state.output, state.command, state.ms, state.usage, kind, spec.id, spec.label, state.brief]);
 
   const execute = () => {
     const text = command.trim();
@@ -128,7 +128,7 @@ export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackS
             <p className="os-label border-b border-os-line px-4 py-2">Execution log {running && <Loader2 className="ms-2 inline size-3 animate-spin text-os-cyan" />}</p>
             <ExecutionLog c={c} log={state.log} agents={state.agents} />
           </section>
-          {state.status === "done" && state.engine && state.brief && <BriefPanel key={state.runId} engine={state.engine} runId={state.runId} output={state.output} brief={state.brief} />}
+          {state.status === "done" && state.engine && state.brief && <BriefPanel key={state.runId} engine={state.engine} runId={state.runId} output={state.output} brief={state.brief} source={spec.label} />}
         </>
       )}
     </div>

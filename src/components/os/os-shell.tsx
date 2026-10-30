@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, Gauge, KeyRound, Presentation, Server, Sparkles, UserRound } from "lucide-react";
+import { Activity, ChevronDown, Gauge, KeyRound, Presentation, Server, Sparkles, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
@@ -14,7 +14,7 @@ import { useLicense } from "@/lib/license-context";
 import type { Tier } from "@/lib/license/tiers";
 import { ROLE_INFO } from "@/components/desk/rbac";
 import { activeEnv, audit, updateSettings, useDeskSettings } from "@/components/desk/settings";
-import { OS_NAV } from "./nav";
+import { NAV_GROUPS, type NavItem } from "./nav";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
@@ -177,28 +177,84 @@ function Header() {
         </div>
       </div>
 
-      <nav aria-label="Operating Desk" className="flex gap-1 overflow-x-auto px-3 pb-2">
-        {OS_NAV.map(({ href, label, icon: Icon, match }) => {
-          const on = match(path);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={on ? "page" : undefined}
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-os-cyan",
-                on ? "border-os-cyan/40 bg-os-cyan/[0.08] text-os-cyan shadow-[0_0_20px_-8px_rgb(0_240_255/0.6)]" : "border-transparent text-white/50 hover:border-os-line hover:text-white/85",
-              )}
-            >
-              <Icon className="size-3.5" />
-              <span className="text-white/25">[</span>
-              {label}
-              <span className="text-white/25">]</span>
-            </Link>
-          );
-        })}
+      <nav aria-label="Operating Desk" className="flex flex-wrap gap-1.5 px-3 pb-2">
+        {NAV_GROUPS.map((g) => (
+          <NavGroup key={g.label} label={g.label} items={g.items} path={path} />
+        ))}
       </nav>
     </header>
+  );
+}
+
+/** One header menu: shows its active pillar, opens on click, closes on outside click, Escape or navigation. */
+function NavGroup({ label, items, path }: { label: string; items: NavItem[]; path: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const active = items.find((i) => i.match(path));
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      ref.current?.querySelector("button")?.focus();
+    };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const Icon = active?.icon;
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-os-cyan",
+          active ? "border-os-cyan/40 bg-os-cyan/[0.08] text-os-cyan shadow-[0_0_20px_-8px_rgb(0_240_255/0.6)]" : open ? "border-os-line text-white/85" : "border-transparent text-white/50 hover:border-os-line hover:text-white/85",
+        )}
+      >
+        <span className="text-white/25">[</span>
+        {label}
+        {active && Icon && (
+          <span className="hidden items-center gap-1 tracking-normal text-white/70 normal-case sm:flex">
+            <span className="text-white/25">·</span>
+            <Icon className="size-3" />
+            {active.name}
+          </span>
+        )}
+        <span className="text-white/25">]</span>
+        <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div role="menu" aria-label={label} className="os-backdrop absolute start-0 top-full z-50 mt-1.5 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-os-line bg-os-panel/95 p-1.5 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.9),0_0_30px_-18px_rgb(0_240_255/0.5)]">
+          {items.map(({ href, label: text, icon: ItemIcon, match }) => {
+            const on = match(path);
+            return (
+              <Link
+                key={href}
+                href={href}
+                role="menuitem"
+                aria-current={on ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={cn("flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors", on ? "bg-os-cyan/[0.08] text-os-cyan" : "text-white/70 hover:bg-white/[0.04] hover:text-white")}
+              >
+                <ItemIcon className="size-4 shrink-0" />
+                {text}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

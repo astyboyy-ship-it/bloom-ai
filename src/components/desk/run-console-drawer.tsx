@@ -13,10 +13,23 @@ import { DESK_COPY } from "./copy";
 import { ExecutionLog } from "./execution-log";
 import { RunStepper } from "./run-stepper";
 import { audit, recordRun, requestHeaders, useDeskSettings } from "./settings";
-import { useRun } from "./use-run";
+import { PHASES as PHASE_ORDER, useRun } from "./use-run";
 
 /** A slide-over run console for the Command Center: one command, its live stages and log, and the brief. */
-export function RunConsoleDrawer({ request, lang, onClose }: { request: { engine: EngineKey; command: string; id: number } | null; lang: Lang; onClose: () => void }) {
+export type ConsoleStatus = { engine: EngineKey | null; status: "idle" | "running" | "done" | "failed"; detail: string; startedAt: number };
+
+export function RunConsoleDrawer({
+  request,
+  lang,
+  onClose,
+  onStatus,
+}: {
+  request: { engine: EngineKey; command: string; id: number } | null;
+  lang: Lang;
+  onClose: () => void;
+  /** Lets the page that opened the console show the run's progress (Home's workstream feed). */
+  onStatus?: (s: ConsoleStatus) => void;
+}) {
   const c = DESK_COPY[lang];
   const { settings } = useDeskSettings();
   const { state, run, abort } = useRun(c.networkError, c.aborted);
@@ -34,14 +47,21 @@ export function RunConsoleDrawer({ request, lang, onClose }: { request: { engine
     run(request.engine, request.command, lang, { headers: requestHeaders(s), calibrations });
   }, [request, run, lang]);
 
+  const active = PHASE_ORDER.map((p) => state.phases[p]).find((p) => p.status === "active");
+  useEffect(() => {
+    onStatus?.({ engine: state.engine, status: state.status, detail: active?.detail ?? "", startedAt: state.startedAt });
+    // onStatus is a setter from the parent; reporting on every phase change is the point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.engine, state.status, active?.detail, state.startedAt]);
+
   // Finished runs join the workspace history.
   const recorded = useRef<string | null>(null);
   useEffect(() => {
     if (!state.runId || recorded.current === state.runId || !state.engine || (state.status !== "done" && state.status !== "failed")) return;
     recorded.current = state.runId;
     const summary = (state.output as { summary?: string } | null)?.summary ?? "";
-    recordRun({ runId: state.runId, at: Date.now(), kind: "engine", target: state.engine, label: ENGINES[state.engine].name, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary });
-  }, [state.runId, state.status, state.engine, state.output, state.command, state.ms, state.usage]);
+    recordRun({ runId: state.runId, at: Date.now(), kind: "engine", target: state.engine, label: ENGINES[state.engine].name, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary, brief: state.brief?.markdown });
+  }, [state.runId, state.status, state.engine, state.output, state.command, state.ms, state.usage, state.brief]);
 
   const close = () => {
     if (state.status === "running") abort();

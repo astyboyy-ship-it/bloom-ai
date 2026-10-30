@@ -1223,3 +1223,27 @@
 [data-demo="on"] .demo-hide {
   display: none !important;
 }
+
+/* Dark glass scrollbars everywhere: slim slate thumb on a clear track, cyan glow on hover. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1a202c transparent;
+}
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a202c;
+  border: 1px solid rgb(255 255 255 / 0.04);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #232b3a;
+  border-color: rgb(0 240 255 / 0.45);
+  box-shadow: 0 0 8px rgb(0 240 255 / 0.55);
+}

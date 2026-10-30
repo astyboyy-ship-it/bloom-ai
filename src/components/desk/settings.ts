@@ -77,7 +77,32 @@ export type RunRecord = {
   tokens: { input: number; output: number };
   summary: string;
   env: string;
+  /** The executive brief (Markdown) for the deliverables shelf; kept on the latest runs only. */
+  brief?: string;
 };
+
+/**
+ * An action a run raised for human approval. Decisions are shared by the brief panel and the Home approval
+ * bay; an approved action that a person must perform becomes a task until it's marked done.
+ */
+export type Approval = {
+  id: string;
+  runId: string;
+  source: string;
+  engine: EngineKey;
+  title: string;
+  detail: string;
+  priority: string;
+  owner: string;
+  at: number;
+  status: "pending" | "approved" | "rejected";
+  by?: string;
+  decidedAt?: number;
+  done?: boolean;
+};
+
+/** The client engagement this workspace is running: shown in Home's context header. */
+export type Project = { client: string; name: string; scope: string };
 
 export type DeskSettings = {
   keys: Credentials;
@@ -99,6 +124,8 @@ export type DeskSettings = {
   pipelines: Pipeline[];
   architectureRules: Record<string, ArchitectureRules>;
   runs: RunRecord[];
+  approvals: Approval[];
+  project: Project;
 };
 
 const OWNER: Member = { id: "owner", name: "Workspace Owner", email: "", role: "owner" };
@@ -124,10 +151,15 @@ export const DEFAULT_SETTINGS: DeskSettings = {
   pipelines: [],
   architectureRules: {},
   runs: [],
+  approvals: [],
+  project: { client: "", name: "", scope: "" },
 };
 
 const AUDIT_CAP = 1000;
 const RUNS_CAP = 200;
+/** Briefs are a few KB each; only the latest keep theirs, so local storage stays well inside its quota. */
+const BRIEFS_KEPT = 20;
+const APPROVALS_CAP = 200;
 
 const DATA_KEY = "bloom-desk-settings";
 const MODE_KEY = "bloom-desk-persistence";
@@ -174,6 +206,8 @@ function read(): DeskSettings {
       pipelines: Array.isArray(parsed.pipelines) ? parsed.pipelines : [],
       architectureRules: parsed.architectureRules ?? {},
       runs: Array.isArray(parsed.runs) ? parsed.runs : [],
+      approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
+      project: { ...DEFAULT_SETTINGS.project, ...parsed.project },
     };
   } catch {
     cache = DEFAULT_SETTINGS;
@@ -308,5 +342,44 @@ export function verifyAudit(entries: AuditEntry[]): { ok: boolean; checked: numb
 
 /** Records a finished run in the workspace history (searchable in architecture and audit views). */
 export function recordRun(r: Omit<RunRecord, "env">) {
-  updateSettings((s) => ({ runs: [...s.runs, { ...r, command: redactSecrets(r.command), summary: redactSecrets(r.summary), env: activeEnv(s).name }].slice(-RUNS_CAP) }));
+  updateSettings((s) => {
+    const runs = [...s.runs, { ...r, command: redactSecrets(r.command), summary: redactSecrets(r.summary), brief: r.brief ? redactSecrets(r.brief) : undefined, env: activeEnv(s).name }].slice(-RUNS_CAP);
+    return { runs: runs.map((x, i) => (i < runs.length - BRIEFS_KEPT && x.brief ? { ...x, brief: undefined } : x)) };
+  });
+}
+
+/** Queues a run's approval-gated actions once (repeat calls for the same run are ignored). */
+export function registerApprovals(runId: string, source: string, engine: EngineKey, actions: { title: string; detail: string; priority: string; owner: string }[], indexes: number[]) {
+  updateSettings((s) => {
+    const fresh = indexes.filter((i) => actions[i] && !s.approvals.some((a) => a.id === `${runId}:${i}`));
+    if (!fresh.length) return {};
+    const added: Approval[] = fresh.map((i) => ({ id: `${runId}:${i}`, runId, source, engine, title: redactSecrets(actions[i].title), detail: redactSecrets(actions[i].detail), priority: actions[i].priority, owner: actions[i].owner, at: Date.now(), status: "pending" }));
+    return { approvals: [...s.approvals, ...added].slice(-APPROVALS_CAP) };
+  });
+}
+
+export function decideApproval(id: string, decision: "approved" | "rejected") {
+  let title = "";
+  let source = "";
+  updateSettings((s) => ({
+    approvals: s.approvals.map((a) => {
+      if (a.id !== id || a.status !== "pending") return a;
+      title = a.title;
+      source = a.source;
+      return { ...a, status: decision, by: activeMember(s).name, decidedAt: Date.now() };
+    }),
+  }));
+  if (title) audit("approval", `${decision === "approved" ? "Approved" : "Rejected"} "${title}" (${source})`);
+}
+
+export function completeTask(id: string) {
+  let title = "";
+  updateSettings((s) => ({
+    approvals: s.approvals.map((a) => {
+      if (a.id !== id) return a;
+      title = a.title;
+      return { ...a, done: true };
+    }),
+  }));
+  if (title) audit("approval", `Marked done: "${title}"`);
 }

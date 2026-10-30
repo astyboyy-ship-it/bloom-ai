@@ -73,7 +73,7 @@ export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
     settled.current = state.runId;
     const name = ENGINES[state.engine].name;
     const summary = (state.output as { summary?: string } | null)?.summary;
-    recordRun({ runId: state.runId, at: Date.now(), kind: "engine", target: state.engine, label: name, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary: summary ?? "" });
+    recordRun({ runId: state.runId, at: Date.now(), kind: "engine", target: state.engine, label: name, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary: summary ?? "", brief: state.brief?.markdown });
     if (state.status === "failed") return audit("run", `${name} run ${state.runId} failed`);
     audit("run", `${name} run ${state.runId} completed in ${((state.ms ?? 0) / 1000).toFixed(1)}s`);
     const engine = state.engine;
@@ -83,7 +83,7 @@ export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
         const memory = [...(prev.memory ?? []), summary.slice(0, 800)].slice(-10);
         return { calibrations: { ...s.calibrations, [engine]: { ...prev, memory } } };
       });
-  }, [state.runId, state.status, state.engine, state.ms, state.output, state.command, state.usage]);
+  }, [state.runId, state.status, state.engine, state.ms, state.output, state.command, state.usage, state.brief]);
 
   const select = (k: EngineKey) => router.push(`/desk/engines/${k}`);
   /** Network nodes open an unlocked engine's deep drawer; locked ones go to their page (and its tier lock). */
