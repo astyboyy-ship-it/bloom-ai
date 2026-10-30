@@ -110,12 +110,12 @@ export function CinematicIntro() {
           <BloomWordmark />
         </motion.p>
         <motion.p
-          className="mt-4 font-display text-xl italic text-[#f6ead2]/85 drop-shadow-[0_2px_12px_rgb(0_0_0/0.8)] sm:text-2xl"
+          className="mt-4 font-mono text-[13px] uppercase tracking-[0.32em] text-[#f6ead2]/85 drop-shadow-[0_2px_12px_rgb(0_0_0/0.8)] sm:text-[15px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1.1 }}
         >
-          Sovereign Operating Desk
+          Bloom AI <span className="text-[#f0d59a]">{"//"}</span> Operating Desk
         </motion.p>
         {/* A three-second hairline: the hold, made visible */}
         <motion.span

@@ -12,6 +12,7 @@ import { ENGINE_ORDER, ENGINES } from "@/components/bloom/command/engines";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { audit, updateSettings, useDeskSettings, verifyAudit } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
+import { ENGINE_ART } from "./engine-art";
 import { useLicense } from "@/lib/license-context";
 import { TIER_INFO } from "@/lib/license/tiers";
 
@@ -83,16 +84,28 @@ export function DemoDeck() {
         <div>
           <h2 className="text-center text-[34px] font-semibold text-white">Eight engines, one network</h2>
           <div className="mx-auto mt-10 grid max-w-5xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {ENGINE_ORDER.map((k, n) => (
-              <motion.div key={k} style={paletteVars(PALETTES[k])} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: n * 0.08 }} className="os-panel rounded-2xl p-5 text-center">
-                <motion.span className="mx-auto flex size-14 items-center justify-center rounded-full border-2 border-c-1 font-mono text-[16px] text-c-2 shadow-[0_0_30px_-6px_var(--c-glow)]" animate={{ boxShadow: ["0 0 18px -6px var(--c-glow)", "0 0 36px -2px var(--c-glow)", "0 0 18px -6px var(--c-glow)"] }} transition={{ duration: 2.4, repeat: Infinity, delay: n * 0.3 }}>
-                  {ENGINES[k].index}
-                </motion.span>
-                <p className="mt-3 text-[17px] font-semibold text-white">{ENGINES[k].name}</p>
-                <p className="mt-1 text-[12px] text-white/50">{ENGINES[k].role}</p>
-              </motion.div>
-            ))}
+            {ENGINE_ORDER.map((k, n) => {
+              const art = ENGINE_ART[k];
+              return (
+                <motion.div key={k} style={paletteVars(PALETTES[k])} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: n * 0.08 }} title={`${art.title}, ${art.artist} (${art.year}). Public domain.`} className="group relative isolate overflow-hidden rounded-2xl border border-os-line bg-os-bg text-center shadow-[0_20px_50px_-30px_rgb(0_0_0/0.9)]">
+                  {/* Artwork, sunk under an obsidian glass overlay so the ring and text stay sharp. */}
+                  <Image src={art.src} alt="" fill sizes="(min-width: 640px) 25vw, 50vw" className="-z-20 object-cover saturate-[0.85] transition-transform duration-[1.6s] ease-out group-hover:scale-105" />
+                  {/* Obsidian glass: the full 80% blurred overlay under the text, easing off toward the top so the artwork reads. */}
+                  <span aria-hidden className="absolute inset-0 -z-10 bg-[#07080c]/45" />
+                  <span aria-hidden className="absolute inset-0 -z-10 bg-[#07080c]/80 backdrop-blur-md [mask-image:linear-gradient(to_bottom,transparent_0%,rgb(0_0_0/0.55)_30%,black_58%)]" />
+                  <span aria-hidden className="absolute inset-x-0 top-0 -z-10 h-px bg-linear-to-r from-transparent via-c-1/60 to-transparent" />
+                  <div className="p-5">
+                    <motion.span className="mx-auto flex size-14 items-center justify-center rounded-full border-2 border-c-1 bg-[#07080c]/40 font-mono text-[16px] text-c-2 shadow-[0_0_30px_-6px_var(--c-glow)]" animate={{ boxShadow: ["0 0 18px -6px var(--c-glow)", "0 0 36px -2px var(--c-glow)", "0 0 18px -6px var(--c-glow)"] }} transition={{ duration: 2.4, repeat: Infinity, delay: n * 0.3 }}>
+                      {ENGINES[k].index}
+                    </motion.span>
+                    <p className="mt-3 text-[17px] font-semibold text-white drop-shadow-[0_1px_8px_rgb(0_0_0/0.8)]">{ENGINES[k].name}</p>
+                    <p className="mt-1 text-[12px] text-white/60">{ENGINES[k].role}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
+          <p className="mt-5 text-center text-[11px] text-white/30">Card artwork: public-domain works by Panini, Piranesi, Leonardo, Cellarius, Raphael, Pige, Constable and a 14th-century Genoese chartmaker, via Wikimedia Commons.</p>
         </div>
       ),
     },

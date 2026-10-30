@@ -15,7 +15,6 @@ import { RunConsoleDrawer, type ConsoleStatus } from "@/components/desk/run-cons
 import { activeEnv, activeMember, audit, completeTask, decideApproval, updateSettings, usageScore, useDeskSettings, verifyAudit, verifyLedger, type DeskSettings, type RunRecord } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
 import { useLicense } from "@/lib/license-context";
-import { TIER_INFO } from "@/lib/license/tiers";
 import { OS_NAV } from "./nav";
 import { TIER_PILL } from "./os-shell";
 import { useOsTelemetry } from "./telemetry-context";
@@ -93,69 +92,80 @@ export function OsHome() {
 
 function ContextHeader({ live }: { live: ConsoleStatus }) {
   const { settings } = useDeskSettings();
-  const { tier, engines, info } = useLicense();
+  const { tier, engines } = useLicense();
   const { manifest, latency, uptime, sla } = useOsTelemetry();
   const mayEdit = can(activeMember(settings).role, "settings");
   const [editing, setEditing] = useState(false);
   const p = settings.project;
-  const client = p.client || settings.branding.orgName || info?.org || "Your organization";
+  const env = activeEnv(settings);
   const pending = settings.approvals.filter((a) => a.status === "pending").length;
   const running = live.status === "running" ? 1 : 0;
   const slaTone = sla === "nominal" ? "text-os-emerald" : sla === "degraded" ? "text-amber-300" : "text-red-400";
   const set = (patch: Partial<typeof p>) => updateSettings((s) => ({ project: { ...s.project, ...patch } }));
+  const engaged = [p.client, p.name].filter(Boolean).join(" · ");
+  const live_ = manifest?.mode === "live";
 
   return (
-    <header className="os-panel grid gap-4 rounded-2xl p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-center">
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-os-line bg-black/40">
-          {settings.branding.logo ? (
-            // A data URL from the logo uploader.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={settings.branding.logo} alt="" className="size-full object-contain" />
-          ) : (
-            <span className="text-[22px] font-semibold text-os-cyan">{client.slice(0, 1).toUpperCase()}</span>
-          )}
+    <header className="relative isolate grid gap-5 overflow-hidden rounded-2xl border border-os-cyan/20 bg-linear-to-br from-[#0d0f17] via-[#0a0c12] to-[#07080c] p-5 shadow-[0_0_0_1px_rgb(52_245_181/0.06),0_0_70px_-34px_rgb(0_240_255/0.7),inset_0_1px_0_rgb(255_255_255/0.04)] sm:p-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-center">
+      {/* Accent light: a cyan-to-emerald hairline and a soft glow from the top corner. */}
+      <span aria-hidden className="absolute inset-x-0 top-0 -z-10 h-px bg-linear-to-r from-transparent via-os-cyan/70 to-os-emerald/60" />
+      <span aria-hidden className="absolute -start-24 -top-28 -z-10 size-72 rounded-full bg-os-cyan/[0.07] blur-3xl" />
+      <span aria-hidden className="absolute -bottom-32 end-10 -z-10 size-64 rounded-full bg-os-emerald/[0.05] blur-3xl" />
+
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="flex items-center gap-1.5 rounded-full border border-os-emerald/35 bg-os-emerald/[0.07] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-os-emerald">
+            <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> {env.name} {"//"} Active
+          </span>
+          <span className={cn("rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]", live_ ? "border-os-cyan/35 text-os-cyan" : "border-os-gold/35 text-os-gold")}>{manifest ? (live_ ? "Live runtime" : "Simulation runtime") : "Runtime …"}</span>
+          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">{TIER_PILL[tier]} license</span>
+          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">{env.region}</span>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="os-label text-os-cyan/80">
-            Client · {activeEnv(settings).name} · {TIER_PILL[tier]}
-          </p>
-          {editing ? (
-            <form
-              className="mt-1.5 grid gap-1.5 sm:grid-cols-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setEditing(false);
-                audit("settings", `Updated the active engagement: ${p.client || client} · ${p.name || "untitled project"}`);
-              }}
-            >
-              <input value={p.client} onChange={(e) => set({ client: e.target.value.slice(0, 60) })} placeholder={client} aria-label="Client" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-              <input value={p.name} onChange={(e) => set({ name: e.target.value.slice(0, 60) })} placeholder="Project, e.g. Q4 pipeline acceleration" aria-label="Project" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-              <div className="flex gap-1.5">
-                <input value={p.scope} onChange={(e) => set({ scope: e.target.value.slice(0, 120) })} placeholder="Scope, e.g. NA mid-market" aria-label="Scope" className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-                <button type="submit" aria-label="Save engagement" className="rounded-lg border border-os-cyan/40 px-2.5 text-os-cyan hover:bg-os-cyan/10">
-                  <Check className="size-4" />
-                </button>
-              </div>
-            </form>
-          ) : (
-            <>
-              <h1 className="mt-1 flex items-center gap-2 truncate text-[24px] font-semibold tracking-[-0.02em] text-white sm:text-[28px]">
-                {client}
-                {mayEdit && (
-                  <button type="button" onClick={() => setEditing(true)} aria-label="Edit engagement" className="rounded-md p-1 text-white/35 transition-colors hover:bg-white/5 hover:text-os-cyan">
-                    <Pencil className="size-3.5" />
-                  </button>
-                )}
-              </h1>
-              <p className="truncate text-[13px] text-white/55">
-                {p.name || "No active project set"}
+        <h1 className="mt-3 font-mono text-[22px] font-semibold uppercase leading-tight tracking-[0.14em] sm:text-[30px]">
+          <span className="bg-linear-to-b from-white via-[#d6dde8] to-[#7f8a9b] bg-clip-text text-transparent drop-shadow-[0_1px_0_rgb(255_255_255/0.08)]">Bloom AI</span>
+          <span className="mx-2 text-os-cyan drop-shadow-[0_0_12px_rgb(0_240_255/0.7)] sm:mx-3">{"//"}</span>
+          <span className="bg-linear-to-b from-white via-[#d6dde8] to-[#7f8a9b] bg-clip-text text-transparent">Operating Desk</span>
+        </h1>
+        {editing ? (
+          <form
+            className="mt-3 grid gap-1.5 sm:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setEditing(false);
+              audit("settings", `Updated the active engagement: ${p.client || "no client"} · ${p.name || "untitled project"}`);
+            }}
+          >
+            <input value={p.client} onChange={(e) => set({ client: e.target.value.slice(0, 60) })} placeholder="Client, e.g. Northwind Logistics" aria-label="Client" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+            <input value={p.name} onChange={(e) => set({ name: e.target.value.slice(0, 60) })} placeholder="Project, e.g. Q4 pipeline acceleration" aria-label="Project" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+            <div className="flex gap-1.5">
+              <input value={p.scope} onChange={(e) => set({ scope: e.target.value.slice(0, 120) })} placeholder="Scope, e.g. NA mid-market" aria-label="Scope" className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+              <button type="submit" aria-label="Save engagement" className="rounded-lg border border-os-cyan/40 px-2.5 text-os-cyan hover:bg-os-cyan/10">
+                <Check className="size-4" />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/55">
+            {settings.branding.logo && (
+              // A data URL from the logo uploader.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.branding.logo} alt="" className="h-5 w-auto rounded-sm object-contain" />
+            )}
+            {engaged ? (
+              <span className="min-w-0 truncate">
+                <span className="text-white/35">Engagement</span> <span className="text-white/80">{engaged}</span>
                 {p.scope && <span className="text-white/35"> · {p.scope}</span>}
-                <span className="text-white/35"> · {engines.length} of 8 engines licensed ({TIER_INFO[tier].label})</span>
-              </p>
-            </>
-          )}
-        </div>
+              </span>
+            ) : (
+              <span className="text-white/40">{engines.length} of 8 engines licensed · autonomous revenue operations</span>
+            )}
+            {mayEdit && (
+              <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] text-white/40 transition-colors hover:bg-white/5 hover:text-os-cyan">
+                <Pencil className="size-3" /> {engaged ? "Edit" : "Set engagement"}
+              </button>
+            )}
+          </p>
+        )}
       </div>
       <dl className="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-3">
         {(
@@ -172,7 +182,7 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
           .map((t) => ({ t, w: t[3] + (t[4] ? 20 : 0) + usageScore(settings, `page:${t[5]}`) }))
           .sort((a, b) => b.w - a.w)
           .map(({ t: [k, v, tone, , alert] }) => (
-            <div key={k} className={cn("rounded-lg border bg-black/25 px-2.5 py-1.5 transition-colors", alert ? "border-amber-300/40 shadow-[0_0_18px_-10px_rgb(252_211_77/0.8)]" : "border-os-line")}>
+            <div key={k} className={cn("rounded-lg border bg-[#07080c]/60 px-2.5 py-1.5 backdrop-blur-sm transition-colors", alert ? "border-amber-300/40 shadow-[0_0_18px_-10px_rgb(252_211_77/0.8)]" : "border-white/[0.07]")}>
               <dt className="truncate font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">{k}</dt>
               <dd className={cn("font-mono text-[15px] tabular-nums", tone)}>{v}</dd>
             </div>

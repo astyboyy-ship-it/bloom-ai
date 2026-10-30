@@ -4,7 +4,7 @@ import type { EngineKey } from "@/components/bloom/command/engines";
 /** The Operating Desk's own chrome. Engine names, roles, badges and metrics come from command/locale.ts. */
 
 const en = {
-  title: "Sovereign Operating Desk",
+  title: "BLOOM AI // OPERATING DESK",
   engines: "Engines",
   command: "Command",
   placeholder: (name: string) => `Command ${name}. Describe the outcome, the numbers you know, and any limits.`,
@@ -48,7 +48,7 @@ const en = {
 type DeskCopy = typeof en;
 
 const es: DeskCopy = {
-  title: "Mesa de Operaciones Soberana",
+  title: "BLOOM AI // OPERATING DESK",
   engines: "Motores",
   command: "Orden",
   placeholder: (name) => `Ordena a ${name}. Describe el resultado, las cifras que conoces y los límites.`,
@@ -90,7 +90,7 @@ const es: DeskCopy = {
 };
 
 const he: DeskCopy = {
-  title: "שולחן הפיקוד הריבוני",
+  title: "BLOOM AI // OPERATING DESK",
   engines: "מנועים",
   command: "פקודה",
   placeholder: (name) => `פקדו על ${name}. תארו את התוצאה, המספרים שידועים לכם והמגבלות.`,
