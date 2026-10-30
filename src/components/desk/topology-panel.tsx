@@ -111,7 +111,8 @@ export function TopologyPanel({ c, shift, clock, onShift, statuses, running, sta
           [c.stats.duration, stats.ms === null ? "—" : fmtMs(stats.ms)],
           [c.stats.agents, String(stats.agents)],
           [c.stats.tools, String(stats.tools)],
-          [c.stats.tokens, stats.mode === "live" ? `${fmtInt(stats.usage.input)} / ${fmtInt(stats.usage.output)}` : "—"],
+          // Simulation estimates tokens from text length, so budgets behave as they would live.
+          [stats.mode === "simulation" ? `${c.stats.tokens} (est.)` : c.stats.tokens, stats.usage.input || stats.usage.output ? `${fmtInt(stats.usage.input)} / ${fmtInt(stats.usage.output)}` : "—"],
         ].map(([k, v]) => (
           <div key={k} className="rounded-xl border border-white/[0.07] bg-black/25 px-3 py-2">
             <dt className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">{k}</dt>

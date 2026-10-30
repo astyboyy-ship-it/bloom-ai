@@ -3,6 +3,8 @@ import { isEngineKey } from "@/components/bloom/command/engines";
 import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
 import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
+import { verifyLicense } from "@/lib/license/keys";
+import { TIER_ENGINES, TIER_INFO, engineAllowed, upgradeTierFor, type Tier } from "@/lib/license/tiers";
 import { runCommand } from "@/lib/orchestrator";
 import { ownKeys } from "../keys";
 
@@ -24,6 +26,14 @@ export const OPTIONS = preflight;
 export async function POST(req: Request, { params }: { params: Promise<{ engine: string }> }) {
   const { engine } = await params;
   if (!isEngineKey(engine)) return fail(404, `Unknown engine "${engine}".`);
+
+  // The license is verified here on every run; the desk's own gating is a convenience, not the control.
+  const license = verifyLicense(req.headers.get("x-bloom-license"));
+  const tier: Tier = license.ok ? license.license.tier : "evaluation";
+  if (!engineAllowed(tier, engine)) {
+    const need = upgradeTierFor(engine);
+    return fail(403, `${engine} isn't included in ${TIER_INFO[tier].label}. Upgrade to ${TIER_INFO[need].label} to run it.`, { tier, requires: need });
+  }
   const keys = ownKeys(req);
   // Runs on the operator's own key cost the server nothing, so they get more room.
   const own = Boolean(keys.anthropic || keys.openrouter);
@@ -54,6 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
           lang: body.data.lang,
           keys,
           calibrations: body.data.calibrations,
+          allowed: TIER_ENGINES[tier],
         });
       } finally {
         clearInterval(keepAlive);

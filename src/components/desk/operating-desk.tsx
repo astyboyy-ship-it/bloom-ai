@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, CornerDownLeft, Loader2, Square, Zap } from "lucide-react";
+import { ArrowUpRight, CornerDownLeft, Layers3, Loader2, Lock, Sparkles, Square, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { paintings } from "@/components/bloom/art/paintings";
 import { ENGINES, isEngineKey, type EngineKey } from "@/components/bloom/command/engines";
@@ -12,15 +12,21 @@ import { localizeEngine, useCommandCopy } from "@/components/bloom/command/local
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { clockShift, type ShiftMode } from "@/components/bloom/shift-plan";
 import { readCalibration } from "@/lib/engines/calibration";
+import { useLicense } from "@/lib/license-context";
+import { BriefPanel } from "./brief-panel";
 import { CalibrationHub } from "./calibration-hub";
 import { DESK_COPY, PRESETS } from "./copy";
+import { EngineDrawer } from "./engine-drawer";
+import { EngineLock } from "./engine-lock";
 import { EngineRail } from "./engine-rail";
 import { engineStatuses, STATUS_DOT } from "./engine-status";
 import { ExecutionLog } from "./execution-log";
 import { HUB_COPY, HUBS, type Hub } from "./hub-copy";
 import { NetworkView } from "./network-view";
+import { can } from "./rbac";
 import { ResultCard } from "./result-card";
-import { keyHeaders, useDeskSettings } from "./settings";
+import { RunStepper } from "./run-stepper";
+import { activeMember, audit, keyHeaders, requestHeaders, updateSettings, useDeskSettings } from "./settings";
 import { SettingsHub } from "./settings-hub";
 import { TopBar } from "./top-bar";
 import { TopologyPanel } from "./topology-panel";
@@ -29,27 +35,36 @@ import { useTelemetry } from "./use-telemetry";
 
 /**
  * The unified desktop workspace (/desk), in three hubs:
- *   01 Architectures: engine rail with metric feeds; command, network view, execution log and result; shift topology and run telemetry.
- *   02 App Settings: provider keys, shift defaults, local persistence.
- *   03 Engine Calibration: per-engine prompts, overrides, schema constraints and tools.
- * The run lives here, above the hubs, so switching hubs never interrupts one.
+ *   01 Architectures: engine rail with metric feeds; command, run stages, network view, execution log and the
+ *      executive output; shift topology and run telemetry; a deep drawer per unlocked architecture.
+ *   02 App Settings: license, gateway credentials, branding and team, shifts, persistence, diagnostics and audit.
+ *   03 Engine Calibration: per-engine model and runtime limits, prompts and rules, memory, schema and tools.
+ * The run lives here, above the hubs, so switching hubs never interrupts one. What the license and the acting
+ * member's role allow is applied throughout; the run API enforces the license again on the server.
  */
 export function OperatingDesk() {
   const { lang, dir, c: cc } = useCommandCopy();
   const c = DESK_COPY[lang];
   const h = HUB_COPY[lang];
   const { settings } = useDeskSettings();
-  const headers = useMemo(() => keyHeaders(settings.keys), [settings.keys]);
+  const { isUnlocked } = useLicense();
+  const member = activeMember(settings);
+  const mayRun = can(member.role, "run");
+  const runtimeHeaders = useMemo(() => keyHeaders(settings.keys), [settings.keys]);
   const [hub, setHub] = useState<Hub>("architectures");
   const [selected, setSelected] = useState<EngineKey>("sovereign");
+  const [drawer, setDrawer] = useState<EngineKey | null>(null);
   const [command, setCommand] = useState("");
   const [shift, setShift] = useState<ShiftMode>("prime");
   const [clock, setClock] = useState<ShiftMode | null>(null);
   const { state, run, abort } = useRun(c.networkError, c.aborted);
-  const { manifest, latency, uptime, sla } = useTelemetry(headers);
+  const telemetry = useTelemetry(runtimeHeaders);
+  const { manifest, latency, uptime, sla } = telemetry;
   const statuses = useMemo(() => engineStatuses(state.agents), [state.agents]);
   const running = state.status === "running";
   const elapsed = useElapsed(running, state.startedAt);
+  const unlocked = isUnlocked(selected);
+  const commandRef = useRef<HTMLTextAreaElement>(null);
 
   // Engine and hub from the URL, and the shift on the clock for this visitor, all resolved after mount.
   useEffect(() => {
@@ -67,6 +82,24 @@ export function OperatingDesk() {
     if (restShift && !running) setShift(restShift);
   }, [restShift, running]);
 
+  // When a run finishes: audit it, and keep its summary as the engine's memory for the next run.
+  const settled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state.runId || settled.current === state.runId || (state.status !== "done" && state.status !== "failed") || !state.engine) return;
+    settled.current = state.runId;
+    const name = ENGINES[state.engine].name;
+    if (state.status === "failed") return audit("run", `${name} run ${state.runId} failed`);
+    audit("run", `${name} run ${state.runId} completed in ${((state.ms ?? 0) / 1000).toFixed(1)}s`);
+    const summary = (state.output as { summary?: string } | null)?.summary;
+    const engine = state.engine;
+    if (summary)
+      updateSettings((s) => {
+        const prev = s.calibrations[engine] ?? {};
+        const memory = [...(prev.memory ?? []), summary.slice(0, 800)].slice(-10);
+        return { calibrations: { ...s.calibrations, [engine]: { ...prev, memory } } };
+      });
+  }, [state.runId, state.status, state.engine, state.ms, state.output]);
+
   const syncUrl = (key: string, value: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set(key, value);
@@ -80,15 +113,21 @@ export function OperatingDesk() {
     setHub(next);
     syncUrl("hub", next);
   };
+  /** Network nodes and the header button open an unlocked architecture's deep drawer. */
+  const inspect = (k: EngineKey) => {
+    select(k);
+    if (isUnlocked(k)) setDrawer(k);
+  };
 
   const execute = () => {
     const text = command.trim();
-    if (text.length < 3 || running) return;
+    if (text.length < 3 || running || !mayRun || !unlocked) return;
     // A command is an event: the grid surges for its duration, then returns to the shift at rest.
     if (settings.surgeOnRun) setShift("surge");
     // Calibrations go out as the runtime will read them, so stale or hand-edited storage can't fail the request.
     const calibrations = Object.fromEntries(Object.entries(settings.calibrations).map(([k, v]) => [k, readCalibration(v)]));
-    run(selected, text, lang, { headers, calibrations });
+    audit("run", `Executed ${ENGINES[selected].name}: "${text.slice(0, 90)}${text.length > 90 ? "…" : ""}"`);
+    run(selected, text, lang, { headers: requestHeaders(settings), calibrations });
   };
 
   const engine = localizeEngine(ENGINES[selected], lang);
@@ -116,9 +155,19 @@ export function OperatingDesk() {
         onHub={openHub}
       />
 
+      {!settings.onboarded && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-[#f0d59a]/20 bg-[#f0d59a]/[0.06] px-4 py-2 text-[12.5px] text-[#f3e2b8]">
+          <Sparkles className="size-4 shrink-0" />
+          Finish setting up this workspace: license, provider keys, branding and a diagnostics check.
+          <Link href="/setup" className="ms-auto rounded-full border border-[#f0d59a]/50 px-3 py-1 text-[12px] hover:bg-[#f0d59a]/10">
+            Start guided setup
+          </Link>
+        </div>
+      )}
+
       {hub === "settings" && (
         <div className="flex-1 overflow-y-auto">
-          <SettingsHub c={h} />
+          <SettingsHub c={h} telemetry={{ manifest, latency, sla }} />
         </div>
       )}
       {hub === "calibration" && <CalibrationHub c={h} lang={lang} selected={selected} onSelect={select} />}
@@ -146,67 +195,90 @@ export function OperatingDesk() {
                 <h1 className="mt-1 font-logo text-[38px] font-medium leading-none tracking-[-0.04em] sm:text-[48px]">{engine.name}</h1>
                 <p className="mt-1.5 text-[14px] text-white/60">{engine.role}</p>
               </div>
-              <Link
-                href={`/command/${selected}`}
-                className="flex items-center gap-1 rounded-full border border-white/12 px-3 py-1.5 text-[12px] text-white/65 transition-colors hover:border-c-edge hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
-              >
-                {c.guided} <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />
-              </Link>
-            </div>
-
-            {/* Command input */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                execute();
-              }}
-              className="glass rounded-2xl p-3 sm:p-4"
-            >
-              <label htmlFor="desk-command" className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/45">
-                {c.command}
-              </label>
-              <textarea
-                id="desk-command"
-                value={command}
-                onChange={(e) => setCommand(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    execute();
-                  }
-                }}
-                rows={3}
-                maxLength={4000}
-                placeholder={c.placeholder(engine.name)}
-                className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/35 p-3 text-[14px] leading-relaxed text-white placeholder:text-white/30 focus:border-c-1/60 focus:outline-none"
-              />
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCommand(PRESETS[lang][selected])}
-                  className="flex min-w-0 items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[11.5px] text-white/55 transition-colors hover:border-c-edge hover:text-white/90"
-                >
-                  <Zap className="size-3 shrink-0 text-c-2" />
-                  <span className="truncate">{c.presets}</span>
-                </button>
-                <span className="ms-auto hidden font-mono text-[10px] text-white/30 sm:inline">{c.shortcut}</span>
-                {running ? (
-                  <button type="button" onClick={abort} className="flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-[13px] font-medium text-red-100 transition-colors hover:bg-red-500/20">
-                    <Square className="size-3.5" /> {c.abort}
-                  </button>
-                ) : (
+              <div className="flex flex-wrap gap-2">
+                {unlocked && (
                   <button
-                    type="submit"
-                    disabled={command.trim().length < 3}
-                    className="flex items-center gap-2 rounded-full bg-linear-to-r from-c-1 to-c-2 px-5 py-2 text-[13px] font-semibold text-black shadow-[0_0_30px_-8px_var(--c-glow)] transition-opacity disabled:opacity-35"
+                    type="button"
+                    onClick={() => setDrawer(selected)}
+                    className="flex items-center gap-1.5 rounded-full border border-c-edge/60 bg-c-deep/50 px-3 py-1.5 text-[12px] text-white/80 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
                   >
-                    {c.execute} <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
+                    <Layers3 className="size-3.5" /> Open architecture
                   </button>
                 )}
+                <Link
+                  href="/setup"
+                  className="flex items-center gap-1 rounded-full border border-white/12 px-3 py-1.5 text-[12px] text-white/65 transition-colors hover:border-c-edge hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
+                >
+                  {c.guided} <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />
+                </Link>
               </div>
-            </form>
+            </div>
 
-            <NetworkView label={h.network} hint={h.networkHint} engines={manifest?.engines} agents={state.agents} statuses={statuses} selected={selected} onSelect={select} />
+            {/* Command input: behind the tier lock when the license doesn't cover this engine. */}
+            <EngineLock engine={selected} lang={lang} className="rounded-2xl">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  execute();
+                }}
+                className="glass rounded-2xl p-3 sm:p-4"
+              >
+                <label htmlFor="desk-command" className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.24em] text-white/45">
+                  {c.command}
+                  {!mayRun && (
+                    <span className="flex items-center gap-1 normal-case tracking-normal text-white/50">
+                      <Lock className="size-3" /> {member.name} is a Viewer: running engines needs Operator or above.
+                    </span>
+                  )}
+                </label>
+                <textarea
+                  id="desk-command"
+                  ref={commandRef}
+                  value={command}
+                  onChange={(e) => setCommand(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      execute();
+                    }
+                  }}
+                  rows={3}
+                  maxLength={4000}
+                  disabled={!mayRun}
+                  placeholder={c.placeholder(engine.name)}
+                  className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/35 p-3 text-[14px] leading-relaxed text-white placeholder:text-white/30 focus:border-c-1/60 focus:outline-none disabled:opacity-50"
+                />
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!mayRun}
+                    onClick={() => setCommand(PRESETS[lang][selected])}
+                    className="flex min-w-0 items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[11.5px] text-white/55 transition-colors hover:border-c-edge hover:text-white/90 disabled:opacity-40"
+                  >
+                    <Zap className="size-3 shrink-0 text-c-2" />
+                    <span className="truncate">{c.presets}</span>
+                  </button>
+                  <span className="ms-auto hidden font-mono text-[10px] text-white/30 sm:inline">{c.shortcut}</span>
+                  {running ? (
+                    <button type="button" onClick={abort} className="flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-[13px] font-medium text-red-100 transition-colors hover:bg-red-500/20">
+                      <Square className="size-3.5" /> {c.abort}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={command.trim().length < 3 || !mayRun}
+                      className="flex items-center gap-2 rounded-full bg-linear-to-r from-c-1 to-c-2 px-5 py-2 text-[13px] font-semibold text-black shadow-[0_0_30px_-8px_var(--c-glow)] transition-opacity disabled:opacity-35"
+                    >
+                      {c.execute} <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
+                    </button>
+                  )}
+                </div>
+              </form>
+            </EngineLock>
+
+            {state.status !== "idle" && state.engine && <RunStepper phases={state.phases} now={state.startedAt + elapsed} />}
+
+            <NetworkView unlocked={isUnlocked} label={h.network} hint={h.networkHint} engines={manifest?.engines} agents={state.agents} statuses={statuses} selected={selected} onSelect={inspect} />
 
             {/* Active topology: every agent in this run, nested by who delegated to whom. */}
             <div className="flex flex-wrap items-center gap-2">
@@ -215,11 +287,7 @@ export function OperatingDesk() {
                 <span className="text-[12px] text-white/35">{c.topologyIdle}</span>
               ) : (
                 agentList.map((a) => (
-                  <span
-                    key={a.id}
-                    style={paletteVars(PALETTES[a.engine])}
-                    className="flex items-center gap-1.5 rounded-full border border-c-edge/70 bg-c-deep/70 px-2 py-0.5 font-mono text-[10.5px] text-c-2"
-                  >
+                  <span key={a.id} style={paletteVars(PALETTES[a.engine])} className="flex items-center gap-1.5 rounded-full border border-c-edge/70 bg-c-deep/70 px-2 py-0.5 font-mono text-[10.5px] text-c-2">
                     {a.depth > 0 && <span className="text-white/30">{"↳".repeat(a.depth)}</span>}
                     <span className={cn("size-1.5 rounded-full", STATUS_DOT[a.status])} />
                     {ENGINES[a.engine].name}
@@ -245,7 +313,7 @@ export function OperatingDesk() {
               <ExecutionLog c={c} log={state.log} agents={state.agents} />
             </section>
 
-            {state.status === "done" && <ResultCard c={c} output={state.output} />}
+            {state.status === "done" && state.engine && (state.brief ? <BriefPanel key={state.runId} engine={state.engine} runId={state.runId} output={state.output} brief={state.brief} /> : <ResultCard c={c} output={state.output} />)}
           </div>
         </main>
 
@@ -259,6 +327,23 @@ export function OperatingDesk() {
           stats={{ ms: running ? elapsed : state.ms, agents: agentList.length, tools: state.toolCalls, usage: state.usage, mode }}
         />
       </div>
+
+      <EngineDrawer
+        engine={drawer}
+        lang={lang}
+        onClose={() => setDrawer(null)}
+        onCommand={(k) => {
+          setDrawer(null);
+          select(k);
+          openHub("architectures");
+          setTimeout(() => commandRef.current?.focus(), 50);
+        }}
+        onCalibrate={(k) => {
+          setDrawer(null);
+          select(k);
+          openHub("calibration");
+        }}
+      />
     </div>
   );
 }

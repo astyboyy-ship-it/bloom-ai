@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Local development (no VERCEL_ENV) is unaffected.
  * The engine demo APIs are public by design (they back /demo/* and the embed scripts).
  */
-const PUBLIC_DEMO_APIS = ["/api/intent-pulse", "/api/aware-marketing", "/api/aware-infrastructure", "/api/shadow-workforce", "/api/foundry", "/api/chat", "/api/command", "/api/desktop"];
+const PUBLIC_DEMO_APIS = ["/api/intent-pulse", "/api/aware-marketing", "/api/aware-infrastructure", "/api/shadow-workforce", "/api/foundry", "/api/chat", "/api/command", "/api/desktop", "/api/license", "/api/settings"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

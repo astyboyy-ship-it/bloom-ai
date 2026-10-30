@@ -8,6 +8,7 @@ import { PaintingCanvas, PaintingCaption } from "@/components/bloom/art/painting
 import { Particles } from "@/components/bloom/art/particles";
 import { RoseFrame } from "@/components/bloom/art/rose-frame";
 import { BloomWordmark } from "@/components/bloom/logo";
+import { useDeskSettings } from "@/components/desk/settings";
 import { markDesktopApp } from "./desktop-env";
 
 /** The entrance holds for three seconds, then zooms through into the workspace. */
@@ -36,6 +37,9 @@ export function CinematicIntro() {
   const router = useRouter();
   const reduce = useReducedMotion() ?? false;
   const [leaving, setLeaving] = useState(false);
+  // A workspace that hasn't been set up yet goes to guided setup; an onboarded one straight to the desk.
+  const { settings } = useDeskSettings();
+  const destination = settings.onboarded ? "/desk" : "/setup";
   const done = useRef(false);
 
   const leave = useCallback(() => setLeaving(true), []);
@@ -44,6 +48,7 @@ export function CinematicIntro() {
     // The desktop shell opens /launch?app=desktop; remember that for the session so the site hides its download CTAs.
     if (new URLSearchParams(window.location.search).get("app") === "desktop") markDesktopApp();
     router.prefetch("/desk");
+    router.prefetch("/setup");
     const t = setTimeout(leave, HOLD_MS);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") leave();
@@ -62,10 +67,10 @@ export function CinematicIntro() {
     const t = setTimeout(() => {
       if (done.current) return;
       done.current = true;
-      router.replace("/desk");
+      router.replace(destination);
     }, (reduce ? 0.4 : EXIT_S) * 1000);
     return () => clearTimeout(t);
-  }, [leaving, reduce, router]);
+  }, [leaving, reduce, router, destination]);
 
   return (
     <motion.div

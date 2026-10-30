@@ -119,18 +119,22 @@ routing lists every engine you delegated to and why. governance lists every eval
     await kit.call("allocate_capacity", { mode, budgetUsd: budget, priorities: picks.map(([k]) => k) });
 
     const routing = [];
+    // Only hand-offs that actually ran are reported as routed; the rest are named as outside the license.
+    const unrouted: EngineKey[] = [];
     for (const [engine, , objective] of picks) {
-      await kit.delegate(engine, `${objective}. Operator command: ${command}`);
-      routing.push({ engine, objective, why: `The command names work ${engine} owns.` });
+      const result = await kit.delegate(engine, `${objective}. Operator command: ${command}`);
+      if (result === null) unrouted.push(engine);
+      else routing.push({ engine, objective, why: `The command names work ${engine} owns.` });
     }
 
     const held = (governance as { decision: string }[]).some((g) => g.decision !== "approve");
     return {
-      summary: `Routed ${routing.length} objective${routing.length === 1 ? "" : "s"} across ${routing.map((r) => r.engine).join(", ")} under ${mode} shift posture.${held ? " Spend is held for human approval under the current authorization level." : ""}`,
+      summary: `${routing.length ? `Routed ${routing.length} objective${routing.length === 1 ? "" : "s"} to ${routing.map((r) => r.engine).join(", ")}` : "Routed no objectives"} under ${mode} shift posture.${unrouted.length ? ` ${unrouted.join(", ")} would also apply but ${unrouted.length === 1 ? "isn't" : "aren't"} in this license.` : ""}${held ? " Spend is held for human approval under the current authorization level." : ""}`,
       confidence: 0.55,
       actions: [
         ...(held ? [{ title: "Approve held spend", owner: "human", priority: "p0" as const, detail: "Spend exceeds the auto-approval ceiling for this authorization level." }] : []),
         ...routing.map((r) => ({ title: r.objective, owner: r.engine, priority: "p1" as const, detail: r.why })),
+        ...(unrouted.length ? [{ title: "Extend the license to the remaining engines", owner: "human", priority: "p2" as const, detail: `${unrouted.join(", ")} match this command but need a higher license tier.` }] : []),
       ].slice(0, 8),
       routing,
       governance: governance as { action: string; decision: "approve" | "hold" | "block"; rule: string }[],

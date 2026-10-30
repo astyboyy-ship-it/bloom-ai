@@ -1,10 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Settings2 } from "lucide-react";
+import { ArrowUpRight, CornerDownLeft, KeyRound, Settings2, Terminal } from "lucide-react";
+import { EngineLock } from "@/components/desk/engine-lock";
 import { fmtUsdCompact } from "@/components/desk/format";
 import { useMetricFeed } from "@/components/desk/metrics";
+import { can } from "@/components/desk/rbac";
+import { RunConsoleDrawer } from "@/components/desk/run-console-drawer";
+import { activeMember, useDeskSettings } from "@/components/desk/settings";
+import { PRESETS } from "@/components/desk/copy";
+import { useLicense } from "@/lib/license-context";
+import { TIER_INFO } from "@/lib/license/tiers";
 import type { Lang } from "../i18n";
 import { LanguageSwitcher } from "../language-switcher";
 import { paintings } from "../art/paintings";
@@ -14,40 +22,7 @@ import { ENGINE_ORDER, ENGINES, type EngineKey } from "./engines";
 import { localizeEngine, useCommandCopy } from "./locale";
 import { PALETTES, paletteVars } from "./theme";
 import { EngineBadge } from "./tutorial";
-
-/** What each engine does for an enterprise, in one sentence per language. */
-const UTILITY: Record<Lang, Record<EngineKey, string>> = {
-  en: {
-    sovereign: "Governs budgets, approvals and access for every engine, and routes each command to the engines that own it.",
-    apex: "Moves live deals to signature: scores deal velocity, sets the negotiation envelope and writes tiered proposals.",
-    coreops: "Keeps CRM, billing and project tools in sync and strips manual steps out of back-office workflows.",
-    intentpulse: "Finds buyers describing your exact problem in public, scores their intent and routes the hottest in seconds.",
-    vanguard: "Opens outbound pipeline: ranks in-market accounts by live triggers and runs multi-channel sequences.",
-    cortex: "Finds where deals stall and arms closers with objection answers, battlecards and risk reads.",
-    shield: "Spots accounts about to churn weeks early, runs the rescue play and flags the healthiest for expansion.",
-    aether: "Finds what customers will really pay, polices discounts and prices the expansion that grows contract value.",
-  },
-  es: {
-    sovereign: "Gobierna presupuestos, aprobaciones y accesos de todos los motores, y dirige cada orden al motor que la posee.",
-    apex: "Lleva los acuerdos a la firma: mide su velocidad, fija el margen de negociación y redacta propuestas por niveles.",
-    coreops: "Mantiene sincronizados CRM, facturación y herramientas de proyecto, y elimina pasos manuales del back-office.",
-    intentpulse: "Encuentra compradores que describen tu problema en público, puntúa su intención y deriva a los más calientes en segundos.",
-    vanguard: "Abre pipeline outbound: prioriza cuentas en mercado por disparadores reales y ejecuta secuencias multicanal.",
-    cortex: "Detecta dónde se estancan los acuerdos y arma a los cerradores con respuestas, battlecards y lecturas de riesgo.",
-    shield: "Detecta con semanas de antelación las cuentas a punto de irse, ejecuta el rescate y señala las más sanas para crecer.",
-    aether: "Descubre cuánto pagarían de verdad tus clientes, controla los descuentos y pone precio a la expansión.",
-  },
-  he: {
-    sovereign: "שולט בתקציבים, באישורים ובהרשאות של כל המנועים, ומנתב כל פקודה למנוע שאחראי עליה.",
-    apex: "מוביל עסקאות חיות לחתימה: מודד את קצב העסקה, קובע את מעטפת המשא ומתן וכותב הצעות בשלוש רמות.",
-    coreops: "שומר על סנכרון בין ה-CRM, החיוב וכלי ניהול הפרויקטים, ומסיר צעדים ידניים מתהליכי הבק-אופיס.",
-    intentpulse: "מוצא קונים שמתארים בפומבי בדיוק את הבעיה שאתם פותרים, מדרג את כוונת הרכישה ומעביר את החמים ביותר תוך שניות.",
-    vanguard: "פותח פייפליין יוצא: מדרג חשבונות לפי טריגרים חיים ומריץ רצפי פנייה בכמה ערוצים.",
-    cortex: "מזהה איפה עסקאות נתקעות ומצייד את הסוגרים בתשובות להתנגדויות, כרטיסי קרב וקריאת סיכון.",
-    shield: "מזהה שבועות מראש חשבונות שעומדים לעזוב, מריץ את תוכנית ההצלה ומסמן את הבריאים ביותר להרחבה.",
-    aether: "מגלה כמה הלקוחות באמת מוכנים לשלם, אוכף את מדיניות ההנחות ומתמחר את ההרחבה שמגדילה את ערך החוזה.",
-  },
-};
+import { UTILITY } from "./utility";
 
 const COPY: Record<Lang, { title: string; sub: string; enter: string; guided: string; metricNote: string; desk: string }> = {
   en: {
@@ -81,6 +56,17 @@ export function EngineGrid() {
   const { lang, dir, c } = useCommandCopy();
   const g = COPY[lang];
   const metrics = useMetricFeed();
+  const { engines: licensed, isUnlocked, tier } = useLicense();
+  const { settings } = useDeskSettings();
+  const mayRun = can(activeMember(settings).role, "run");
+  const [engine, setEngine] = useState<EngineKey | null>(null);
+  const [text, setText] = useState("");
+  const [request, setRequest] = useState<{ engine: EngineKey; command: string; id: number } | null>(null);
+  const target = engine && isUnlocked(engine) ? engine : licensed[0];
+  const submit = () => {
+    if (text.trim().length < 3 || !mayRun) return;
+    setRequest({ engine: target, command: text.trim(), id: Date.now() });
+  };
   return (
     <div lang={lang} dir={dir} className="relative isolate min-h-dvh bg-ink px-4 py-10 font-sans text-white sm:px-6">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgb(255_189_110/0.09),transparent_55%)]" />
@@ -103,12 +89,56 @@ export function EngineGrid() {
         <h1 className="mt-2 font-display text-[44px] font-light leading-tight sm:text-[60px]">{g.title}</h1>
         <p className="mt-2 max-w-2xl text-[15px] text-white/55">{g.sub}</p>
 
+        {/* Quick command: run any licensed engine from here, in a slide-over console. */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+          className="glass mt-8 flex flex-col gap-2 rounded-2xl p-3 sm:flex-row sm:items-center"
+        >
+          <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[13px]">
+            <Terminal className="size-4 shrink-0 text-[#f3e2b8]" />
+            <span className="sr-only">Engine</span>
+            <select value={target} onChange={(e) => setEngine(e.target.value as EngineKey)} className="bg-transparent text-white focus:outline-none">
+              {licensed.map((k) => (
+                <option key={k} value={k} className="bg-ink">
+                  {ENGINES[k].index} {ENGINES[k].name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={!mayRun}
+            placeholder={mayRun ? `Command ${ENGINES[target].name}…` : "Your role can't run engines"}
+            aria-label="Command"
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[14px] text-white placeholder:text-white/30 focus:border-[#f0d59a]/50 focus:outline-none disabled:opacity-50"
+          />
+          <div className="flex gap-2">
+            <button type="button" disabled={!mayRun} onClick={() => setText(PRESETS[lang][target])} className="rounded-xl border border-white/10 px-3 py-2 text-[12px] text-white/60 hover:text-white disabled:opacity-40">
+              Sample
+            </button>
+            <button type="submit" disabled={text.trim().length < 3 || !mayRun} className="flex items-center gap-2 rounded-xl bg-[#f3e2b8] px-5 py-2 text-[13px] font-semibold text-[#1a0f05] disabled:opacity-40">
+              Execute <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
+            </button>
+          </div>
+        </form>
+        <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-white/40">
+          <KeyRound className="size-3" /> {TIER_INFO[tier].label}: {licensed.length} of 8 architectures unlocked.
+          <Link href="/desk?hub=settings#license" className="text-[#f3e2b8]/70 hover:text-[#f3e2b8]">
+            Manage license
+          </Link>
+        </p>
+
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           {ENGINE_ORDER.map((k) => {
             const e = localizeEngine(ENGINES[k], lang);
             const p = paintings[e.painting];
             return (
-              <article key={k} style={paletteVars(PALETTES[k])} className="group relative flex min-h-[27rem] flex-col overflow-hidden rounded-2xl border border-c-edge/60 shadow-[0_0_60px_-30px_var(--c-glow)]">
+              <EngineLock key={k} engine={k} lang={lang} compact className="rounded-2xl">
+              <article style={paletteVars(PALETTES[k])} className="group relative flex min-h-[27rem] flex-col overflow-hidden rounded-2xl border border-c-edge/60 shadow-[0_0_60px_-30px_var(--c-glow)]">
                 <Image src={p.src} alt={`${p.title} by ${p.artist}, ${p.year}`} fill sizes="(min-width: 640px) 50vw, 100vw" className="object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-105" style={{ objectPosition: p.focus }} />
                 <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/45 to-black/10" />
                 <div className="relative flex items-start justify-between gap-2 p-4">
@@ -133,7 +163,7 @@ export function EngineGrid() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/command/${k}`}
+                          href="/setup"
                           aria-label={`${g.guided}: ${e.name}`}
                           title={g.guided}
                           className="inline-flex size-9 items-center justify-center rounded-full border border-white/15 text-white/65 transition-colors hover:border-c-edge hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
@@ -151,11 +181,13 @@ export function EngineGrid() {
                   </div>
                 </div>
               </article>
+              </EngineLock>
             );
           })}
         </div>
         <p className="mt-6 text-center text-[11.5px] text-white/35">{g.metricNote}</p>
       </div>
+      <RunConsoleDrawer request={request} lang={lang} onClose={() => setRequest(null)} />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import type { DESK_COPY } from "./copy";
 import { STATUS_DOT, type EngineRunStatus } from "./engine-status";
 import { fmtUsdCompact } from "./format";
 import { useMetricFeed } from "./metrics";
+import { useLicense } from "@/lib/license-context";
+import { LockBadge } from "./engine-lock";
 
 type Props = {
   c: (typeof DESK_COPY)["en"];
@@ -20,6 +22,7 @@ type Props = {
 
 export function EngineRail({ c, lang, selected, onSelect, statuses }: Props) {
   const values = useMetricFeed(statuses);
+  const { isUnlocked } = useLicense();
   return (
     <aside aria-label={c.engines} className="flex min-h-0 flex-col border-white/10 lg:border-e">
       <p className="px-4 pt-4 font-mono text-[10px] uppercase tracking-[0.26em] text-white/40">{c.engines}</p>
@@ -28,6 +31,7 @@ export function EngineRail({ c, lang, selected, onSelect, statuses }: Props) {
           const e = localizeEngine(ENGINES[k], lang);
           const s = statuses[k] ?? "idle";
           const on = k === selected;
+          const locked = !isUnlocked(k);
           return (
             <li key={k} className="shrink-0 lg:shrink">
               <button
@@ -46,12 +50,16 @@ export function EngineRail({ c, lang, selected, onSelect, statuses }: Props) {
                     {e.index}
                     {e.badge && <span className="rounded-full border border-c-edge/70 px-1.5 py-px text-[8.5px] tracking-[0.16em] text-c-2/80">{e.badge}</span>}
                   </span>
-                  <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-white/45">
-                    <span className={cn("size-1.5 rounded-full", STATUS_DOT[s])} />
-                    {c.status[s]}
-                  </span>
+                  {locked ? (
+                    <LockBadge engine={k} />
+                  ) : (
+                    <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-white/45">
+                      <span className={cn("size-1.5 rounded-full", STATUS_DOT[s])} />
+                      {c.status[s]}
+                    </span>
+                  )}
                 </span>
-                <span className="mt-1.5 block font-logo text-[19px] font-medium leading-none tracking-[-0.03em] text-white">{e.name}</span>
+                <span className={cn("mt-1.5 block font-logo text-[19px] font-medium leading-none tracking-[-0.03em]", locked ? "text-white/45" : "text-white")}>{e.name}</span>
                 <span className="mt-1 block truncate text-[11.5px] text-white/50">{e.role}</span>
                 <span className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-white/[0.06] pt-2">
                   <span className="truncate font-mono text-[9px] uppercase tracking-[0.1em] text-white/40">{e.metric}</span>

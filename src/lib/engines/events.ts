@@ -1,4 +1,5 @@
 import type { EngineKey } from "@/components/bloom/command/engines";
+import type { Metric } from "./brief";
 
 /**
  * The wire contract between /api/command/[engine] and the Operating Desk. Each event is one SSE frame
@@ -6,6 +7,7 @@ import type { EngineKey } from "@/components/bloom/command/engines";
  */
 
 export type RunMode = "live" | "simulation";
+/** Tokens used. In simulation they are estimated from text length (about four characters a token). */
 export type Usage = { input: number; output: number };
 
 export type RunEvent =
@@ -21,7 +23,13 @@ export type RunEvent =
   | { type: "delegate"; agentId: string; callId: string; to: EngineKey }
   | { type: "agent.end"; agentId: string; engine: EngineKey; ok: boolean; output: unknown; usage: Usage; ms: number }
   | { type: "run.end"; runId: string; ok: boolean; output: unknown; usage: Usage; ms: number; agents: number; tools: number }
-  | { type: "error"; agentId: string | null; message: string };
+  | { type: "error"; agentId: string | null; message: string }
+  /** The run's three visible stages: parsing intent and allocating nodes, routing the engine pipeline, composing the brief. */
+  | { type: "phase"; phase: RunPhase; detail: string }
+  /** The executive brief rendered from the final output, with headline metrics and the actions awaiting approval. */
+  | { type: "brief"; markdown: string; metrics: Metric[]; approvals: number[] };
+
+export type RunPhase = "parse" | "route" | "compose";
 
 export type RunEventType = RunEvent["type"];
 

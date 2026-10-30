@@ -16,6 +16,7 @@
     "desktop:build": "tauri build",
     "desktop:build:win": "tauri build --bundles nsis",
     "desktop:build:mac": "tauri build --target universal-apple-darwin --bundles dmg",
+    "license:issue": "node scripts/issue-license.mts",
     "postinstall": "prisma generate",
     "db:up": "docker compose up -d postgres",
     "db:migrate": "prisma migrate dev",

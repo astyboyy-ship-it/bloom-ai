@@ -24,6 +24,8 @@ const POS: Record<EngineKey, { x: number; y: number }> = (() => {
 })();
 
 type Props = {
+  /** Engines the license unlocks; the rest render dimmed with a dashed ring. */
+  unlocked?: (k: EngineKey) => boolean;
   label: string;
   hint: string;
   engines: ManifestEngine[] | undefined;
@@ -34,7 +36,7 @@ type Props = {
 };
 
 /** The 8-engine topological network: permitted hand-offs as faint links, this run's hand-offs lit and flowing. */
-export function NetworkView({ label, hint, engines, agents, statuses, selected, onSelect }: Props) {
+export function NetworkView({ unlocked = () => true, label, hint, engines, agents, statuses, selected, onSelect }: Props) {
   // Each permitted link once, whichever side declares it.
   const links = useMemo(() => {
     const seen = new Set<string>();
@@ -108,7 +110,16 @@ export function NetworkView({ label, hint, engines, agents, statuses, selected, 
               className="cursor-pointer outline-none [&:focus-visible>circle:first-child]:stroke-white"
             >
               {s === "running" && <circle cx={p.x} cy={p.y} r={r + 6} fill={PALETTES[k].c1} opacity={0.45} filter="url(#net-glow)" className="animate-pulse" />}
-              <circle cx={p.x} cy={p.y} r={r} fill={PALETTES[k].deep} stroke={on ? PALETTES[k].c2 : PALETTES[k].c1} strokeWidth={on ? 2.2 : 1.2} opacity={s || on ? 1 : 0.8} />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={r}
+                fill={PALETTES[k].deep}
+                stroke={on ? PALETTES[k].c2 : PALETTES[k].c1}
+                strokeWidth={on ? 2.2 : 1.2}
+                strokeDasharray={unlocked(k) ? undefined : "3 3"}
+                opacity={!unlocked(k) ? 0.4 : s || on ? 1 : 0.8}
+              />
               <text x={p.x} y={p.y + 3.5} textAnchor="middle" fontSize={10} fontFamily="var(--font-geist-mono)" fill={PALETTES[k].c2}>
                 {ENGINES[k].index}
               </text>

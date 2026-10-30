@@ -4,7 +4,8 @@ import { useCallback, useReducer, useRef } from "react";
 import type { EngineKey } from "@/components/bloom/command/engines";
 import type { Lang } from "@/components/bloom/i18n";
 import type { CalibrationInput } from "@/lib/engines/calibration";
-import type { RunEvent, RunMode, Usage } from "@/lib/engines/events";
+import type { Metric } from "@/lib/engines/brief";
+import type { RunEvent, RunMode, RunPhase, Usage } from "@/lib/engines/events";
 
 /**
  * Drives one command run against /api/command/[engine]: POSTs the command, reads the SSE body, and folds
@@ -22,8 +23,20 @@ export type LogEntry =
 
 export type RunStatus = "idle" | "running" | "done" | "failed";
 
+export type PhaseState = { status: "pending" | "active" | "done" | "failed"; detail: string; startedAt: number | null; ms: number | null };
+export const PHASES: RunPhase[] = ["parse", "route", "compose"];
+const freshPhases = (): Record<RunPhase, PhaseState> => ({
+  parse: { status: "pending", detail: "", startedAt: null, ms: null },
+  route: { status: "pending", detail: "", startedAt: null, ms: null },
+  compose: { status: "pending", detail: "", startedAt: null, ms: null },
+});
+
 export type RunState = {
   status: RunStatus;
+  runId: string | null;
+  command: string;
+  phases: Record<RunPhase, PhaseState>;
+  brief: { markdown: string; metrics: Metric[]; approvals: number[] } | null;
   engine: EngineKey | null;
   mode: RunMode | null;
   model: string | null;
@@ -37,20 +50,33 @@ export type RunState = {
   toolCalls: number;
 };
 
-const initial: RunState = { status: "idle", engine: null, mode: null, model: null, startedAt: 0, firstEventMs: null, agents: {}, log: [], output: null, usage: { input: 0, output: 0 }, ms: null, toolCalls: 0 };
+const initial: RunState = { status: "idle", runId: null, command: "", phases: freshPhases(), brief: null, engine: null, mode: null, model: null, startedAt: 0, firstEventMs: null, agents: {}, log: [], output: null, usage: { input: 0, output: 0 }, ms: null, toolCalls: 0 };
 
-type Action = { type: "begin"; engine: EngineKey; at: number } | { type: "event"; e: RunEvent; at: number } | { type: "fail"; message: string; at: number };
+type Action = { type: "begin"; engine: EngineKey; command: string; at: number } | { type: "event"; e: RunEvent; at: number } | { type: "fail"; message: string; at: number };
 
 function reduce(s: RunState, a: Action): RunState {
-  if (a.type === "begin") return { ...initial, status: "running", engine: a.engine, startedAt: a.at };
-  if (a.type === "fail") return { ...s, status: "failed", log: [...s.log, { id: `err-${s.log.length}`, kind: "error", at: a.at - s.startedAt, agentId: null, text: a.message }] };
+  if (a.type === "begin") return { ...initial, phases: freshPhases(), status: "running", engine: a.engine, command: a.command, startedAt: a.at };
+  if (a.type === "fail") return { ...s, status: "failed", phases: failActive(s.phases, a.at), log: [...s.log, { id: `err-${s.log.length}`, kind: "error", at: a.at - s.startedAt, agentId: null, text: a.message }] };
 
   const e = a.e;
   const at = a.at - s.startedAt;
   const next: RunState = s.firstEventMs === null ? { ...s, firstEventMs: at } : s;
   switch (e.type) {
     case "run.start":
-      return { ...next, mode: e.mode, model: e.model };
+      return { ...next, runId: e.runId, mode: e.mode, model: e.model };
+    case "phase": {
+      // Starting a phase closes the one before it.
+      const phases = { ...next.phases };
+      for (const p of PHASES) {
+        if (p === e.phase) break;
+        const ph = phases[p];
+        if (ph.status === "active") phases[p] = { ...ph, status: "done", ms: a.at - (ph.startedAt ?? a.at) };
+      }
+      phases[e.phase] = { status: "active", detail: e.detail, startedAt: a.at, ms: null };
+      return { ...next, phases };
+    }
+    case "brief":
+      return { ...next, brief: { markdown: e.markdown, metrics: e.metrics, approvals: e.approvals } };
     case "agent.start":
       return {
         ...next,
@@ -82,9 +108,17 @@ function reduce(s: RunState, a: Action): RunState {
       return { ...next, log: [...next.log, { id: `notice-${next.log.length}`, kind: "notice", at, agentId: e.agentId, text: e.text }] };
     case "error":
       return { ...next, log: [...next.log, { id: `err-${next.log.length}`, kind: "error", at, agentId: e.agentId, text: e.message }] };
-    case "run.end":
-      return { ...next, status: e.ok ? "done" : "failed", output: e.output, usage: e.usage, ms: e.ms };
+    case "run.end": {
+      const phases = e.ok
+        ? (Object.fromEntries(PHASES.map((p) => [p, next.phases[p].status === "active" ? { ...next.phases[p], status: "done", ms: a.at - (next.phases[p].startedAt ?? a.at) } : next.phases[p]])) as Record<RunPhase, PhaseState>)
+        : failActive(next.phases, a.at);
+      return { ...next, phases, status: e.ok ? "done" : "failed", output: e.output, usage: e.usage, ms: e.ms };
+    }
   }
+}
+
+function failActive(phases: Record<RunPhase, PhaseState>, at: number): Record<RunPhase, PhaseState> {
+  return Object.fromEntries(PHASES.map((p) => [p, phases[p].status === "active" ? { ...phases[p], status: "failed", ms: at - (phases[p].startedAt ?? at) } : phases[p]])) as Record<RunPhase, PhaseState>;
 }
 
 export function useRun(networkError: string, aborted: string) {
@@ -96,7 +130,7 @@ export function useRun(networkError: string, aborted: string) {
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
-      dispatch({ type: "begin", engine, at: Date.now() });
+      dispatch({ type: "begin", engine, command, at: Date.now() });
       let ended = false;
       try {
         const res = await fetch(`/api/command/${engine}`, {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif, Outfit } from "next/font/google";
 import { LanguageProvider } from "@/components/bloom/i18n";
+import { LicenseProvider } from "@/lib/license-context";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -32,7 +33,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${cormorant.variable} ${outfit.variable} min-h-dvh bg-background antialiased`}>
         {/* Site-wide, so the chosen language follows the visitor from the home page into every engine. */}
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <LicenseProvider>{children}</LicenseProvider>
+        </LanguageProvider>
         <Toaster richColors />
       </body>
     </html>

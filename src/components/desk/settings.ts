@@ -4,10 +4,13 @@ import { useSyncExternalStore } from "react";
 import type { EngineKey } from "@/components/bloom/command/engines";
 import type { ShiftMode } from "@/components/bloom/shift-plan";
 import type { CalibrationInput } from "@/lib/engines/calibration";
+import type { Tier } from "@/lib/license/tiers";
+import type { Role } from "./rbac";
 
 /**
- * The desk's local settings: provider keys, shift defaults, persistence, and per-engine calibrations.
- * Nothing here reaches the server except as headers/body on the requests that use it.
+ * The workspace's local state: license, gateway credentials, branding, team and roles, shift defaults,
+ * per-engine calibrations, the audit log and onboarding progress. Persists across reloads (and desktop app
+ * restarts). Nothing here reaches the server except as headers/body on the requests that use it.
  *
  * Persistence: "device" keeps settings in localStorage across restarts; "session" keeps them in sessionStorage
  * so closing the window (or the desktop app) forgets them, keys included. The choice itself always lives in
@@ -17,15 +20,57 @@ import type { CalibrationInput } from "@/lib/engines/calibration";
 export type Persistence = "device" | "session";
 export type ShiftDefault = "clock" | ShiftMode;
 
+/** Gateway credentials. Anthropic and OpenRouter drive the engine runtime; the rest are stored for integrations. */
+export type Credentials = {
+  anthropic: string;
+  openrouter: string;
+  openai: string;
+  vectorDbUrl: string;
+  vectorDbKey: string;
+  customUrl: string;
+  customKey: string;
+};
+
+/** A license the server has verified: what the desk shows and gates on (the server re-verifies every run). */
+export type LicenseInfo = { tier: Exclude<Tier, "evaluation">; org: string; expiresAt: string | null; issuedAt: string; dev: boolean; verifiedAt: number };
+
+export type Member = { id: string; name: string; email: string; role: Role };
+
+export type AuditKind = "license" | "settings" | "credentials" | "run" | "approval" | "member" | "calibration" | "system";
+export type AuditEntry = { id: number; at: number; kind: AuditKind; actor: string; message: string };
+
 export type DeskSettings = {
-  keys: { anthropic: string; openrouter: string };
+  keys: Credentials;
+  licenseKey: string;
+  license: LicenseInfo | null;
+  branding: { orgName: string; logo: string | null };
+  members: Member[];
+  activeMemberId: string;
+  onboarded: boolean;
   shiftDefault: ShiftDefault;
   /** Light the Surge shift for the duration of every run, then return to the default. */
   surgeOnRun: boolean;
   calibrations: Partial<Record<EngineKey, CalibrationInput>>;
+  audit: AuditEntry[];
 };
 
-export const DEFAULT_SETTINGS: DeskSettings = { keys: { anthropic: "", openrouter: "" }, shiftDefault: "clock", surgeOnRun: true, calibrations: {} };
+const OWNER: Member = { id: "owner", name: "Workspace Owner", email: "", role: "owner" };
+
+export const DEFAULT_SETTINGS: DeskSettings = {
+  keys: { anthropic: "", openrouter: "", openai: "", vectorDbUrl: "", vectorDbKey: "", customUrl: "", customKey: "" },
+  licenseKey: "",
+  license: null,
+  branding: { orgName: "", logo: null },
+  members: [OWNER],
+  activeMemberId: OWNER.id,
+  onboarded: false,
+  shiftDefault: "clock",
+  surgeOnRun: true,
+  calibrations: {},
+  audit: [],
+};
+
+const AUDIT_CAP = 400;
 
 const DATA_KEY = "bloom-desk-settings";
 const MODE_KEY = "bloom-desk-persistence";
@@ -58,7 +103,17 @@ function read(): DeskSettings {
   try {
     const raw = storage(readMode())?.getItem(DATA_KEY);
     const parsed = raw ? (JSON.parse(raw) as Partial<DeskSettings>) : {};
-    cache = { ...DEFAULT_SETTINGS, ...parsed, keys: { ...DEFAULT_SETTINGS.keys, ...parsed.keys }, calibrations: parsed.calibrations ?? {} };
+    const members = Array.isArray(parsed.members) && parsed.members.length ? parsed.members : DEFAULT_SETTINGS.members;
+    cache = {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      keys: { ...DEFAULT_SETTINGS.keys, ...parsed.keys },
+      branding: { ...DEFAULT_SETTINGS.branding, ...parsed.branding },
+      members,
+      activeMemberId: members.some((m) => m.id === parsed.activeMemberId) ? parsed.activeMemberId! : members[0].id,
+      calibrations: parsed.calibrations ?? {},
+      audit: Array.isArray(parsed.audit) ? parsed.audit : [],
+    };
   } catch {
     cache = DEFAULT_SETTINGS;
   }
@@ -126,10 +181,25 @@ export function useDeskSettings() {
   return { settings, persistence };
 }
 
-/** Request headers carrying the operator's own keys; empty when none are set. */
-export function keyHeaders(keys: DeskSettings["keys"]): Record<string, string> {
+/** Request headers carrying the operator's own runtime keys; empty when none are set. */
+export function keyHeaders(keys: Pick<Credentials, "anthropic" | "openrouter">): Record<string, string> {
   return {
     ...(keys.anthropic.trim() && { "x-anthropic-key": keys.anthropic.trim() }),
     ...(keys.openrouter.trim() && { "x-openrouter-key": keys.openrouter.trim() }),
   };
+}
+
+/** Everything a run request carries: own keys plus the license the server verifies. */
+export function requestHeaders(s: DeskSettings): Record<string, string> {
+  return { ...keyHeaders(s.keys), ...(s.licenseKey && { "x-bloom-license": s.licenseKey }) };
+}
+
+export const activeMember = (s: DeskSettings) => s.members.find((m) => m.id === s.activeMemberId) ?? s.members[0];
+
+/** Appends to the workspace audit log, attributed to the member currently acting. */
+export function audit(kind: AuditKind, message: string) {
+  updateSettings((s) => {
+    const last = s.audit.at(-1);
+    return { audit: [...s.audit, { id: (last?.id ?? 0) + 1, at: Date.now(), kind, actor: activeMember(s).name, message }].slice(-AUDIT_CAP) };
+  });
 }

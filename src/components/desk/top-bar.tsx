@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Gauge, ShieldCheck } from "lucide-react";
+import { Activity, Gauge, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
 import { ENGINE_ORDER, ENGINES, type EngineKey } from "@/components/bloom/command/engines";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import type { RunMode } from "@/lib/engines/events";
+import { useLicense } from "@/lib/license-context";
+import { TIER_INFO } from "@/lib/license/tiers";
 import type { DESK_COPY } from "./copy";
 import { HUBS, type Hub } from "./hub-copy";
 import { STATUS_DOT, type EngineRunStatus } from "./engine-status";
 import { fmtMs } from "./format";
+import { ROLE_INFO } from "./rbac";
+import { audit, updateSettings, useDeskSettings } from "./settings";
 import type { Sla } from "./use-telemetry";
 
 type Props = {
@@ -38,7 +42,7 @@ export function TopBar({ c, statuses, selected, onSelect, mode, model, sla, upti
       <Link href="/" className="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-[#f0d59a]">
         <BloomWordmark className="text-[20px]" />
       </Link>
-      <span className="hidden font-display text-[19px] italic leading-none text-[#f3e2b8]/85 xl:block">{c.title}</span>
+      <Branding fallback={c.title} />
 
       {/* The three hubs of the desktop workspace. */}
       <div role="tablist" aria-label={c.title} className="order-last flex w-full gap-1 overflow-x-auto md:order-none md:w-auto">
@@ -114,8 +118,69 @@ export function TopBar({ c, statuses, selected, onSelect, mode, model, sla, upti
             </span>
           )}
         </span>
+        <TierPill onOpen={() => onHub("settings")} />
+        <ActingAs />
         <LanguageSwitcher />
       </div>
     </header>
+  );
+}
+
+/** The client's organization and logo, once branded in App Settings; the desk's own title until then. */
+function Branding({ fallback }: { fallback: string }) {
+  const { settings } = useDeskSettings();
+  const { logo, orgName } = settings.branding;
+  if (!logo && !orgName) return <span className="hidden font-display text-[19px] italic leading-none text-[#f3e2b8]/85 xl:block">{fallback}</span>;
+  return (
+    <span className="hidden items-center gap-2 xl:flex">
+      {/* A data URL from the logo uploader; next/image adds nothing for it. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {logo && <img src={logo} alt="" className="size-7 rounded-md object-contain" />}
+      <span className="font-display text-[19px] italic leading-none text-[#f3e2b8]/85">{orgName || fallback}</span>
+    </span>
+  );
+}
+
+function TierPill({ onOpen }: { onOpen: () => void }) {
+  const { tier } = useLicense();
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title={TIER_INFO[tier].label}
+      className={cn(
+        "flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition-colors hover:bg-white/5",
+        tier === "evaluation" ? "border-white/20 text-white/60" : "border-[#f0d59a]/45 text-[#f3e2b8]",
+      )}
+    >
+      <KeyRound className="size-3" /> {TIER_INFO[tier].short}
+    </button>
+  );
+}
+
+/** Which team member is acting on this device; their role decides what the desk lets them do. */
+function ActingAs() {
+  const { settings } = useDeskSettings();
+  if (settings.members.length < 2) return null;
+  return (
+    <label className="flex items-center gap-1.5 rounded-full border border-white/10 py-0.5 ps-2.5 pe-1 text-[11px] text-white/60">
+      <UserRound className="size-3" />
+      <span className="sr-only">Acting as</span>
+      <select
+        value={settings.activeMemberId}
+        onChange={(e) => {
+          const m = settings.members.find((x) => x.id === e.target.value);
+          updateSettings({ activeMemberId: e.target.value });
+          if (m) audit("member", `${m.name} is now acting (${ROLE_INFO[m.role].label})`);
+        }}
+        className="max-w-36 rounded-full bg-transparent py-0.5 text-[11px] text-white focus:outline-none"
+      >
+        {settings.members.map((m) => (
+          <option key={m.id} value={m.id} className="bg-ink">
+            {m.name} · {ROLE_INFO[m.role].label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
