@@ -6,6 +6,7 @@ import { AGENTS, type EngineAgent } from "@/lib/engines";
 import { buildBrief } from "@/lib/engines/brief";
 import { DEFAULT_CALIBRATION, type Calibration } from "@/lib/engines/calibration";
 import { modelInfo, type ModelInfo } from "@/lib/engines/models";
+import { scanCommand } from "@/lib/security/injection";
 import type { CommandManifest, RunEvent, Usage } from "@/lib/engines/events";
 import { ActionSchema, type Effort } from "@/lib/engines/types";
 
@@ -121,6 +122,8 @@ type AgentCtx = {
   model: ModelInfo;
   /** The concrete model id for the active provider. */
   providerModel: string;
+  /** The calibrated fallback, as an id for the active provider, if one is set. */
+  fallbackModel?: string;
   temperature?: number;
   budget: number;
   spent: number;
@@ -218,6 +221,7 @@ export async function runCommand(
   const runId = `run_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const started = Date.now();
   run.emit({ type: "run.start", runId, engine, mode: rt.mode, provider: rt.provider, model: rt.model, at: started });
+  shield(run, String((input as { command?: unknown } | null)?.command ?? ""));
 
   let output: unknown = null;
   let ok = false;
@@ -246,6 +250,71 @@ export async function runCommand(
     }
   }
   run.emit({ type: "run.end", runId, ok, output, usage: run.usage, ms: Date.now() - started, agents: run.agents, tools: run.tools });
+}
+
+/**
+ * Runs an architecture (or a builder pipeline): its engines in data-flow order, each one handed the earlier
+ * stages' summaries as upstream context. Delegation is off inside a stack so cost stays predictable; the
+ * stack's own engines are the team. Never throws: failures arrive as error + run.end events.
+ */
+export async function runPipeline(
+  spec: { id: string; label: string; engines: EngineKey[] },
+  input: { command: string },
+  opts: { emit: (e: RunEvent) => void; signal: AbortSignal; lang?: Lang; keys?: OwnKeys; calibrations?: Partial<Record<EngineKey, Calibration>>; allowed: EngineKey[] },
+) {
+  const keys = opts.keys ?? {};
+  const rt = runtime(keys);
+  const calibrations = Object.fromEntries(spec.engines.map((k) => [k, { ...(opts.calibrations?.[k] ?? DEFAULT_CALIBRATION), allowDelegation: false }])) as Partial<Record<EngineKey, Calibration>>;
+  const run: Run = { rt, emit: opts.emit, signal: opts.signal, lang: opts.lang ?? "en", ownKey: Boolean(keys.anthropic || keys.openrouter), calibrations, allowed: opts.allowed, usage: { input: 0, output: 0 }, agents: 0, tools: 0 };
+  if (rt.provider === "anthropic") run.client = new Anthropic({ apiKey: rt.key });
+  const runId = `run_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const started = Date.now();
+  run.emit({ type: "run.start", runId, engine: spec.engines[0], mode: rt.mode, provider: rt.provider, model: rt.model, at: started, pipeline: spec });
+  shield(run, input.command);
+
+  const stages: { engine: EngineKey; output: { summary?: string; confidence?: number; actions?: { title: string; owner: string; priority: string; detail: string }[] } & Record<string, unknown> }[] = [];
+  let ok = false;
+  let merged: unknown = null;
+  try {
+    const nodes = spec.engines.reduce((s, k) => s + ENGINES[k].cards.reduce((n, c) => n + c.agents, 0), 0);
+    run.emit({ type: "phase", phase: "parse", detail: `Parsing intent · allocating ${nodes} agent nodes across ${spec.engines.length} engines of ${spec.label}` });
+    if (rt.mode === "simulation") await sleep(500, run.signal);
+
+    for (const [i, engine] of spec.engines.entries()) {
+      run.emit({ type: "phase", phase: "route", detail: `Stage ${i + 1} of ${spec.engines.length}: ${ENGINES[engine].name}${i ? ` (with ${i} upstream result${i === 1 ? "" : "s"})` : ""}` });
+      const upstream = stages.length ? `\n\nUPSTREAM RESULTS (earlier engines in the ${spec.label} stack; build on them)\n${stages.map((s) => `- ${ENGINES[s.engine].name}: ${s.output.summary ?? ""}`).join("\n")}` : "";
+      // The whole stack is the chain, so no engine delegates back into it.
+      const out = await runAgent(run, engine, { command: `${input.command}${upstream}`.slice(0, 4000), params: {} }, null, spec.engines);
+      stages.push({ engine, output: (out ?? {}) as (typeof stages)[number]["output"] });
+    }
+
+    run.emit({ type: "phase", phase: "compose", detail: `Composing the ${spec.label} executive brief` });
+    const last = stages.at(-1)!;
+    const confidences = stages.map((s) => s.output.confidence).filter((c): c is number => typeof c === "number");
+    merged = {
+      summary: stages.map((s) => `${ENGINES[s.engine].name}: ${s.output.summary ?? ""}`).join(" "),
+      confidence: confidences.length ? Math.round((confidences.reduce((a, b) => a + b, 0) / confidences.length) * 100) / 100 : undefined,
+      actions: stages.flatMap((s) => (s.output.actions ?? []).slice(0, 3)).slice(0, 8),
+      ...Object.fromEntries(stages.map((s) => [ENGINES[s.engine].name.toLowerCase(), Object.fromEntries(Object.entries(s.output).filter(([k]) => !["summary", "confidence", "actions"].includes(k)))])),
+    };
+    const threshold = Math.min(...spec.engines.map((k) => (calibrations[k] ?? DEFAULT_CALIBRATION).approvalThresholdUsd));
+    const brief = buildBrief(last.engine, merged, { approvalThresholdUsd: threshold, command: input.command, mode: rt.mode, model: modelInfo((calibrations[last.engine] ?? DEFAULT_CALIBRATION).model).label, title: spec.label, subtitle: `Architecture · ${spec.engines.map((k) => ENGINES[k].name).join(" → ")}` });
+    run.emit({ type: "brief", ...brief });
+    ok = true;
+  } catch (err) {
+    if (!run.signal.aborted) {
+      console.error("[orchestrator] pipeline failed:", err);
+      run.emit({ type: "error", agentId: null, message: publicMessage(err) });
+    }
+  }
+  run.emit({ type: "run.end", runId, ok, output: merged, usage: run.usage, ms: Date.now() - started, agents: run.agents, tools: run.tools });
+}
+
+/** Shield's screening: an injection or exfiltration attempt is noted in the run's log. It's contained, not blocked. */
+function shield(run: Run, command: string) {
+  const findings = scanCommand(command);
+  if (findings.length)
+    run.emit({ type: "notice", agentId: null, text: `Shield flagged ${findings.map((f) => `${f.rule.toLowerCase()} (${f.severity})`).join(", ")}. The operating rules keep precedence and the command is handled as data.` });
 }
 
 /** Upstream errors can carry request ids and raw bodies; the desk gets a plain sentence. */
@@ -355,7 +424,8 @@ async function runAgent(run: Run, key: EngineKey, rawInput: unknown, parentId: s
     const system = systemPrompt(agent, delegates, run.lang, cal, prompts);
     if (run.rt.provider === "anthropic") result = await anthropicLoop(run, ctx, system, userMessage(input), specs, invoke, effort);
     else if (run.rt.provider === "openrouter") result = await openrouterLoop(run, ctx, system, userMessage(input), specs, invoke, effort);
-    else result = await simulate(run, ctx, agent, input, invoke, delegates, cal, system);
+    // Scripted plans parse the operator's own words; upstream stage results are context for live models only.
+    else result = await simulate(run, ctx, agent, { ...input, command: input.command.split("\n\nUPSTREAM RESULTS")[0] }, invoke, delegates, cal, system);
   } catch (err) {
     // The agent's own latency cap fired (not the operator aborting): say so plainly.
     const capped = !run.signal.aborted && ctx.signal.aborted;
@@ -382,8 +452,11 @@ function agentContext(run: Run, agentId: string, cal: Calibration): AgentCtx {
       providerModel = run.rt.model;
     }
   } else if (run.rt.provider === "openrouter") providerModel = model.openrouter;
+  const fb = cal.fallbackModel ? modelInfo(cal.fallbackModel) : undefined;
+  const fallbackModel = !fb || fb.id === model.id ? undefined : run.rt.provider === "openrouter" ? fb.openrouter : run.rt.provider === "anthropic" && fb.anthropic ? fb.id : undefined;
   return {
     agentId,
+    fallbackModel,
     signal: AbortSignal.any([run.signal, AbortSignal.timeout(cal.latencyCapS * 1000)]),
     model,
     providerModel,
@@ -458,7 +531,14 @@ async function anthropicLoop(run: Run, ctx: AgentCtx, system: string, user: stri
       message = await stream.finalMessage();
       jsonRetries = 0;
     } catch (err) {
-      // Only an unparseable streamed tool input is retried; API errors and aborts propagate.
+      // An overloaded or failing primary model switches to the calibrated fallback, once.
+      if (err instanceof Anthropic.APIError && (err.status === 529 || (err.status ?? 0) >= 500) && ctx.fallbackModel && ctx.providerModel !== ctx.fallbackModel && !ctx.signal.aborted) {
+        run.emit({ type: "notice", agentId, text: `${ctx.providerModel} is unavailable (${err.status}); falling back to ${ctx.fallbackModel}.` });
+        ctx.providerModel = ctx.fallbackModel;
+        turn--;
+        continue;
+      }
+      // Only an unparseable streamed tool input is retried; other API errors and aborts propagate.
       if (err instanceof Anthropic.APIError || ctx.signal.aborted || jsonRetries++ >= 2) throw err;
       continue;
     }
@@ -517,7 +597,7 @@ async function openrouterLoop(run: Run, ctx: AgentCtx, system: string, user: str
       headers: { Authorization: `Bearer ${rt.key}`, "Content-Type": "application/json", "HTTP-Referer": process.env.APP_URL ?? "http://localhost:3000", "X-Title": "Bloom AI Operating Desk" },
       body: JSON.stringify({
         // The calibrated model first; for Claude models the server's chain stays as fallback.
-        models: [...new Set([ctx.providerModel, ...(ctx.model.anthropic ? rt.models : [])])],
+        models: [...new Set([ctx.providerModel, ...(ctx.fallbackModel ? [ctx.fallbackModel] : []), ...(ctx.model.anthropic ? rt.models : [])])],
         messages,
         tools,
         max_tokens: turnCap(ctx, 16_000),

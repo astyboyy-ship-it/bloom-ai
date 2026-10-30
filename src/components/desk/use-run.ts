@@ -6,6 +6,8 @@ import type { Lang } from "@/components/bloom/i18n";
 import type { CalibrationInput } from "@/lib/engines/calibration";
 import type { Metric } from "@/lib/engines/brief";
 import type { RunEvent, RunMode, RunPhase, Usage } from "@/lib/engines/events";
+import { scanCommand } from "@/lib/security/injection";
+import { audit } from "./settings";
 
 /**
  * Drives one command run against /api/command/[engine]: POSTs the command, reads the SSE body, and folds
@@ -22,6 +24,9 @@ export type LogEntry =
   | { id: string; kind: "notice" | "error"; at: number; agentId: string | null; text: string };
 
 export type RunStatus = "idle" | "running" | "done" | "failed";
+
+type RunTarget = { kind: "engine"; engine: EngineKey } | { kind: "pipeline"; id: string; label: string; engines: EngineKey[] };
+type RunExtras = { headers?: Record<string, string>; calibrations?: Partial<Record<EngineKey, CalibrationInput>> };
 
 export type PhaseState = { status: "pending" | "active" | "done" | "failed"; detail: string; startedAt: number | null; ms: number | null };
 export const PHASES: RunPhase[] = ["parse", "route", "compose"];
@@ -46,11 +51,13 @@ export type RunState = {
   log: LogEntry[];
   output: unknown;
   usage: Usage;
+  /** Tokens so far, summed from top-level agents as they finish (children are inside their parent's figure). */
+  liveUsage: Usage;
   ms: number | null;
   toolCalls: number;
 };
 
-const initial: RunState = { status: "idle", runId: null, command: "", phases: freshPhases(), brief: null, engine: null, mode: null, model: null, startedAt: 0, firstEventMs: null, agents: {}, log: [], output: null, usage: { input: 0, output: 0 }, ms: null, toolCalls: 0 };
+const initial: RunState = { status: "idle", runId: null, command: "", phases: freshPhases(), brief: null, engine: null, mode: null, model: null, startedAt: 0, firstEventMs: null, agents: {}, log: [], output: null, usage: { input: 0, output: 0 }, liveUsage: { input: 0, output: 0 }, ms: null, toolCalls: 0 };
 
 type Action = { type: "begin"; engine: EngineKey; command: string; at: number } | { type: "event"; e: RunEvent; at: number } | { type: "fail"; message: string; at: number };
 
@@ -98,8 +105,10 @@ function reduce(s: RunState, a: Action): RunState {
       return { ...next, log: [...next.log, { id: `${e.callId}-delegate`, kind: "delegate", at, agentId: e.agentId, to: e.to }] };
     case "agent.end": {
       const agent = next.agents[e.agentId];
+      const top = agent?.depth === 0;
       return {
         ...next,
+        liveUsage: top ? { input: next.liveUsage.input + e.usage.input, output: next.liveUsage.output + e.usage.output } : next.liveUsage,
         agents: agent ? { ...next.agents, [e.agentId]: { ...agent, status: e.ok ? "done" : "failed" } } : next.agents,
         log: [...next.log, { id: `${e.agentId}-end`, kind: "agent", at, agentId: e.agentId, phase: e.ok ? "end" : "failed", ms: e.ms }],
       };
@@ -125,22 +134,33 @@ export function useRun(networkError: string, aborted: string) {
   const [state, dispatch] = useReducer(reduce, initial);
   const abortRef = useRef<AbortController | null>(null);
 
-  const run = useCallback(
-    async (engine: EngineKey, command: string, lang: Lang, extras: { headers?: Record<string, string>; calibrations?: Partial<Record<EngineKey, CalibrationInput>> } = {}) => {
+  /** Streams one run: a single engine (/api/command/:engine) or a stack of engines (/api/pipeline). */
+  const start = useCallback(
+    async (target: RunTarget, command: string, lang: Lang, extras: RunExtras = {}) => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
+      const engine = target.kind === "engine" ? target.engine : target.engines[0];
+      const where = target.kind === "engine" ? target.engine : target.label;
+      // Screened here for the Threat Matrix; the server notes the same finding in the run's own log.
+      for (const f of scanCommand(command)) audit("security", `${f.rule} (${f.severity}) in a ${where} command: "${f.match}". Contained: operating rules kept precedence.`);
       dispatch({ type: "begin", engine, command, at: Date.now() });
       let ended = false;
       try {
-        const res = await fetch(`/api/command/${engine}`, {
+        const res = await fetch(target.kind === "engine" ? `/api/command/${engine}` : "/api/pipeline", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...extras.headers },
-          body: JSON.stringify({ command, lang, calibrations: extras.calibrations ?? {} }),
+          body: JSON.stringify(
+            target.kind === "engine"
+              ? { command, lang, calibrations: extras.calibrations ?? {} }
+              : { id: target.id, label: target.label, engines: target.engines, command, lang, calibrations: extras.calibrations ?? {} },
+          ),
           signal: ctrl.signal,
         });
         if (!res.ok || !res.body) {
           const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+          if (res.status === 403) audit("security", `Gateway refused a ${where} run: ${body?.error?.message ?? "not licensed"}`);
+          if (res.status === 429) audit("security", `Rate limit tripped on a ${where} run; the gateway throttled it.`);
           dispatch({ type: "fail", message: body?.error?.message ?? `HTTP ${res.status}`, at: Date.now() });
           return;
         }
@@ -176,7 +196,9 @@ export function useRun(networkError: string, aborted: string) {
     [networkError, aborted],
   );
 
+  const run = useCallback((engine: EngineKey, command: string, lang: Lang, extras: RunExtras = {}) => start({ kind: "engine", engine }, command, lang, extras), [start]);
+  const runPipeline = useCallback((spec: { id: string; label: string; engines: EngineKey[] }, command: string, lang: Lang, extras: RunExtras = {}) => start({ kind: "pipeline", ...spec }, command, lang, extras), [start]);
   const abort = useCallback(() => abortRef.current?.abort(), []);
 
-  return { state, run, abort };
+  return { state, run, runPipeline, abort };
 }

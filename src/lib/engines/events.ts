@@ -11,7 +11,7 @@ export type RunMode = "live" | "simulation";
 export type Usage = { input: number; output: number };
 
 export type RunEvent =
-  | { type: "run.start"; runId: string; engine: EngineKey; mode: RunMode; provider: string; model: string; at: number }
+  | { type: "run.start"; runId: string; engine: EngineKey; mode: RunMode; provider: string; model: string; at: number; pipeline?: { id: string; label: string; engines: EngineKey[] } }
   | { type: "agent.start"; agentId: string; engine: EngineKey; parentId: string | null; depth: number; command: string }
   /** Summarized reasoning (live mode) or the engine's stated plan (simulation). */
   | { type: "reasoning"; agentId: string; text: string }

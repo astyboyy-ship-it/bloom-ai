@@ -127,7 +127,7 @@ export function EngineGrid() {
         </form>
         <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-white/40">
           <KeyRound className="size-3" /> {TIER_INFO[tier].label}: {licensed.length} of 8 architectures unlocked.
-          <Link href="/desk?hub=settings#license" className="text-[#f3e2b8]/70 hover:text-[#f3e2b8]">
+          <Link href="/desk/settings#license" className="text-[#f3e2b8]/70 hover:text-[#f3e2b8]">
             Manage license
           </Link>
         </p>
@@ -171,7 +171,7 @@ export function EngineGrid() {
                           <Settings2 className="size-4" />
                         </Link>
                         <Link
-                          href={`/desk?engine=${k}`}
+                          href={`/desk/engines/${k}`}
                           className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-c-1 to-c-2 px-4 py-2 text-[12.5px] font-semibold text-black shadow-[0_0_30px_-8px_var(--c-glow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-c-2"
                         >
                           {g.enter} <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />

@@ -67,14 +67,14 @@ export function BriefPanel({
   const pending = brief.approvals.filter((i) => !decisions[i]).length;
 
   return (
-    <section aria-label="Executive output" style={paletteVars(PALETTES[engine])} className="glass rounded-2xl p-4 sm:p-5">
+    <section aria-label="Executive output" style={paletteVars(PALETTES[engine])} className="os-panel rounded-2xl p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#f0d59a]/85">Executive output · {ENGINES[engine].name}</p>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => download("md")} className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-[11.5px] text-white/75 hover:border-c-edge hover:text-white">
             <FileText className="size-3.5" /> Markdown
           </button>
-          <button type="button" onClick={() => download("json")} className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-[11.5px] text-white/75 hover:border-c-edge hover:text-white">
+          <button type="button" onClick={() => download("json")} className="demo-hide flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-[11.5px] text-white/75 hover:border-c-edge hover:text-white">
             <FileJson className="size-3.5" /> JSON
           </button>
           <Download className="size-3.5 text-white/30" aria-hidden />

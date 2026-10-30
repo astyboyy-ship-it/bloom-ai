@@ -33,7 +33,7 @@ export function SettingsHub({ c, telemetry }: { c: C; telemetry: Telemetry }) {
   const { settings } = useDeskSettings();
   const role = activeMember(settings).role;
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-5 p-4 sm:p-6 lg:grid-cols-2">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5 p-4 sm:p-6 lg:grid-cols-2">
       <LicensePanel allowed={can(role, "license")} />
       <GatewayPanel c={c} allowed={can(role, "settings")} />
       <TeamPanel allowed={can(role, "members")} />
@@ -50,7 +50,7 @@ export function SettingsHub({ c, telemetry }: { c: C; telemetry: Telemetry }) {
 
 export function Panel({ id, icon: Icon, title, body, className, locked, children }: { id?: string; icon: LucideIcon; title: string; body?: string; className?: string; locked?: boolean; children: React.ReactNode }) {
   return (
-    <section id={id} className={cn("glass scroll-mt-20 rounded-2xl p-5", className)}>
+    <section id={id} className={cn("os-panel scroll-mt-20 rounded-2xl p-5", className)}>
       <h2 className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-[#f0d59a]/85">
         <Icon className="size-3.5" /> {title}
         {locked && <span className="ms-auto rounded-full border border-white/15 px-2 py-0.5 text-[8.5px] tracking-[0.14em] text-white/45">Read-only for your role</span>}
@@ -505,7 +505,7 @@ function PersistencePanel({ c, allowed }: { c: C; allowed: boolean }) {
 type Line = { id: string; at: number; kind: AuditKind; actor: string; message: string };
 const KINDS: (AuditKind | "all")[] = ["all", "run", "approval", "license", "credentials", "calibration", "member", "settings", "system"];
 
-function DiagnosticsPanel({ telemetry, canClear }: { telemetry: Telemetry; canClear: boolean }) {
+function DiagnosticsPanel({ telemetry }: { telemetry: Telemetry; canClear?: boolean }) {
   const { settings } = useDeskSettings();
   const { tier } = useLicense();
   const [filter, setFilter] = useState<AuditKind | "all">("all");
@@ -563,9 +563,10 @@ function DiagnosticsPanel({ telemetry, canClear }: { telemetry: Telemetry; canCl
           <button type="button" onClick={exportLog} className={btn}>
             <Download className="size-3.5" /> Export
           </button>
-          <button type="button" disabled={!canClear} onClick={() => window.confirm("Clear the audit log?") && updateSettings({ audit: [] })} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[12px] text-white/60 hover:text-white disabled:opacity-40">
-            Clear
-          </button>
+          {/* The audit log is append-only and hash-chained; there is deliberately no way to clear it from here. */}
+          <a href="/desk/audit" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[12px] text-white/60 hover:text-white">
+            Open audit bay
+          </a>
         </span>
       </div>
       <div ref={box} role="log" aria-live="polite" className="mt-3 h-64 overflow-y-auto rounded-xl border border-white/[0.07] bg-black/50 p-3 font-mono text-[11.5px] leading-relaxed">

@@ -197,7 +197,7 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
               <Range label={c.summaryMax} value={cal.summaryMax} min={120} max={800} step={20} suffix={` ${c.chars}`} onChange={(v) => save({ summaryMax: v })} />
             </div>
             {def?.detail && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="demo-hide mt-4 grid gap-3 sm:grid-cols-2">
                 <Schema label={c.inputSchema} value={def.detail.input} />
                 <Schema label={c.outputSchema} value={def.detail.output} />
               </div>
@@ -282,7 +282,7 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
 
 function Section({ icon: Icon, title, children }: { icon: typeof Wrench; title: string; children: React.ReactNode }) {
   return (
-    <section className="glass rounded-2xl p-5">
+    <section className="os-panel rounded-2xl p-5">
       <h3 className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-c-2/90">
         <Icon className="size-3.5" /> {title}
       </h3>

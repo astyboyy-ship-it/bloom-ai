@@ -12,7 +12,7 @@ import { BriefPanel } from "./brief-panel";
 import { DESK_COPY } from "./copy";
 import { ExecutionLog } from "./execution-log";
 import { RunStepper } from "./run-stepper";
-import { audit, requestHeaders, useDeskSettings } from "./settings";
+import { audit, recordRun, requestHeaders, useDeskSettings } from "./settings";
 import { useRun } from "./use-run";
 
 /** A slide-over run console for the Command Center: one command, its live stages and log, and the brief. */
@@ -33,6 +33,15 @@ export function RunConsoleDrawer({ request, lang, onClose }: { request: { engine
     audit("run", `Executed ${ENGINES[request.engine].name} from the Command Center: "${request.command.slice(0, 90)}"`);
     run(request.engine, request.command, lang, { headers: requestHeaders(s), calibrations });
   }, [request, run, lang]);
+
+  // Finished runs join the workspace history.
+  const recorded = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state.runId || recorded.current === state.runId || !state.engine || (state.status !== "done" && state.status !== "failed")) return;
+    recorded.current = state.runId;
+    const summary = (state.output as { summary?: string } | null)?.summary ?? "";
+    recordRun({ runId: state.runId, at: Date.now(), kind: "engine", target: state.engine, label: ENGINES[state.engine].name, command: state.command, ok: state.status === "done", ms: state.ms ?? 0, tokens: state.usage, summary });
+  }, [state.runId, state.status, state.engine, state.output, state.command, state.ms, state.usage]);
 
   const close = () => {
     if (state.status === "running") abort();
@@ -68,7 +77,7 @@ export function RunConsoleDrawer({ request, lang, onClose }: { request: { engine
                     <Square className="size-3" /> {c.abort}
                   </button>
                 ) : (
-                  <Link href={`/desk?engine=${request.engine}`} className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/15 px-3 py-1.5 text-[12px] text-white/70 hover:text-white">
+                  <Link href={`/desk/engines/${request.engine}`} className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/15 px-3 py-1.5 text-[12px] text-white/70 hover:text-white">
                     Open in desk <ArrowUpRight className="size-3.5" />
                   </Link>
                 )}
@@ -79,7 +88,7 @@ export function RunConsoleDrawer({ request, lang, onClose }: { request: { engine
             </header>
             <div className="flex-1 space-y-4 overflow-y-auto p-5">
               {state.engine ? <RunStepper phases={state.phases} now={Date.now()} /> : <Loader2 className="size-5 animate-spin text-c-2" />}
-              <section className="flex max-h-80 min-h-48 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-black/45">
+              <section className="demo-hide flex max-h-80 min-h-48 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-black/45">
                 <ExecutionLog c={c} log={state.log} agents={state.agents} />
               </section>
               {state.status === "done" && state.engine && state.brief && <BriefPanel key={state.runId} engine={state.engine} runId={state.runId} output={state.output} brief={state.brief} />}

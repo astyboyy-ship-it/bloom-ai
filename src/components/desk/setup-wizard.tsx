@@ -69,7 +69,7 @@ export function SetupWizard() {
           ))}
         </ol>
 
-        <div className="glass mt-6 rounded-3xl p-6 sm:p-8">
+        <div className="os-panel mt-6 rounded-3xl p-6 sm:p-8">
           <h1 className="font-display text-[34px] font-light leading-tight">{STEPS[step].title}</h1>
           <p className="mt-1 text-[14px] text-white/55">{STEPS[step].blurb}</p>
           <AnimatePresence mode="wait">

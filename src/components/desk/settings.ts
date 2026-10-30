@@ -5,6 +5,8 @@ import type { EngineKey } from "@/components/bloom/command/engines";
 import type { ShiftMode } from "@/components/bloom/shift-plan";
 import type { CalibrationInput } from "@/lib/engines/calibration";
 import type { Tier } from "@/lib/license/tiers";
+import { redactSecrets } from "@/lib/security/injection";
+import { sha256 } from "@/lib/sha256";
 import type { Role } from "./rbac";
 
 /**
@@ -36,8 +38,46 @@ export type LicenseInfo = { tier: Exclude<Tier, "evaluation">; org: string; expi
 
 export type Member = { id: string; name: string; email: string; role: Role };
 
-export type AuditKind = "license" | "settings" | "credentials" | "run" | "approval" | "member" | "calibration" | "system";
-export type AuditEntry = { id: number; at: number; kind: AuditKind; actor: string; message: string };
+export type AuditKind = "license" | "settings" | "credentials" | "run" | "approval" | "member" | "calibration" | "system" | "security";
+/**
+ * An audit entry. `hash` chains it to the entry before (SHA-256 over the previous hash and this entry's fields),
+ * so editing or deleting any past entry breaks verification from that point on. Entries written before the
+ * chain existed have no hash and are reported as unchained.
+ */
+export type AuditEntry = { id: number; at: number; kind: AuditKind; actor: string; message: string; env?: string; hash?: string };
+
+/** A deployment environment the workspace operates in; runs and audit entries are tagged with it. */
+export type Environment = { id: string; name: string; region: string };
+
+/** A custom pipeline from the builder: engines chained left to right between an input and an output. */
+export type PipelineNode = { id: string; kind: "input" | "engine" | "output"; engine?: EngineKey; x: number; y: number };
+export type Pipeline = { id: string; name: string; nodes: PipelineNode[]; edges: [string, string][]; updatedAt: number };
+
+/** Governance for one architecture product, applied to every engine in its stack when it runs. */
+export type ArchitectureRules = {
+  runsPerHour: number;
+  budgetTokens: number;
+  model: string;
+  fallbackModel: string;
+  approvalThresholdUsd: number;
+  memoryRuns: number;
+  requireApprovalAlways: boolean;
+};
+
+export type RunRecord = {
+  runId: string;
+  at: number;
+  kind: "engine" | "architecture" | "pipeline";
+  /** Engine key, architecture id or pipeline id. */
+  target: string;
+  label: string;
+  command: string;
+  ok: boolean;
+  ms: number;
+  tokens: { input: number; output: number };
+  summary: string;
+  env: string;
+};
 
 export type DeskSettings = {
   keys: Credentials;
@@ -52,6 +92,13 @@ export type DeskSettings = {
   surgeOnRun: boolean;
   calibrations: Partial<Record<EngineKey, CalibrationInput>>;
   audit: AuditEntry[];
+  environments: Environment[];
+  activeEnvId: string;
+  /** Executive presentation mode: hides logs, JSON and code; shows large metrics and clean animations. */
+  demoMode: boolean;
+  pipelines: Pipeline[];
+  architectureRules: Record<string, ArchitectureRules>;
+  runs: RunRecord[];
 };
 
 const OWNER: Member = { id: "owner", name: "Workspace Owner", email: "", role: "owner" };
@@ -68,9 +115,19 @@ export const DEFAULT_SETTINGS: DeskSettings = {
   surgeOnRun: true,
   calibrations: {},
   audit: [],
+  environments: [
+    { id: "alpha-1", name: "Enterprise Node: Alpha-1", region: "us-east" },
+    { id: "prod-eu-central", name: "Prod-EU-Central", region: "eu-central" },
+  ],
+  activeEnvId: "alpha-1",
+  demoMode: false,
+  pipelines: [],
+  architectureRules: {},
+  runs: [],
 };
 
-const AUDIT_CAP = 400;
+const AUDIT_CAP = 1000;
+const RUNS_CAP = 200;
 
 const DATA_KEY = "bloom-desk-settings";
 const MODE_KEY = "bloom-desk-persistence";
@@ -113,6 +170,10 @@ function read(): DeskSettings {
       activeMemberId: members.some((m) => m.id === parsed.activeMemberId) ? parsed.activeMemberId! : members[0].id,
       calibrations: parsed.calibrations ?? {},
       audit: Array.isArray(parsed.audit) ? parsed.audit : [],
+      environments: Array.isArray(parsed.environments) && parsed.environments.length ? parsed.environments : DEFAULT_SETTINGS.environments,
+      pipelines: Array.isArray(parsed.pipelines) ? parsed.pipelines : [],
+      architectureRules: parsed.architectureRules ?? {},
+      runs: Array.isArray(parsed.runs) ? parsed.runs : [],
     };
   } catch {
     cache = DEFAULT_SETTINGS;
@@ -196,10 +257,56 @@ export function requestHeaders(s: DeskSettings): Record<string, string> {
 
 export const activeMember = (s: DeskSettings) => s.members.find((m) => m.id === s.activeMemberId) ?? s.members[0];
 
-/** Appends to the workspace audit log, attributed to the member currently acting. */
+export const activeEnv = (s: DeskSettings) => s.environments.find((e) => e.id === s.activeEnvId) ?? s.environments[0];
+
+/** The canonical text an audit entry's hash covers, chained to the previous entry's hash. */
+export const auditPayload = (prev: string, e: Omit<AuditEntry, "hash">) => `${prev}|${e.id}|${e.at}|${e.kind}|${e.actor}|${e.env ?? ""}|${e.message}`;
+
+/** Appends to the workspace audit log, attributed to the member acting and tagged with the environment. */
 export function audit(kind: AuditKind, message: string) {
   updateSettings((s) => {
     const last = s.audit.at(-1);
-    return { audit: [...s.audit, { id: (last?.id ?? 0) + 1, at: Date.now(), kind, actor: activeMember(s).name, message }].slice(-AUDIT_CAP) };
+    // Credentials never reach the log, even if one was pasted into a command.
+    const entry: Omit<AuditEntry, "hash"> = { id: (last?.id ?? 0) + 1, at: Date.now(), kind, actor: activeMember(s).name, message: redactSecrets(message), env: activeEnv(s).name };
+    const hash = sha256(auditPayload(last?.hash ?? "genesis", entry));
+    return { audit: [...s.audit, { ...entry, hash }].slice(-AUDIT_CAP) };
   });
+}
+
+/**
+ * Walks the chain. Entries before the first hashed one are "unchained" (written before the chain existed);
+ * the first hashed entry after a capped trim anchors on its own stored predecessor hash.
+ */
+export function verifyAudit(entries: AuditEntry[]): { ok: boolean; checked: number; unchained: number; brokenAt: number | null } {
+  let prev: string | null = null;
+  let checked = 0;
+  let unchained = 0;
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (!e.hash) {
+      if (prev !== null) return { ok: false, checked, unchained, brokenAt: e.id };
+      unchained++;
+      continue;
+    }
+    if (prev === null) {
+      // The first hashed entry chains to "genesis". Only when the log has hit its cap (so older entries were
+      // trimmed away) can it legitimately chain to something we no longer hold; then it's taken as the anchor.
+      const { hash, ...body } = e;
+      const trimmed = i === 0 && entries.length >= AUDIT_CAP;
+      if (!trimmed && sha256(auditPayload("genesis", body)) !== hash) return { ok: false, checked, unchained, brokenAt: e.id };
+      prev = hash;
+      checked++;
+      continue;
+    }
+    const { hash, ...body } = e;
+    if (sha256(auditPayload(prev, body)) !== hash) return { ok: false, checked, unchained, brokenAt: e.id };
+    prev = hash;
+    checked++;
+  }
+  return { ok: true, checked, unchained, brokenAt: null };
+}
+
+/** Records a finished run in the workspace history (searchable in architecture and audit views). */
+export function recordRun(r: Omit<RunRecord, "env">) {
+  updateSettings((s) => ({ runs: [...s.runs, { ...r, command: redactSecrets(r.command), summary: redactSecrets(r.summary), env: activeEnv(s).name }].slice(-RUNS_CAP) }));
 }

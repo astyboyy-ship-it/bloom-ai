@@ -90,7 +90,7 @@ function section(key: string, v: unknown): string {
   return `\n**${human(key)}:** ${v}\n`;
 }
 
-export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalThresholdUsd: number; command: string; mode: string; model: string }): Brief {
+export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalThresholdUsd: number; command: string; mode: string; model: string; title?: string; subtitle?: string }): Brief {
   const o = (output && typeof output === "object" ? output : {}) as { summary?: string; confidence?: number; actions?: Action[] } & Record<string, unknown>;
   const { summary = "", confidence, actions = [], ...rest } = o;
   const e = ENGINES[engine];
@@ -105,8 +105,8 @@ export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalT
 
   // Sections are separated by blank lines; omitted sections are null, not empty strings.
   const md = [
-    `# ${e.name} · Executive Brief`,
-    `_Engine Nº ${e.index} · ${e.role} · ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC · ${opts.mode === "live" ? opts.model : "simulation"}_`,
+    `# ${opts.title ?? e.name} · Executive Brief`,
+    `_${opts.subtitle ?? `Engine Nº ${e.index} · ${e.role}`} · ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC · ${opts.mode === "live" ? opts.model : "simulation"}_`,
     `> ${opts.command.replace(/\n+/g, " ")}`,
     `## Summary\n${summary}${typeof confidence === "number" ? `\n\n**Confidence:** ${Math.round(confidence * 100)}%` : ""}`,
     metrics.length ? `## Key metrics\n| Metric | Value |\n| --- | --- |\n${metrics.map((m) => `| ${m.label} | ${fmt(m)} |`).join("\n")}` : null,

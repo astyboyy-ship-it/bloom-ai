@@ -59,7 +59,10 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       setChecking(true);
       const r = await postLicense({ key: key.trim() });
       setChecking(false);
-      if (!r.ok) return r;
+      if (!r.ok) {
+        audit("security", `License key rejected at activation: ${r.message}`);
+        return r;
+      }
       const info = apply(r.data);
       audit("license", `Activated ${TIER_INFO[info.tier].label} for ${info.org}${info.dev ? " (development key)" : ""}`);
       return { ok: true, info };

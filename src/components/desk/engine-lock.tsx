@@ -36,7 +36,7 @@ export function EngineLock({ engine, lang, children, compact = false, className 
         {children}
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-ink/55 p-4 backdrop-blur-[2px]">
-        <div role="region" aria-label={`${e.name} is locked`} className={cn("glass w-full rounded-2xl text-start", compact ? "max-w-sm p-4" : "max-w-lg p-6")}>
+        <div role="region" aria-label={`${e.name} is locked`} className={cn("os-panel w-full rounded-2xl text-start", compact ? "max-w-sm p-4" : "max-w-lg p-6")}>
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-c-2">
             <Lock className="size-3.5" /> Tier lock · Engine Nº {e.index}
           </p>
@@ -60,7 +60,7 @@ export function EngineLock({ engine, lang, children, compact = false, className 
             </>
           )}
           <Link
-            href="/desk?hub=settings#license"
+            href="/desk/settings#license"
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-c-1 to-c-2 px-4 py-2 text-[12.5px] font-semibold text-black shadow-[0_0_30px_-8px_var(--c-glow)]"
           >
             <Lock className="size-3.5" /> Upgrade Architecture License

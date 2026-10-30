@@ -10,24 +10,14 @@ import { PALETTES, paletteVars } from "./command/theme";
 import { useI18n, type Lang } from "./i18n";
 import { FADE, SNAP } from "./motion";
 import { Accent, SectionHeading } from "./section-heading";
+import { ARCHITECTURES } from "@/lib/architectures";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /** A pre-packaged architecture: engines in the order data flows through them, with its deployment fee and retainer (USD). */
 type Product = { id: string; name: string; engines: EngineKey[]; setup: number; retainer: number };
 
-const PRODUCTS: Product[] = [
-  { id: "inbound", name: "Inbound Signal Collector", engines: ["intentpulse", "sovereign"], setup: 35000, retainer: 8500 },
-  { id: "outbound", name: "Autonomous Outbound Engine", engines: ["intentpulse", "vanguard", "apex"], setup: 50000, retainer: 14500 },
-  { id: "fullfunnel", name: "Full-Funnel Closing Suite", engines: ["vanguard", "cortex", "aether"], setup: 65000, retainer: 22000 },
-  { id: "retention", name: "Retention & Churn Shield", engines: ["shield", "aether", "sovereign"], setup: 45000, retainer: 12500 },
-  { id: "executive", name: "Executive Authority Engine", engines: ["coreops", "shield", "sovereign"], setup: 35000, retainer: 9500 },
-  { id: "pipeline", name: "Pipeline Acceleration Stack", engines: ["intentpulse", "vanguard", "cortex"], setup: 60000, retainer: 18500 },
-  { id: "monetization", name: "Monetization Yield Optimizer", engines: ["cortex", "aether", "coreops"], setup: 50000, retainer: 16000 },
-  { id: "postsale", name: "Post-Sale Expansion Suite", engines: ["shield", "aether", "cortex"], setup: 55000, retainer: 19500 },
-  { id: "lifecycle", name: "Lifecycle Orchestration Stack", engines: ["intentpulse", "apex", "shield"], setup: 75000, retainer: 28000 },
-  { id: "os", name: "The Sovereign Revenue OS", engines: ["intentpulse", "vanguard", "apex", "cortex", "aether", "coreops", "shield", "sovereign"], setup: 125000, retainer: 55000 },
-];
+const PRODUCTS: Product[] = ARCHITECTURES;
 
 const FLAGSHIP = "os";
 
@@ -55,18 +45,7 @@ const en = {
     ["SLA guarantee", flagship ? "99.99% uptime · 15-minute response · dedicated forward-deployed engineer" : retainer >= 25000 ? "99.99% uptime · 30-minute response · named engineer" : retainer >= 12000 ? "99.95% uptime · 1-hour response · named engineer" : "99.9% uptime · 4-hour response"],
     ["Go-live", n <= 2 ? "2 weeks" : n === 3 ? "3 to 4 weeks" : "6 to 8 weeks"],
   ],
-  taglines: {
-    inbound: "IntentPulse catches buyers describing your problem; Sovereign routes budget and approvals to the hottest ones.",
-    outbound: "Buying signals feed Vanguard's outreach, and Apex works every reply until it's signed.",
-    fullfunnel: "Vanguard opens the deals, Cortex closes them, and Aether makes sure each one is priced to win.",
-    retention: "Shield spots churn early, Aether prices the save, and Sovereign signs off within your limits.",
-    executive: "Back office, retention and governance run themselves, with every decision on the record.",
-    pipeline: "From the first buying signal to a briefed closer in hours instead of weeks.",
-    monetization: "Objection data reshapes your pricing, and CoreOps bills the new model the same day.",
-    postsale: "Find the expansion, price it right and close it, inside your existing customer base.",
-    lifecycle: "Catch the buyer, close the deal, keep the customer: one loop from signal to renewal.",
-    os: "Every Bloom engine wired into one autonomous revenue operating system, governed by Sovereign.",
-  } as Record<string, string>,
+  taglines: Object.fromEntries(ARCHITECTURES.map((a) => [a.id, a.tagline])) as Record<string, string>,
   handoff: {
     sovereign: "approved budgets, limits and final sign-off",
     apex: "won deals and signed terms",

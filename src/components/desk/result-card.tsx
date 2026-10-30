@@ -19,7 +19,7 @@ export function ResultCard({ c, output }: { c: (typeof DESK_COPY)["en"]; output:
   if (!output || typeof output !== "object") return null;
   const { summary, confidence, actions = [], ...rest } = output as Output;
   return (
-    <section aria-label={c.result} className="glass rounded-2xl p-4 sm:p-5">
+    <section aria-label={c.result} className="os-panel rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#f0d59a]/85">{c.result}</p>
         {typeof confidence === "number" && (

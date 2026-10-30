@@ -20,6 +20,8 @@ export const CalibrationSchema = z.object({
 
   /** Model & runtime. */
   model: z.enum(MODEL_IDS).default(DEFAULT_MODEL),
+  /** Where the engine falls back when its model is overloaded or unavailable. */
+  fallbackModel: z.enum(MODEL_IDS).optional(),
   /** 0-1; applies only to models that accept it (see models.ts). */
   temperature: z.number().min(0).max(1).default(0.4),
   /** Per-engine wall-clock cap for one run, in seconds. */
