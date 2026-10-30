@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Boxes, Check, CheckCircle2, CircleDot, ClipboardCheck, CornerDownLeft, Download, FileText, Loader2, Pencil, ShieldAlert, Terminal, X, XCircle } from "lucide-react";
+import { ArrowUpRight, Boxes, BrainCircuit, Check, CheckCircle2, CircleDot, ClipboardCheck, CornerDownLeft, Download, FileText, Gavel, Loader2, Pencil, ShieldAlert, Terminal, X, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANIES, ENGINES, usdFmt, type EngineKey } from "@/components/bloom/command/engines";
 import { useCommandCopy } from "@/components/bloom/command/locale";
@@ -12,10 +12,11 @@ import { PRESETS } from "@/components/desk/copy";
 import { fmtMs } from "@/components/desk/format";
 import { can } from "@/components/desk/rbac";
 import { RunConsoleDrawer, type ConsoleStatus } from "@/components/desk/run-console-drawer";
-import { activeEnv, activeMember, audit, completeTask, decideApproval, updateSettings, useDeskSettings, type RunRecord } from "@/components/desk/settings";
+import { activeEnv, activeMember, audit, completeTask, decideApproval, updateSettings, usageScore, useDeskSettings, verifyAudit, verifyLedger, type DeskSettings, type RunRecord } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
 import { useLicense } from "@/lib/license-context";
 import { TIER_INFO } from "@/lib/license/tiers";
+import { OS_NAV } from "./nav";
 import { TIER_PILL } from "./os-shell";
 import { useOsTelemetry } from "./telemetry-context";
 
@@ -36,11 +37,13 @@ export function OsHome() {
   const [text, setText] = useState("");
   const [request, setRequest] = useState<{ engine: EngineKey; command: string; id: number } | null>(null);
   const [live, setLive] = useState<ConsoleStatus>({ engine: null, status: "idle", detail: "", startedAt: 0 });
-  const target = engine && isUnlocked(engine) ? engine : engines[0];
+  const ranked = byUsage(settings, engines, (k) => `engine:${k}`);
+  const target = engine && isUnlocked(engine) ? engine : ranked[0];
 
   return (
     <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-5 sm:px-6">
       <ContextHeader live={live} />
+      <AdaptiveStrip />
       <ArchitectureLauncher runs={settings.runs} />
 
       <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -155,19 +158,25 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
         </div>
       </div>
       <dl className="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-3">
-        {[
-          ["Runtime", manifest ? (manifest.mode === "live" ? "LIVE" : "SIM") : "…", manifest?.mode === "live" ? "text-os-emerald" : "text-os-gold"],
-          ["SLA", uptime === null ? "…" : `${Math.round(uptime * 100)}%`, slaTone],
-          ["Latency", latency === null ? "…" : `${latency}ms`, "os-glow"],
-          ["Engines online", `${engines.length}`, "text-white"],
-          ["Runs active", String(running), running ? "text-os-cyan" : "text-white"],
-          ["Approvals", String(pending), pending ? "text-amber-300" : "text-white"],
-        ].map(([k, v, tone]) => (
-          <div key={k} className="rounded-lg border border-os-line bg-black/25 px-2.5 py-1.5">
-            <dt className="truncate font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">{k}</dt>
-            <dd className={cn("font-mono text-[15px] tabular-nums", tone)}>{v}</dd>
-          </div>
-        ))}
+        {(
+          [
+            // [label, value, tone, base salience, alert, related page]
+            ["Runtime", manifest ? (manifest.mode === "live" ? "LIVE" : "SIM") : "…", manifest?.mode === "live" ? "text-os-emerald" : "text-os-gold", 1, false, "/desk/settings"],
+            ["SLA", uptime === null ? "…" : `${Math.round(uptime * 100)}%`, slaTone, 2, sla !== "nominal" && uptime !== null, "/desk/global-pulse"],
+            ["Latency", latency === null ? "…" : `${latency}ms`, "os-glow", 1.5, false, "/desk/audit"],
+            ["Engines online", `${engines.length}`, "text-white", 1.2, false, "/desk/engines"],
+            ["Runs active", String(running), running ? "text-os-cyan" : "text-white", 1.4, running > 0, "/desk/builder"],
+            ["Approvals", String(pending), pending ? "text-amber-300" : "text-white", 1.8, pending > 0, "/desk/shadow-board"],
+          ] as const
+        )
+          .map((t) => ({ t, w: t[3] + (t[4] ? 20 : 0) + usageScore(settings, `page:${t[5]}`) }))
+          .sort((a, b) => b.w - a.w)
+          .map(({ t: [k, v, tone, , alert] }) => (
+            <div key={k} className={cn("rounded-lg border bg-black/25 px-2.5 py-1.5 transition-colors", alert ? "border-amber-300/40 shadow-[0_0_18px_-10px_rgb(252_211_77/0.8)]" : "border-os-line")}>
+              <dt className="truncate font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">{k}</dt>
+              <dd className={cn("font-mono text-[15px] tabular-nums", tone)}>{v}</dd>
+            </div>
+          ))}
       </dl>
     </header>
   );
@@ -181,7 +190,8 @@ function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
   const recent = [...runs].reverse().flatMap((r) => (r.kind === "architecture" ? [r.target] : []));
   const ids = [...new Set(recent)];
   // Licensed products first; on smaller tiers the rest still show, since their desks explain what unlocks them.
-  const licensed = [...ARCHITECTURES].sort((a, b) => Number(b.engines.every((k) => engines.includes(k))) - Number(a.engines.every((k) => engines.includes(k))));
+  const fit = (a: (typeof ARCHITECTURES)[number]) => usageScore(settings, `arch:${a.id}`) * 10 + Number(a.engines.every((k) => engines.includes(k)));
+  const licensed = [...ARCHITECTURES].sort((a, b) => fit(b) - fit(a));
   const list = [...ids.map((id) => ARCHITECTURES.find((a) => a.id === id)).filter((a): a is (typeof ARCHITECTURES)[number] => Boolean(a)), ...licensed.filter((a) => !ids.includes(a.id))].slice(0, 6);
   const pipelines = settings.pipelines.slice(-2).reverse();
 
@@ -256,7 +266,8 @@ function useWorkstreams(engines: EngineKey[]) {
 
 function Workstreams({ live, onOpen }: { live: ConsoleStatus; onOpen: () => void }) {
   const { engines } = useLicense();
-  const streams = useWorkstreams(engines);
+  const { settings } = useDeskSettings();
+  const streams = useWorkstreams(byUsage(settings, engines, (k) => `engine:${k}`));
   const elapsed = useTicker(live.status === "running", live.startedAt);
   return (
     <div className="os-panel rounded-2xl">
@@ -349,6 +360,7 @@ function ApprovalBay() {
   const pending = settings.approvals.filter((a) => a.status === "pending").reverse();
   const tasks = settings.approvals.filter((a) => a.status === "approved" && a.owner === "human" && !a.done).reverse();
   const exports = [...settings.audit].reverse().filter((a) => /export|download|pdf/i.test(a.message)).slice(0, 5);
+  const boardFor = (id: string) => settings.boardSessions.findLast((b) => b.approvalId === id);
 
   return (
     <aside aria-label="Approval and action bay" className="min-w-0 space-y-4">
@@ -372,7 +384,10 @@ function ApprovalBay() {
                 </p>
                 <p dir="auto" className="mt-1 text-[13px] font-medium text-white">{a.title}</p>
                 <p dir="auto" className="mt-0.5 line-clamp-2 text-[12px] text-white/50">{a.detail}</p>
-                <div className="mt-2 flex gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <Link href={`/desk/shadow-board?approval=${encodeURIComponent(a.id)}`} className="flex items-center gap-1 rounded-full border border-os-cyan/40 px-3 py-1 text-[11.5px] text-os-cyan transition-colors hover:bg-os-cyan/10">
+                    <Gavel className="size-3" /> {boardFor(a.id) ? `Board: ${boardFor(a.id)!.verdict}` : "Stress-test"}
+                  </Link>
                   <button type="button" disabled={!mayApprove} onClick={() => decideApproval(a.id, "approved")} className="flex items-center gap-1 rounded-full border border-os-emerald/40 px-3 py-1 text-[11.5px] text-os-emerald transition-colors hover:bg-os-emerald/10 disabled:opacity-35" title={mayApprove ? undefined : "Your role can't approve actions"}>
                     <Check className="size-3" /> Approve
                   </button>
@@ -436,6 +451,67 @@ function ApprovalBay() {
         </Link>
       </section>
     </aside>
+  );
+}
+
+/** Orders keys by their decayed usage weight, keeping the original order for ties. */
+function byUsage<T extends string>(s: DeskSettings, keys: T[], key: (k: T) => string): T[] {
+  return keys.map((k, i) => ({ k, i, w: usageScore(s, key(k)) })).sort((a, b) => b.w - a.w || a.i - b.i).map((x) => x.k);
+}
+
+/**
+ * Neuro-adaptive layer: active alerts rise to the top, and the operator's most-used pillars and engines become
+ * one-click shortcuts. All weights are local (decaying, 3-day half-life) and can be reset.
+ */
+function AdaptiveStrip() {
+  const { settings } = useDeskSettings();
+  const { sla } = useOsTelemetry();
+  const pending = settings.approvals.filter((a) => a.status === "pending").length;
+  const day = Date.now() - 86_400_000;
+  const threats = settings.audit.filter((a) => a.kind === "security" && a.at >= day).length;
+  const auditOk = verifyAudit(settings.audit).ok;
+  const ledgerOk = verifyLedger(settings.runs).ok;
+  const alerts = [
+    pending > 0 && { href: "/desk/shadow-board", text: `${pending} approval${pending > 1 ? "s" : ""} awaiting sign-off`, tone: "amber" },
+    threats > 0 && { href: "/desk/threat-matrix", text: `${threats} security event${threats > 1 ? "s" : ""} in 24h`, tone: "red" },
+    !auditOk && { href: "/desk/audit", text: "Audit chain broken", tone: "red" },
+    !ledgerOk && { href: "/desk/audit", text: "Execution ledger broken", tone: "red" },
+    sla === "degraded" && { href: "/desk/global-pulse", text: "SLA degraded", tone: "amber" },
+    sla === "offline" && { href: "/desk/global-pulse", text: "Runtime offline", tone: "red" },
+  ].filter((x): x is { href: string; text: string; tone: string } => Boolean(x));
+  const pages = OS_NAV.filter((n) => n.href !== "/desk")
+    .map((n) => ({ n, w: usageScore(settings, `page:${n.href}`) }))
+    .filter((x) => x.w > 0.05)
+    .sort((a, b) => b.w - a.w)
+    .slice(0, 4);
+  const learned = Object.keys(settings.usage).length > 0;
+
+  if (!alerts.length && !pages.length) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      {alerts.map((a) => (
+        <Link key={a.text} href={a.href} className={cn("flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition-colors", a.tone === "red" ? "border-red-400/40 bg-red-500/[0.06] text-red-200 hover:bg-red-500/10" : "border-amber-300/40 bg-amber-300/[0.06] text-amber-100 hover:bg-amber-300/10")}>
+          <span className={cn("size-1.5 animate-pulse rounded-full", a.tone === "red" ? "bg-red-400" : "bg-amber-300")} /> {a.text}
+        </Link>
+      ))}
+      {pages.length > 0 && (
+        <span className="ms-auto flex flex-wrap items-center gap-1.5">
+          <span className="os-label flex items-center gap-1" title="Ranked by how often and how recently you use them, on this device">
+            <BrainCircuit className="size-3 text-os-violet" /> Your shortcuts
+          </span>
+          {pages.map(({ n }) => (
+            <Link key={n.href} href={n.href} className="flex items-center gap-1.5 rounded-full border border-os-line px-2.5 py-1 text-[12px] text-white/70 transition-colors hover:border-os-cyan/40 hover:text-white">
+              <n.icon className="size-3" /> {n.name}
+            </Link>
+          ))}
+          {learned && (
+            <button type="button" onClick={() => updateSettings({ usage: {} })} className="px-1 text-[11px] text-white/35 hover:text-white/70">
+              reset
+            </button>
+          )}
+        </span>
+      )}
+    </div>
   );
 }
 

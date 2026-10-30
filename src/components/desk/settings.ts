@@ -79,6 +79,15 @@ export type RunRecord = {
   env: string;
   /** The executive brief (Markdown) for the deliverables shelf; kept on the latest runs only. */
   brief?: string;
+  /**
+   * Proof of execution: SHA-256 of the (redacted) command and summary, the executing node, and a seal chaining
+   * this run to the one before. Editing any sealed run, or its stored input/output, breaks verification.
+   */
+  inputHash?: string;
+  outputHash?: string;
+  node?: string;
+  prevSeal?: string;
+  seal?: string;
 };
 
 /**
@@ -99,7 +108,35 @@ export type Approval = {
   by?: string;
   decidedAt?: number;
   done?: boolean;
+  /** Human-in-the-loop signature: SHA-256 over the decision, who made it, when, and the run's seal. */
+  sig?: string;
 };
+
+/** One Shadow Board deliberation: three adversarial agents stress-test a proposal before it touches live systems. */
+export type BoardVote = { agent: "advocate" | "optimizer" | "compliance"; stance: "support" | "conditional" | "oppose" | "veto"; score: number; ms: number; criteria: Record<string, number>; points: string[]; conditions: string[] };
+export type BoardSession = {
+  id: string;
+  at: number;
+  subject: string;
+  detail: string;
+  amountUsd: number | null;
+  approvalId?: string;
+  runId?: string;
+  verdict: "approved" | "rejected" | "escalate";
+  score: number;
+  votes: BoardVote[];
+  ms: number;
+  hash: string;
+};
+
+/**
+ * A snapshot of one engine's long-term memory, like a commit: it has a parent and a branch, so the timeline can be
+ * inspected, rolled back (as a new snapshot, so nothing is lost) or forked into a what-if branch.
+ */
+export type MemorySnapshot = { id: string; engine: EngineKey; at: number; parent: string | null; branch: string; memory: string[]; label: string; hash: string };
+
+/** Local, decaying usage weights (engines, architectures, pages) that let Home adapt to how the operator works. */
+export type UsageWeight = { score: number; last: number };
 
 /** The client engagement this workspace is running: shown in Home's context header. */
 export type Project = { client: string; name: string; scope: string };
@@ -126,6 +163,13 @@ export type DeskSettings = {
   runs: RunRecord[];
   approvals: Approval[];
   project: Project;
+  /** This device's node identity, minted on first sealed run. */
+  nodeId: string;
+  boardSessions: BoardSession[];
+  memorySnapshots: MemorySnapshot[];
+  /** The snapshot each engine's live memory currently sits on. */
+  memoryHeads: Partial<Record<EngineKey, string>>;
+  usage: Record<string, UsageWeight>;
 };
 
 const OWNER: Member = { id: "owner", name: "Workspace Owner", email: "", role: "owner" };
@@ -153,6 +197,11 @@ export const DEFAULT_SETTINGS: DeskSettings = {
   runs: [],
   approvals: [],
   project: { client: "", name: "", scope: "" },
+  nodeId: "",
+  boardSessions: [],
+  memorySnapshots: [],
+  memoryHeads: {},
+  usage: {},
 };
 
 const AUDIT_CAP = 1000;
@@ -160,6 +209,9 @@ const RUNS_CAP = 200;
 /** Briefs are a few KB each; only the latest keep theirs, so local storage stays well inside its quota. */
 const BRIEFS_KEPT = 20;
 const APPROVALS_CAP = 200;
+const BOARD_CAP = 100;
+const SNAPSHOTS_CAP = 400;
+const USAGE_HALF_LIFE = 3 * 86_400_000;
 
 const DATA_KEY = "bloom-desk-settings";
 const MODE_KEY = "bloom-desk-persistence";
@@ -208,6 +260,11 @@ function read(): DeskSettings {
       runs: Array.isArray(parsed.runs) ? parsed.runs : [],
       approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
       project: { ...DEFAULT_SETTINGS.project, ...parsed.project },
+      nodeId: typeof parsed.nodeId === "string" ? parsed.nodeId : "",
+      boardSessions: Array.isArray(parsed.boardSessions) ? parsed.boardSessions : [],
+      memorySnapshots: Array.isArray(parsed.memorySnapshots) ? parsed.memorySnapshots : [],
+      memoryHeads: parsed.memoryHeads ?? {},
+      usage: parsed.usage ?? {},
     };
   } catch {
     cache = DEFAULT_SETTINGS;
@@ -227,8 +284,117 @@ function write(next: DeskSettings) {
 
 export function updateSettings(patch: Partial<DeskSettings> | ((s: DeskSettings) => Partial<DeskSettings>)) {
   const cur = read();
-  write({ ...cur, ...(typeof patch === "function" ? patch(cur) : patch) });
+  const next = { ...cur, ...(typeof patch === "function" ? patch(cur) : patch) };
+  write(next.calibrations === cur.calibrations ? next : snapshotMemory(cur, next));
 }
+
+const memOf = (s: DeskSettings, k: EngineKey) => s.calibrations[k]?.memory ?? [];
+const sameMem = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
+
+/** Builds a snapshot chained to its parent's hash. */
+export function makeSnapshot(s: Pick<DeskSettings, "memorySnapshots">, engine: EngineKey, parent: string | null, branch: string, memory: string[], label: string, at = Date.now()): MemorySnapshot {
+  const prev = s.memorySnapshots.find((x) => x.id === parent);
+  const id = newId().slice(0, 12);
+  return { id, engine, at, parent, branch, memory, label, hash: sha256(`${prev?.hash ?? "root"}|${id}|${engine}|${at}|${branch}|${JSON.stringify(memory)}`) };
+}
+
+/**
+ * Any change to an engine's memory (a run's retained result, seeding, forgetting, clearing) is committed as a
+ * snapshot on the engine's current branch. Rollbacks and forks move the head themselves and are skipped here.
+ */
+function snapshotMemory(cur: DeskSettings, next: DeskSettings): DeskSettings {
+  const engines = new Set([...Object.keys(cur.calibrations), ...Object.keys(next.calibrations)] as EngineKey[]);
+  let snaps = next.memorySnapshots;
+  const heads = { ...next.memoryHeads };
+  for (const k of engines) {
+    const before = memOf(cur, k);
+    const after = memOf(next, k);
+    if (sameMem(before, after) || next.memoryHeads[k] !== cur.memoryHeads[k]) continue;
+    let head = snaps.find((x) => x.id === heads[k]) ?? null;
+    if (!head && before.length) {
+      // Memory that predates time-travel becomes the root, so the first change can be rolled back.
+      head = makeSnapshot({ memorySnapshots: snaps }, k, null, "main", before, "Baseline", Date.now() - 1);
+      snaps = [...snaps, head];
+    }
+    const added = after.filter((m) => !before.includes(m)).length;
+    const removed = before.filter((m) => !after.includes(m)).length;
+    const label = !after.length ? "Memory cleared" : added && !removed ? `Retained ${added} result${added > 1 ? "s" : ""}` : removed && !added ? `Forgot ${removed} memor${removed > 1 ? "ies" : "y"}` : `+${added} / -${removed} memories`;
+    const snap = makeSnapshot({ memorySnapshots: snaps }, k, head?.id ?? null, head?.branch ?? "main", after, label);
+    snaps = [...snaps, snap];
+    heads[k] = snap.id;
+  }
+  return { ...next, memorySnapshots: snaps.slice(-SNAPSHOTS_CAP), memoryHeads: heads };
+}
+
+/** Re-hydrates an engine's memory to a past snapshot, recorded as a new snapshot so the history is kept. */
+export function rollbackMemory(id: string) {
+  let label = "";
+  updateSettings((s) => {
+    const target = s.memorySnapshots.find((x) => x.id === id);
+    if (!target) return {};
+    const k = target.engine;
+    const head = s.memorySnapshots.find((x) => x.id === s.memoryHeads[k]);
+    const snap = makeSnapshot(s, k, head?.id ?? target.id, head?.branch ?? target.branch, target.memory, `Rollback to ${target.id.slice(0, 7)}`);
+    label = `Rolled ${k} memory back to snapshot ${target.id.slice(0, 7)} (${new Date(target.at).toISOString()})`;
+    return { calibrations: { ...s.calibrations, [k]: { ...s.calibrations[k], memory: target.memory } }, memorySnapshots: [...s.memorySnapshots, snap].slice(-SNAPSHOTS_CAP), memoryHeads: { ...s.memoryHeads, [k]: snap.id } };
+  });
+  if (label) audit("calibration", label);
+}
+
+/** Forks a what-if branch from a snapshot, optionally injecting a scenario premise, and checks it out. */
+export function forkMemory(id: string, branch: string, scenario: string) {
+  let label = "";
+  updateSettings((s) => {
+    const from = s.memorySnapshots.find((x) => x.id === id);
+    if (!from) return {};
+    const k = from.engine;
+    const memory = scenario.trim() ? [...from.memory, `WHAT-IF SCENARIO: ${redactSecrets(scenario.trim()).slice(0, 760)}`].slice(-10) : from.memory;
+    const snap = makeSnapshot(s, k, from.id, branch, memory, scenario.trim() ? `Fork: ${scenario.trim().slice(0, 48)}` : `Fork from ${from.id.slice(0, 7)}`);
+    label = `Forked ${k} memory into branch "${branch}" from snapshot ${from.id.slice(0, 7)}`;
+    return { calibrations: { ...s.calibrations, [k]: { ...s.calibrations[k], memory } }, memorySnapshots: [...s.memorySnapshots, snap].slice(-SNAPSHOTS_CAP), memoryHeads: { ...s.memoryHeads, [k]: snap.id } };
+  });
+  if (label) audit("calibration", label);
+}
+
+/** Switches an engine to the latest snapshot on a branch. */
+export function checkoutBranch(engine: EngineKey, branch: string) {
+  let ok = false;
+  updateSettings((s) => {
+    const tip = s.memorySnapshots.filter((x) => x.engine === engine && x.branch === branch).at(-1);
+    if (!tip || s.memoryHeads[engine] === tip.id) return {};
+    ok = true;
+    return { calibrations: { ...s.calibrations, [engine]: { ...s.calibrations[engine], memory: tip.memory } }, memoryHeads: { ...s.memoryHeads, [engine]: tip.id } };
+  });
+  if (ok) audit("calibration", `Checked out ${engine} memory branch "${branch}"`);
+}
+
+/** Walks every snapshot's hash back to its parent. Returns the ids that don't verify. */
+export function verifySnapshots(snaps: MemorySnapshot[]): string[] {
+  const byId = new Map(snaps.map((x) => [x.id, x]));
+  return snaps.filter((x) => x.hash !== sha256(`${(x.parent && byId.get(x.parent)?.hash) || "root"}|${x.id}|${x.engine}|${x.at}|${x.branch}|${JSON.stringify(x.memory)}`)).map((x) => x.id);
+}
+
+/** Bumps a usage weight (exponential decay, 3-day half-life) so Home can lift what the operator uses most. */
+export function touchUsage(...keys: string[]) {
+  const now = Date.now();
+  updateSettings((s) => {
+    const usage = { ...s.usage };
+    for (const key of keys) {
+      const w = usage[key];
+      usage[key] = { score: (w ? w.score * 0.5 ** ((now - w.last) / USAGE_HALF_LIFE) : 0) + 1, last: now };
+    }
+    // Keep the table small: drop the faintest entries.
+    const kept = Object.entries(usage).sort((a, b) => b[1].score - a[1].score).slice(0, 120);
+    return { usage: Object.fromEntries(kept) };
+  });
+}
+
+/** A usage weight decayed to now. */
+export const usageScore = (s: Pick<DeskSettings, "usage">, key: string, now = Date.now()) => {
+  const w = s.usage[key];
+  return w ? w.score * 0.5 ** ((now - w.last) / USAGE_HALF_LIFE) : 0;
+};
 
 export function setCalibration(engine: EngineKey, c: CalibrationInput | null) {
   updateSettings((s) => {
@@ -341,11 +507,57 @@ export function verifyAudit(entries: AuditEntry[]): { ok: boolean; checked: numb
 }
 
 /** Records a finished run in the workspace history (searchable in architecture and audit views). */
-export function recordRun(r: Omit<RunRecord, "env">) {
+export function recordRun(r: Omit<RunRecord, "env" | "inputHash" | "outputHash" | "node" | "prevSeal" | "seal">) {
   updateSettings((s) => {
-    const runs = [...s.runs, { ...r, command: redactSecrets(r.command), summary: redactSecrets(r.summary), brief: r.brief ? redactSecrets(r.brief) : undefined, env: activeEnv(s).name }].slice(-RUNS_CAP);
-    return { runs: runs.map((x, i) => (i < runs.length - BRIEFS_KEPT && x.brief ? { ...x, brief: undefined } : x)) };
+    const nodeId = s.nodeId || `node-${newId().slice(0, 8)}`;
+    const env = activeEnv(s);
+    const command = redactSecrets(r.command);
+    const summary = redactSecrets(r.summary);
+    const sealed = { ...r, command, summary, brief: r.brief ? redactSecrets(r.brief) : undefined, env: env.name, node: `${nodeId}@${env.region}`, inputHash: sha256(command), outputHash: sha256(summary) };
+    const prevSeal = s.runs.findLast((x) => x.seal)?.seal ?? "genesis";
+    const runs = [...s.runs, { ...sealed, prevSeal, seal: sha256(sealPayload(prevSeal, sealed)) }].slice(-RUNS_CAP);
+    return { nodeId, runs: runs.map((x, i) => (i < runs.length - BRIEFS_KEPT && x.brief ? { ...x, brief: undefined } : x)) };
   });
+  touchUsage(`${r.kind === "architecture" ? "arch" : r.kind}:${r.target}`);
+}
+
+/** The canonical text a run's seal covers. */
+export const sealPayload = (prev: string, r: Pick<RunRecord, "runId" | "at" | "node" | "env" | "inputHash" | "outputHash" | "ok" | "target">) => `${prev}|${r.runId}|${r.at}|${r.node}|${r.env}|${r.target}|${r.inputHash}|${r.outputHash}|${r.ok}`;
+
+/** Checks one run: its stored input/output still hash to what was sealed, and the seal covers them. */
+export function verifyRun(r: RunRecord) {
+  return {
+    input: r.inputHash === sha256(r.command),
+    output: r.outputHash === sha256(r.summary),
+    seal: !!r.seal && !!r.prevSeal && r.seal === sha256(sealPayload(r.prevSeal, r)),
+  };
+}
+
+/** Walks the execution ledger: every sealed run must verify and chain to the sealed run before it. */
+export function verifyLedger(runs: RunRecord[]): { ok: boolean; checked: number; brokenAt: string | null } {
+  let prev: string | null = null;
+  let checked = 0;
+  for (const r of runs) {
+    if (!r.seal) continue;
+    const v = verifyRun(r);
+    // The first sealed run may chain to a run trimmed off the capped history.
+    const linked = prev === null ? r.prevSeal === "genesis" || runs.length >= RUNS_CAP : r.prevSeal === prev;
+    if (!v.input || !v.output || !v.seal || !linked) return { ok: false, checked, brokenAt: r.runId };
+    prev = r.seal;
+    checked++;
+  }
+  return { ok: true, checked, brokenAt: null };
+}
+
+/** The canonical text a human approval signature covers. */
+export const approvalSigPayload = (a: Pick<Approval, "id" | "status" | "by" | "decidedAt">, seal: string) => `${a.id}|${a.status}|${a.by}|${a.decidedAt}|${seal}`;
+
+/** Records a Shadow Board deliberation (hashed over its votes) and audits the verdict. */
+export function recordBoardSession(b: Omit<BoardSession, "hash">) {
+  const hash = sha256(JSON.stringify(b));
+  updateSettings((s) => ({ boardSessions: [...s.boardSessions, { ...b, subject: redactSecrets(b.subject), detail: redactSecrets(b.detail), hash }].slice(-BOARD_CAP) }));
+  audit("approval", `Shadow Board ${b.verdict === "escalate" ? "escalated" : b.verdict} "${b.subject}" (consensus ${(b.score * 100).toFixed(0)}%, ${hash.slice(0, 12)})`);
+  return hash;
 }
 
 /** Queues a run's approval-gated actions once (repeat calls for the same run are ignored). */
@@ -366,7 +578,9 @@ export function decideApproval(id: string, decision: "approved" | "rejected") {
       if (a.id !== id || a.status !== "pending") return a;
       title = a.title;
       source = a.source;
-      return { ...a, status: decision, by: activeMember(s).name, decidedAt: Date.now() };
+      const decided = { ...a, status: decision, by: activeMember(s).name, decidedAt: Date.now() };
+      const seal = s.runs.find((r) => r.runId === a.runId)?.seal ?? "unsealed";
+      return { ...decided, sig: sha256(approvalSigPayload(decided, seal)) };
     }),
   }));
   if (title) audit("approval", `${decision === "approved" ? "Approved" : "Rejected"} "${title}" (${source})`);

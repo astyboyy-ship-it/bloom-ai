@@ -8,6 +8,7 @@ import { isDesktopApp } from "@/components/desktop/desktop-env";
 import { activeEnv, audit, useDeskSettings, verifyAudit, type AuditEntry, type AuditKind } from "@/components/desk/settings";
 import { useLicense } from "@/lib/license-context";
 import { TIER_INFO } from "@/lib/license/tiers";
+import { ExecutionLedger } from "./certificates";
 import { OsPage } from "./os-shell";
 import { useOsTelemetry } from "./telemetry-context";
 
@@ -18,7 +19,7 @@ function Tabs({ on }: { on: "audit" | "diagnostics" }) {
     <div className="mb-4 flex gap-1.5">
       {(
         [
-          ["audit", "/desk/audit", "Audit & compliance", ShieldCheck],
+          ["audit", "/desk/audit", "Audit & certificates", ShieldCheck],
           ["diagnostics", "/desk/diagnostics", "Diagnostics", Stethoscope],
         ] as const
       ).map(([id, href, label, Icon]) => (
@@ -42,14 +43,14 @@ export function AuditBay() {
   const { tier, info } = useLicense();
   const [kind, setKind] = useState<AuditKind | "all">("all");
   const [q, setQ] = useState("");
-  const [check, setCheck] = useState(() => verifyAudit(settings.audit));
+  // Derived from the live log: settings hydrate after the first render, and every new entry re-verifies.
+  const check = useMemo(() => verifyAudit(settings.audit), [settings.audit]);
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
   const rows = useMemo(() => [...settings.audit].reverse().filter((a) => (kind === "all" || a.kind === kind) && (!q || `${a.message} ${a.actor} ${a.env ?? ""} ${a.id}`.toLowerCase().includes(q.toLowerCase()))), [settings.audit, kind, q]);
   const counts = useMemo(() => Object.fromEntries(KINDS.slice(1).map((k) => [k, settings.audit.filter((a) => a.kind === k).length])) as Record<AuditKind, number>, [settings.audit]);
 
   const verify = () => {
     const r = verifyAudit(settings.audit);
-    setCheck(r);
     setCheckedAt(Date.now());
     audit("system", `Verified the audit chain: ${r.ok ? `intact across ${r.checked} entries` : `broken at entry #${r.brokenAt}`}`);
   };
@@ -84,7 +85,7 @@ ${rows.map((a) => `<tr><td>${a.id}</td><td>${esc(new Date(a.at).toLocaleString()
   };
 
   return (
-    <OsPage kicker="Audit & compliance" title="The record of everything" lede="Every license change, run, approval, security event and setting is appended to a SHA-256 hash chain. Entries can't be edited or deleted without the chain breaking.">
+    <OsPage kicker="Audit & certificates" title="The record of everything" lede="Every license change, run, approval, security event and setting is appended to a SHA-256 hash chain, and every run is sealed into an execution ledger you can certify. Nothing can be edited or deleted without the chain breaking.">
       <Tabs on="audit" />
       <div className="grid gap-3 lg:grid-cols-[1.2fr_2fr]">
         <div className={cn("os-panel rounded-2xl p-4", check.ok ? "border-os-emerald/40" : "border-red-400/50")}>
@@ -110,6 +111,8 @@ ${rows.map((a) => `<tr><td>${a.id}</td><td>${esc(new Date(a.at).toLocaleString()
           ))}
         </dl>
       </div>
+
+      <ExecutionLedger />
 
       <section className="os-panel mt-4 rounded-2xl p-4">
         <div className="flex flex-wrap items-center gap-2">

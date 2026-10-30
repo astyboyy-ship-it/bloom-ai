@@ -1,6 +1,6 @@
 [package]
 name = "bloom-ai-desktop"
-version = "0.1.3"
+version = "0.1.4"
 description = "Bloom AI Desktop: the Sovereign Operating Desk"
 authors = ["Bloom AI"]
 edition = "2021"

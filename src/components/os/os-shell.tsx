@@ -13,8 +13,9 @@ import { useCommandCopy } from "@/components/bloom/command/locale";
 import { useLicense } from "@/lib/license-context";
 import type { Tier } from "@/lib/license/tiers";
 import { ROLE_INFO } from "@/components/desk/rbac";
-import { activeEnv, audit, updateSettings, useDeskSettings } from "@/components/desk/settings";
-import { NAV_GROUPS, type NavItem } from "./nav";
+import { activeEnv, audit, touchUsage, updateSettings, useDeskSettings } from "@/components/desk/settings";
+import { ARCHITECTURES } from "@/lib/architectures";
+import { NAV_GROUPS, OS_NAV, type NavItem } from "./nav";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
@@ -48,6 +49,18 @@ function Shell({ children }: { children: React.ReactNode }) {
     else if (hub === "calibration") router.replace(`/desk/engines/${engine ?? "sovereign"}?tab=calibration`);
     else if (engine) router.replace(`/desk/engines/${engine}`);
   }, [path, router]);
+
+  // Neuro-adaptive weighting: every visit nudges the pillar (and engine or architecture) it opened.
+  useEffect(() => {
+    const nav = OS_NAV.find((n) => n.match(path));
+    const keys = nav ? [`page:${nav.href}`] : [];
+    const engine = path.match(/^\/desk\/engines\/([a-z]+)/)?.[1];
+    if (engine) keys.push(`engine:${engine}`);
+    const slug = path.match(/^\/desk\/architectures\/([^/?#]+)/)?.[1];
+    const arch = slug && ARCHITECTURES.find((a) => a.slug === slug);
+    if (arch) keys.push(`arch:${arch.id}`);
+    if (keys.length) touchUsage(...keys);
+  }, [path]);
 
   return (
     <div lang={lang} dir={dir} data-demo={settings.demoMode ? "on" : "off"} className="os-backdrop relative isolate flex min-h-dvh flex-col font-sans text-white">

@@ -9,6 +9,7 @@ import { can } from "@/components/desk/rbac";
 import { activeMember, audit, setCalibration, updateSettings, useDeskSettings } from "@/components/desk/settings";
 import { readCalibration } from "@/lib/engines/calibration";
 import { ENGINE_DEMOS } from "./explore-data";
+import { MemoryTimeline } from "./memory-timeline";
 import { OsPage } from "./os-shell";
 
 const DIM = 256;
@@ -96,7 +97,7 @@ export function VectorMemory() {
   };
 
   return (
-    <OsPage kicker="Vector memory · context inspector" title="What the agents remember" lede="Long-term memory is each engine's retained results, sent back as context on its next run; short-term is the last 24 hours of runs. Embeddings here are computed locally (256-d feature hashing over words and character trigrams), not by a model, so search is lexical rather than semantic.">
+    <OsPage kicker="Vector memory · time-travel" title="What the agents remember, and when" lede="Long-term memory is each engine's retained results, sent back as context on its next run; short-term is the last 24 hours of runs. Embeddings here are computed locally (256-d feature hashing over words and character trigrams), not by a model, so search is lexical rather than semantic. Every memory change is a snapshot you can roll back to or fork.">
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex min-w-60 flex-1 items-center gap-2 rounded-lg border border-os-line bg-os-panel/80 px-3 py-2">
           <Search className="size-4 text-os-cyan" />
@@ -250,6 +251,8 @@ export function VectorMemory() {
           </div>
         </section>
       </div>
+
+      <MemoryTimeline />
 
       <section className="os-panel mt-4 rounded-2xl p-4">
         <p className="os-label">{qv ? "Search results · ranked by cosine similarity" : "Memory entries"}</p>
