@@ -16,6 +16,7 @@ import { ROLE_INFO } from "@/components/desk/rbac";
 import { activeEnv, audit, touchUsage, updateSettings, useDeskSettings } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
 import { NAV_GROUPS, OS_NAV, type NavItem } from "./nav";
+import { useOsCopy } from "./os-copy";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
@@ -38,6 +39,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { settings } = useDeskSettings();
   const path = usePathname();
   const router = useRouter();
+  const t = useOsCopy();
 
   // Older links (/desk?engine=…, /desk?hub=…) and the desktop app's first route land on the right pillar.
   useEffect(() => {
@@ -68,9 +70,9 @@ function Shell({ children }: { children: React.ReactNode }) {
       {!settings.onboarded && path !== "/desk/settings" && (
         <div className="flex flex-wrap items-center gap-3 border-b border-os-line bg-os-cyan/[0.04] px-4 py-2 text-[12.5px] text-white/75">
           <Sparkles className="size-4 shrink-0 text-os-cyan" />
-          Finish setting up this workspace: license, provider keys, branding and a diagnostics check.
+          {t.shell.setup}
           <Link href="/setup" className="ms-auto rounded-full border border-os-cyan/40 px-3 py-1 text-[12px] text-os-cyan hover:bg-os-cyan/10">
-            Start guided setup
+            {t.shell.setupCta}
           </Link>
         </div>
       )}
@@ -85,6 +87,7 @@ function Header() {
   const { tier, engines } = useLicense();
   const { latency, uptime, sla } = useOsTelemetry();
   const env = activeEnv(settings);
+  const t = useOsCopy();
 
   // Active nodes: every agent in the licensed engines, plus the compute nodes the current shift runs.
   const nodes = useMemo(() => {
@@ -114,19 +117,19 @@ function Header() {
         <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em]">
           <span className="flex items-center gap-1.5 rounded-full border border-os-line bg-os-panel/70 px-2.5 py-1 text-white/60">
             <Activity className={cn("size-3", slaTone)} />
-            <span className={cn("tabular-nums", slaTone)}>{uptime === null ? "—" : `${Math.round(uptime * 100)}%`}</span> SLA {sla}
+            <span className={cn("tabular-nums", slaTone)}>{uptime === null ? "—" : `${Math.round(uptime * 100)}%`}</span> {t.shell.sla} {t.shell.slaState[sla] ?? sla}
           </span>
           <span className="flex items-center gap-1.5 rounded-full border border-os-line bg-os-panel/70 px-2.5 py-1 text-white/60">
-            <Gauge className="size-3 text-os-cyan" /> Global latency <span className="os-glow tabular-nums">{latency === null ? "—" : `${latency}ms`}</span>
+            <Gauge className="size-3 text-os-cyan" /> {t.shell.latency} <span className="os-glow tabular-nums">{latency === null ? "—" : `${latency}ms`}</span>
           </span>
           <span className="hidden items-center gap-1.5 rounded-full border border-os-line bg-os-panel/70 px-2.5 py-1 text-white/60 sm:flex">
-            <Server className="size-3 text-os-emerald" /> Active nodes <span className="tabular-nums text-os-emerald">{nodes.toLocaleString("en-US")}</span>
+            <Server className="size-3 text-os-emerald" /> {t.shell.nodes} <span className="tabular-nums text-os-emerald">{nodes.toLocaleString("en-US")}</span>
           </span>
         </div>
 
         <div className="ms-auto flex flex-wrap items-center gap-1.5">
           <label className="flex items-center gap-1.5 rounded-full border border-os-line bg-os-panel/70 py-0.5 ps-2.5 pe-1 font-mono text-[10.5px] text-white/60">
-            <span className="sr-only">Environment</span>
+            <span className="sr-only">{t.shell.environment}</span>
             <span className="size-1.5 rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" />
             <select
               value={settings.activeEnvId}
@@ -163,12 +166,12 @@ function Header() {
               settings.demoMode ? "border-os-violet/60 bg-os-violet/15 text-os-violet" : "border-os-line text-white/55 hover:text-white",
             )}
           >
-            <Presentation className="size-3" /> Demo {settings.demoMode ? "on" : "off"}
+            <Presentation className="size-3" /> {t.shell.demo(settings.demoMode)}
           </button>
           {settings.members.length > 1 && (
             <label className="flex items-center gap-1.5 rounded-full border border-os-line py-0.5 ps-2.5 pe-1 text-[11px] text-white/60">
               <UserRound className="size-3" />
-              <span className="sr-only">Acting as</span>
+              <span className="sr-only">{t.shell.actingAs}</span>
               <select
                 value={settings.activeMemberId}
                 onChange={(e) => {
@@ -200,7 +203,9 @@ function Header() {
 }
 
 /** One header menu: shows its active pillar, opens on click, closes on outside click, Escape or navigation. */
-function NavGroup({ label, items, path }: { label: string; items: NavItem[]; path: string }) {
+function NavGroup({ label: groupKey, items, path }: { label: string; items: NavItem[]; path: string }) {
+  const t = useOsCopy();
+  const label = t.groups[groupKey] ?? groupKey;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const active = items.find((i) => i.match(path));
@@ -241,7 +246,7 @@ function NavGroup({ label, items, path }: { label: string; items: NavItem[]; pat
           <span className="hidden items-center gap-1 tracking-normal text-white/70 normal-case sm:flex">
             <span className="text-white/25">·</span>
             <Icon className="size-3" />
-            {active.name}
+            {t.nav[active.href]?.name ?? active.name}
           </span>
         )}
         <span className="text-white/25">]</span>
@@ -261,7 +266,7 @@ function NavGroup({ label, items, path }: { label: string; items: NavItem[]; pat
                 className={cn("flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors", on ? "bg-os-cyan/[0.08] text-os-cyan" : "text-white/70 hover:bg-white/[0.04] hover:text-white")}
               >
                 <ItemIcon className="size-4 shrink-0" />
-                {text}
+                {t.nav[href]?.label ?? text}
               </Link>
             );
           })}
@@ -272,7 +277,12 @@ function NavGroup({ label, items, path }: { label: string; items: NavItem[]; pat
 }
 
 /** Page frame for an OS view: kicker, title, optional lede and actions, then the content. */
-export function OsPage({ kicker, title, lede, actions, children, className }: { kicker: string; title: string; lede?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+export function OsPage({ kicker: kickerEn, title: titleEn, lede: ledeEn, actions, children, className }: { kicker: string; title: string; lede?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  // Pages pass English; other languages take this route's entry (an empty field keeps the page's own, e.g. a pipeline name).
+  const tr = useOsCopy().pages[usePathname()];
+  const kicker = tr?.kicker || kickerEn;
+  const title = tr?.title || titleEn;
+  const lede = tr ? tr.lede || ledeEn : ledeEn;
   return (
     <main className={cn("mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 sm:px-6", className)}>
       <div className="flex flex-wrap items-end justify-between gap-4">

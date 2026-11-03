@@ -8,21 +8,29 @@ import { COMPANIES, ENGINE_ORDER, ENGINES, usdFmt, type EngineKey } from "@/comp
 import { PALETTES } from "@/components/bloom/command/theme";
 import { activeEnv, useDeskSettings } from "@/components/desk/settings";
 import { OsPage } from "./os-shell";
+import { firehoseEvent } from "./pulse-firehose";
 import { LAND_DOTS, MAP_H, MAP_W, project, PULSE_NODES, type PulseNode } from "./world";
 
 type Pulse = { id: number; at: number; from: PulseNode; to: PulseNode; engine: EngineKey; text: string; mine?: boolean };
 
 const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
 
-/** One simulated global agent action, written from an engine's own activity templates. */
+/**
+ * One simulated global agent action: mostly the multi-domain firehose (music, software, freight, security…),
+ * with the engines' own activity templates mixed in.
+ */
 function synth(seq: number): Pulse {
+  const from = pick(PULSE_NODES);
+  let to = pick(PULSE_NODES);
+  if (to.id === from.id) to = PULSE_NODES[(PULSE_NODES.indexOf(from) + 3) % PULSE_NODES.length];
+  if (Math.random() < 0.7) {
+    const f = firehoseEvent();
+    return { id: seq, at: Date.now(), from, to, engine: f.engine, text: f.text };
+  }
   const engine = pick(ENGINE_ORDER);
   const card = pick(ENGINES[engine].cards);
   const ev = pick(card.events);
   const amt = ev.amt ? Math.round((ev.amt[0] + Math.random() * (ev.amt[1] - ev.amt[0])) / 100) * 100 : 0;
-  const from = pick(PULSE_NODES);
-  let to = pick(PULSE_NODES);
-  if (to.id === from.id) to = PULSE_NODES[(PULSE_NODES.indexOf(from) + 3) % PULSE_NODES.length];
   const text = ev.text
     .replace("{agent}", `Agent #${String(1 + Math.floor(Math.random() * card.agents)).padStart(2, "0")}`)
     .replace("{co}", pick(COMPANIES))
@@ -59,11 +67,12 @@ export function GlobalPulse() {
   );
 
   useEffect(() => {
-    setFeed(Array.from({ length: 8 }, () => synth(++seq.current)));
+    setFeed(Array.from({ length: 24 }, () => synth(++seq.current)));
   }, []);
   useEffect(() => {
     if (paused || reduce) return;
-    const t = setInterval(() => setFeed((f) => [...f, synth(++seq.current)].slice(-80)), 900 + Math.random() * 600);
+    // High-frequency firehose: a burst of one to three actions every ~0.45s.
+    const t = setInterval(() => setFeed((f) => [...f, ...Array.from({ length: 1 + Math.floor(Math.random() * 3) }, () => synth(++seq.current))].slice(-160)), 380 + Math.random() * 160);
     return () => clearInterval(t);
   }, [paused, reduce]);
 

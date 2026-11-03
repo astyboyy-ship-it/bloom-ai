@@ -31,6 +31,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Applies the saved language's lang/dir before first paint, so Hebrew never flashes left-to-right. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var l=localStorage.getItem("bloom-lang");if(l==="es"||l==="he"){document.documentElement.lang=l;document.documentElement.dir=l==="he"?"rtl":"ltr"}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${cormorant.variable} ${outfit.variable} min-h-dvh bg-background antialiased`}>
         {/* Site-wide, so the chosen language follows the visitor from the home page into every engine. */}
         <LanguageProvider>

@@ -16,6 +16,7 @@ import { activeEnv, activeMember, audit, completeTask, decideApproval, updateSet
 import { ARCHITECTURES } from "@/lib/architectures";
 import { useLicense } from "@/lib/license-context";
 import { OS_NAV } from "./nav";
+import { useOsCopy } from "./os-copy";
 import { TIER_PILL } from "./os-shell";
 import { useOsTelemetry } from "./telemetry-context";
 
@@ -28,6 +29,7 @@ const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)]
  */
 export function OsHome() {
   const { lang } = useCommandCopy();
+  const h = useOsCopy().home;
   const { settings } = useDeskSettings();
   const { engines, isUnlocked } = useLicense();
   const member = activeMember(settings);
@@ -56,7 +58,7 @@ export function OsHome() {
           >
             <label className="flex shrink-0 items-center gap-2 rounded-xl border border-os-line bg-black/40 px-3 py-2 text-[13px]">
               <Terminal className="size-4 shrink-0 text-os-cyan" />
-              <span className="sr-only">Engine</span>
+              <span className="sr-only">{h.engine}</span>
               <select value={target} onChange={(e) => setEngine(e.target.value as EngineKey)} className="bg-transparent text-white focus:outline-none">
                 {engines.map((k) => (
                   <option key={k} value={k} className="bg-os-panel">
@@ -65,13 +67,13 @@ export function OsHome() {
                 ))}
               </select>
             </label>
-            <input value={text} onChange={(e) => setText(e.target.value)} disabled={!mayRun} placeholder={mayRun ? `Dispatch a task to ${ENGINES[target].name}…` : "Your role can't dispatch tasks"} aria-label="Task" className="min-w-0 flex-1 rounded-xl border border-os-line bg-black/40 px-3 py-2 text-[14px] text-white placeholder:text-white/30 focus:border-os-cyan/50 focus:outline-none disabled:opacity-50" />
+            <input value={text} onChange={(e) => setText(e.target.value)} disabled={!mayRun} placeholder={mayRun ? h.dispatchTo(ENGINES[target].name) : h.noDispatch} aria-label={h.task} className="min-w-0 flex-1 rounded-xl border border-os-line bg-black/40 px-3 py-2 text-[14px] text-white placeholder:text-white/30 focus:border-os-cyan/50 focus:outline-none disabled:opacity-50" />
             <div className="flex gap-2">
               <button type="button" disabled={!mayRun} onClick={() => setText(PRESETS[lang][target])} className="rounded-xl border border-os-line px-3 py-2 text-[12px] text-white/60 transition-colors hover:border-os-cyan/30 hover:text-white disabled:opacity-40">
-                Sample
+                {h.sample}
               </button>
               <button type="submit" disabled={text.trim().length < 3 || !mayRun} className="flex items-center gap-2 rounded-xl bg-os-cyan px-4 py-2 text-[13px] font-semibold text-black shadow-[0_0_24px_-8px_rgb(0_240_255/0.8)] transition-shadow hover:shadow-[0_0_32px_-6px_rgb(0_240_255/0.9)] disabled:opacity-40">
-                Dispatch <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
+                {h.dispatch} <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
               </button>
             </div>
           </form>
@@ -94,6 +96,7 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
   const { settings } = useDeskSettings();
   const { tier, engines } = useLicense();
   const { manifest, latency, uptime, sla } = useOsTelemetry();
+  const h = useOsCopy().home;
   const mayEdit = can(activeMember(settings).role, "settings");
   const [editing, setEditing] = useState(false);
   const p = settings.project;
@@ -115,10 +118,10 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="flex items-center gap-1.5 rounded-full border border-os-emerald/35 bg-os-emerald/[0.07] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-os-emerald">
-            <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> {env.name} {"//"} Active
+            <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> {env.name} {"//"} {h.active}
           </span>
-          <span className={cn("rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]", live_ ? "border-os-cyan/35 text-os-cyan" : "border-os-gold/35 text-os-gold")}>{manifest ? (live_ ? "Live runtime" : "Simulation runtime") : "Runtime …"}</span>
-          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">{TIER_PILL[tier]} license</span>
+          <span className={cn("rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]", live_ ? "border-os-cyan/35 text-os-cyan" : "border-os-gold/35 text-os-gold")}>{h.runtime(manifest ? manifest.mode : null)}</span>
+          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">{h.license(TIER_PILL[tier])}</span>
           <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">{env.region}</span>
         </div>
         <h1 className="mt-3 font-mono text-[22px] font-semibold uppercase leading-tight tracking-[0.14em] sm:text-[30px]">
@@ -135,11 +138,11 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
               audit("settings", `Updated the active engagement: ${p.client || "no client"} · ${p.name || "untitled project"}`);
             }}
           >
-            <input value={p.client} onChange={(e) => set({ client: e.target.value.slice(0, 60) })} placeholder="Client, e.g. Northwind Logistics" aria-label="Client" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-            <input value={p.name} onChange={(e) => set({ name: e.target.value.slice(0, 60) })} placeholder="Project, e.g. Q4 pipeline acceleration" aria-label="Project" className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+            <input value={p.client} onChange={(e) => set({ client: e.target.value.slice(0, 60) })} placeholder={h.clientPh} aria-label={h.client} className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+            <input value={p.name} onChange={(e) => set({ name: e.target.value.slice(0, 60) })} placeholder={h.projectPh} aria-label={h.project} className="rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
             <div className="flex gap-1.5">
-              <input value={p.scope} onChange={(e) => set({ scope: e.target.value.slice(0, 120) })} placeholder="Scope, e.g. NA mid-market" aria-label="Scope" className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-              <button type="submit" aria-label="Save engagement" className="rounded-lg border border-os-cyan/40 px-2.5 text-os-cyan hover:bg-os-cyan/10">
+              <input value={p.scope} onChange={(e) => set({ scope: e.target.value.slice(0, 120) })} placeholder={h.scopePh} aria-label={h.scope} className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+              <button type="submit" aria-label={h.save} className="rounded-lg border border-os-cyan/40 px-2.5 text-os-cyan hover:bg-os-cyan/10">
                 <Check className="size-4" />
               </button>
             </div>
@@ -153,15 +156,15 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
             )}
             {engaged ? (
               <span className="min-w-0 truncate">
-                <span className="text-white/35">Engagement</span> <span className="text-white/80">{engaged}</span>
+                <span className="text-white/35">{h.engagement}</span> <span className="text-white/80">{engaged}</span>
                 {p.scope && <span className="text-white/35"> · {p.scope}</span>}
               </span>
             ) : (
-              <span className="text-white/40">{engines.length} of 8 engines licensed · autonomous revenue operations</span>
+              <span className="text-white/40">{h.licensed(engines.length)}</span>
             )}
             {mayEdit && (
               <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] text-white/40 transition-colors hover:bg-white/5 hover:text-os-cyan">
-                <Pencil className="size-3" /> {engaged ? "Edit" : "Set engagement"}
+                <Pencil className="size-3" /> {engaged ? h.edit : h.setEngagement}
               </button>
             )}
           </p>
@@ -171,12 +174,12 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
         {(
           [
             // [label, value, tone, base salience, alert, related page]
-            ["Runtime", manifest ? (manifest.mode === "live" ? "LIVE" : "SIM") : "…", manifest?.mode === "live" ? "text-os-emerald" : "text-os-gold", 1, false, "/desk/settings"],
-            ["SLA", uptime === null ? "…" : `${Math.round(uptime * 100)}%`, slaTone, 2, sla !== "nominal" && uptime !== null, "/desk/global-pulse"],
-            ["Latency", latency === null ? "…" : `${latency}ms`, "os-glow", 1.5, false, "/desk/audit"],
-            ["Engines online", `${engines.length}`, "text-white", 1.2, false, "/desk/engines"],
-            ["Runs active", String(running), running ? "text-os-cyan" : "text-white", 1.4, running > 0, "/desk/builder"],
-            ["Approvals", String(pending), pending ? "text-amber-300" : "text-white", 1.8, pending > 0, "/desk/shadow-board"],
+            [h.tiles.runtime, manifest ? (manifest.mode === "live" ? "LIVE" : "SIM") : "…", manifest?.mode === "live" ? "text-os-emerald" : "text-os-gold", 1, false, "/desk/settings"],
+            [h.tiles.sla, uptime === null ? "…" : `${Math.round(uptime * 100)}%`, slaTone, 2, sla !== "nominal" && uptime !== null, "/desk/global-pulse"],
+            [h.tiles.latency, latency === null ? "…" : `${latency}ms`, "os-glow", 1.5, false, "/desk/audit"],
+            [h.tiles.engines, `${engines.length}`, "text-white", 1.2, false, "/desk/engines"],
+            [h.tiles.runs, String(running), running ? "text-os-cyan" : "text-white", 1.4, running > 0, "/desk/builder"],
+            [h.tiles.approvals, String(pending), pending ? "text-amber-300" : "text-white", 1.8, pending > 0, "/desk/shadow-board"],
           ] as const
         )
           .map((t) => ({ t, w: t[3] + (t[4] ? 20 : 0) + usageScore(settings, `page:${t[5]}`) }))
@@ -195,6 +198,7 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
 // ------------------------------------------------------------------------------------------- launcher
 
 function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
+  const h = useOsCopy().home;
   const { engines } = useLicense();
   const { settings } = useDeskSettings();
   const recent = [...runs].reverse().flatMap((r) => (r.kind === "architecture" ? [r.target] : []));
@@ -207,7 +211,7 @@ function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
 
   return (
     <nav aria-label="Quick architecture launcher" className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-      <span className="os-label shrink-0">{ids.length ? "Recent desks" : "Launch"}</span>
+      <span className="os-label shrink-0">{ids.length ? h.recent : h.launch}</span>
       {list.map((a) => (
         <Link key={a.id} href={`/desk/architectures/${a.slug}`} className="group flex shrink-0 items-center gap-2 rounded-full border border-os-line bg-os-panel/70 py-1 ps-2.5 pe-3 text-[12px] text-white/75 transition-colors hover:border-os-cyan/40 hover:text-white">
           <span className="flex -space-x-1">
@@ -225,7 +229,7 @@ function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
         </Link>
       ))}
       <Link href="/desk/architectures" className="flex shrink-0 items-center gap-1 px-2 text-[12px] text-os-cyan/80 hover:text-os-cyan">
-        All products <ArrowUpRight className="size-3" />
+        {h.allProducts} <ArrowUpRight className="size-3" />
       </Link>
     </nav>
   );
@@ -277,15 +281,16 @@ function useWorkstreams(engines: EngineKey[]) {
 function Workstreams({ live, onOpen }: { live: ConsoleStatus; onOpen: () => void }) {
   const { engines } = useLicense();
   const { settings } = useDeskSettings();
+  const h = useOsCopy().home;
   const streams = useWorkstreams(byUsage(settings, engines, (k) => `engine:${k}`));
   const elapsed = useTicker(live.status === "running", live.startedAt);
   return (
     <div className="os-panel rounded-2xl">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-os-line px-4 py-2.5">
         <h2 className="os-label flex shrink-0 items-center gap-2 text-white/60">
-          <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> Live workstreams
+          <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> {h.workstreams}
         </h2>
-        <span className="text-[10.5px] text-white/35">Workforce activity is simulated · your dispatched runs are live</span>
+        <span className="text-[10.5px] text-white/35">{h.workstreamsNote}</span>
       </div>
 
       {live.engine && live.status !== "idle" && (
@@ -293,11 +298,11 @@ function Workstreams({ live, onOpen }: { live: ConsoleStatus; onOpen: () => void
           {live.status === "running" ? <Loader2 className="size-4 shrink-0 animate-spin text-c-2" /> : live.status === "done" ? <CheckCircle2 className="size-4 shrink-0 text-os-emerald" /> : <XCircle className="size-4 shrink-0 text-red-400" />}
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-medium text-white">
-              {ENGINES[live.engine].name} · your dispatched run {live.status === "running" ? "in progress" : live.status === "done" ? "complete" : "failed"}
+              {h.yourRun(ENGINES[live.engine].name, live.status === "running" ? "running" : live.status === "done" ? "done" : "failed")}
             </span>
-            <span className="block truncate text-[12px] text-white/55">{live.detail || (live.status === "done" ? "Brief ready in the run console" : "")}</span>
+            <span className="block truncate text-[12px] text-white/55">{live.detail || (live.status === "done" ? h.briefReady : "")}</span>
           </span>
-          <span className="shrink-0 font-mono text-[11px] text-c-2">{live.status === "running" ? fmtMs(elapsed) : "open"}</span>
+          <span className="shrink-0 font-mono text-[11px] text-c-2">{live.status === "running" ? fmtMs(elapsed) : h.open}</span>
         </button>
       )}
 
@@ -324,6 +329,7 @@ function Workstreams({ live, onOpen }: { live: ConsoleStatus; onOpen: () => void
 }
 
 function Deliverables({ runs }: { runs: RunRecord[] }) {
+  const h = useOsCopy().home;
   const items = [...runs].reverse().filter((r) => r.ok).slice(0, 6);
   const download = (r: RunRecord) => {
     const url = URL.createObjectURL(new Blob([r.brief ?? `# ${r.label}\n\n${r.summary}\n`], { type: "text/markdown" }));
@@ -335,22 +341,22 @@ function Deliverables({ runs }: { runs: RunRecord[] }) {
   return (
     <div className="os-panel rounded-2xl">
       <h2 className="os-label flex items-center gap-2 border-b border-os-line px-4 py-2.5 text-white/60">
-        <FileText className="size-3.5 text-os-cyan" /> Client deliverables
+        <FileText className="size-3.5 text-os-cyan" /> {h.deliverables}
       </h2>
       {items.length === 0 ? (
-        <p className="px-4 py-5 text-[12.5px] text-white/40">Completed runs land here as executive briefs. Dispatch a task above to produce the first one.</p>
+        <p className="px-4 py-5 text-[12.5px] text-white/40">{h.deliverablesEmpty}</p>
       ) : (
         <ul className="divide-y divide-os-line/60">
           {items.map((r) => (
             <li key={r.runId} className="flex items-center gap-3 px-4 py-2.5">
               <span className="min-w-0 flex-1">
                 <Link href={href(r)} className="block truncate text-[13px] text-white transition-colors hover:text-os-cyan">
-                  {r.label} brief
+                  {h.brief(r.label)}
                 </Link>
                 <span dir="auto" className="block truncate text-[11.5px] text-white/45">{r.summary || r.command}</span>
               </span>
               <span className="hidden shrink-0 font-mono text-[10.5px] text-white/35 sm:block">{new Date(r.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-              <button type="button" onClick={() => download(r)} title={r.brief ? "Download the brief (Markdown)" : "Download the summary (full brief not kept for older runs)"} className="flex shrink-0 items-center gap-1 rounded-full border border-os-line px-2.5 py-1 text-[11.5px] text-white/65 transition-colors hover:border-os-cyan/40 hover:text-os-cyan">
+              <button type="button" onClick={() => download(r)} title={r.brief ? h.downloadBrief : h.downloadSummary} className="flex shrink-0 items-center gap-1 rounded-full border border-os-line px-2.5 py-1 text-[11.5px] text-white/65 transition-colors hover:border-os-cyan/40 hover:text-os-cyan">
                 <Download className="size-3" /> .md
               </button>
             </li>
@@ -371,18 +377,19 @@ function ApprovalBay() {
   const tasks = settings.approvals.filter((a) => a.status === "approved" && a.owner === "human" && !a.done).reverse();
   const exports = [...settings.audit].reverse().filter((a) => /export|download|pdf/i.test(a.message)).slice(0, 5);
   const boardFor = (id: string) => settings.boardSessions.findLast((b) => b.approvalId === id);
+  const h = useOsCopy().home;
 
   return (
     <aside aria-label="Approval and action bay" className="min-w-0 space-y-4">
       <section className={cn("os-panel rounded-2xl", pending.length && "border-amber-300/30 shadow-[0_0_40px_-24px_rgb(252_211_77/0.6)]")}>
         <h2 className="os-label flex items-center justify-between border-b border-os-line px-4 py-2.5 text-white/60">
           <span className="flex items-center gap-2">
-            <ShieldAlert className="size-3.5 text-amber-300" /> Pending approvals
+            <ShieldAlert className="size-3.5 text-amber-300" /> {h.pending}
           </span>
           <span className={cn("rounded-full px-2 py-0.5 font-mono text-[10px]", pending.length ? "bg-amber-300/15 text-amber-200" : "text-white/35")}>{pending.length}</span>
         </h2>
         {pending.length === 0 ? (
-          <p className="px-4 py-5 text-[12.5px] text-white/40">Nothing waiting. Actions over your approval threshold, or that a person must do, queue here from every run.</p>
+          <p className="px-4 py-5 text-[12.5px] text-white/40">{h.pendingEmpty}</p>
         ) : (
           <ul className="max-h-[22rem] divide-y divide-os-line/60 overflow-y-auto">
             {pending.map((a) => (
@@ -396,13 +403,13 @@ function ApprovalBay() {
                 <p dir="auto" className="mt-0.5 line-clamp-2 text-[12px] text-white/50">{a.detail}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <Link href={`/desk/shadow-board?approval=${encodeURIComponent(a.id)}`} className="flex items-center gap-1 rounded-full border border-os-cyan/40 px-3 py-1 text-[11.5px] text-os-cyan transition-colors hover:bg-os-cyan/10">
-                    <Gavel className="size-3" /> {boardFor(a.id) ? `Board: ${boardFor(a.id)!.verdict}` : "Stress-test"}
+                    <Gavel className="size-3" /> {boardFor(a.id) ? h.board(boardFor(a.id)!.verdict) : h.stressTest}
                   </Link>
-                  <button type="button" disabled={!mayApprove} onClick={() => decideApproval(a.id, "approved")} className="flex items-center gap-1 rounded-full border border-os-emerald/40 px-3 py-1 text-[11.5px] text-os-emerald transition-colors hover:bg-os-emerald/10 disabled:opacity-35" title={mayApprove ? undefined : "Your role can't approve actions"}>
-                    <Check className="size-3" /> Approve
+                  <button type="button" disabled={!mayApprove} onClick={() => decideApproval(a.id, "approved")} className="flex items-center gap-1 rounded-full border border-os-emerald/40 px-3 py-1 text-[11.5px] text-os-emerald transition-colors hover:bg-os-emerald/10 disabled:opacity-35" title={mayApprove ? undefined : h.noApprove}>
+                    <Check className="size-3" /> {h.approve}
                   </button>
                   <button type="button" disabled={!mayApprove} onClick={() => decideApproval(a.id, "rejected")} className="flex items-center gap-1 rounded-full border border-red-400/40 px-3 py-1 text-[11.5px] text-red-200 transition-colors hover:bg-red-500/10 disabled:opacity-35">
-                    <X className="size-3" /> Reject
+                    <X className="size-3" /> {h.reject}
                   </button>
                 </div>
               </li>
@@ -414,12 +421,12 @@ function ApprovalBay() {
       <section className="os-panel rounded-2xl">
         <h2 className="os-label flex items-center justify-between border-b border-os-line px-4 py-2.5 text-white/60">
           <span className="flex items-center gap-2">
-            <ClipboardCheck className="size-3.5 text-os-cyan" /> Task queue
+            <ClipboardCheck className="size-3.5 text-os-cyan" /> {h.tasks}
           </span>
           <span className="font-mono text-[10px] text-white/35">{tasks.length}</span>
         </h2>
         {tasks.length === 0 ? (
-          <p className="px-4 py-4 text-[12.5px] text-white/40">Approved actions that a person must carry out appear here until they&apos;re done.</p>
+          <p className="px-4 py-4 text-[12.5px] text-white/40">{h.tasksEmpty}</p>
         ) : (
           <ul className="divide-y divide-os-line/60">
             {tasks.map((a) => (
@@ -428,11 +435,11 @@ function ApprovalBay() {
                 <span className="min-w-0 flex-1">
                   <span dir="auto" className="block text-[12.5px] text-white">{a.title}</span>
                   <span className="block text-[11px] text-white/40">
-                    {a.source} · approved by {a.by}
+                    {a.source} · {h.approvedBy(a.by ?? "")}
                   </span>
                 </span>
                 <button type="button" onClick={() => completeTask(a.id)} className="shrink-0 rounded-full border border-os-line px-2.5 py-1 text-[11px] text-white/65 transition-colors hover:border-os-emerald/40 hover:text-os-emerald">
-                  Mark done
+                  {h.markDone}
                 </button>
               </li>
             ))}
@@ -442,10 +449,10 @@ function ApprovalBay() {
 
       <section className="os-panel rounded-2xl">
         <h2 className="os-label flex items-center gap-2 border-b border-os-line px-4 py-2.5 text-white/60">
-          <Download className="size-3.5 text-os-cyan" /> Recently completed exports
+          <Download className="size-3.5 text-os-cyan" /> {h.exports}
         </h2>
         {exports.length === 0 ? (
-          <p className="px-4 py-4 text-[12.5px] text-white/40">Reports and briefs you export are logged here.</p>
+          <p className="px-4 py-4 text-[12.5px] text-white/40">{h.exportsEmpty}</p>
         ) : (
           <ul className="space-y-1.5 px-4 py-3">
             {exports.map((e) => (
@@ -457,7 +464,7 @@ function ApprovalBay() {
           </ul>
         )}
         <Link href="/desk/audit" className="flex items-center justify-end gap-1 border-t border-os-line px-4 py-2 text-[11.5px] text-os-cyan/75 hover:text-os-cyan">
-          Full audit trail <ArrowUpRight className="size-3" />
+          {h.auditTrail} <ArrowUpRight className="size-3" />
         </Link>
       </section>
     </aside>
@@ -476,18 +483,20 @@ function byUsage<T extends string>(s: DeskSettings, keys: T[], key: (k: T) => st
 function AdaptiveStrip() {
   const { settings } = useDeskSettings();
   const { sla } = useOsTelemetry();
+  const t = useOsCopy();
+  const h = t.home;
   const pending = settings.approvals.filter((a) => a.status === "pending").length;
   const day = Date.now() - 86_400_000;
   const threats = settings.audit.filter((a) => a.kind === "security" && a.at >= day).length;
   const auditOk = verifyAudit(settings.audit).ok;
   const ledgerOk = verifyLedger(settings.runs).ok;
   const alerts = [
-    pending > 0 && { href: "/desk/shadow-board", text: `${pending} approval${pending > 1 ? "s" : ""} awaiting sign-off`, tone: "amber" },
-    threats > 0 && { href: "/desk/threat-matrix", text: `${threats} security event${threats > 1 ? "s" : ""} in 24h`, tone: "red" },
-    !auditOk && { href: "/desk/audit", text: "Audit chain broken", tone: "red" },
-    !ledgerOk && { href: "/desk/audit", text: "Execution ledger broken", tone: "red" },
-    sla === "degraded" && { href: "/desk/global-pulse", text: "SLA degraded", tone: "amber" },
-    sla === "offline" && { href: "/desk/global-pulse", text: "Runtime offline", tone: "red" },
+    pending > 0 && { href: "/desk/shadow-board", text: h.approvalsWaiting(pending), tone: "amber" },
+    threats > 0 && { href: "/desk/threat-matrix", text: h.securityEvents(threats), tone: "red" },
+    !auditOk && { href: "/desk/audit", text: h.auditBroken, tone: "red" },
+    !ledgerOk && { href: "/desk/audit", text: h.ledgerBroken, tone: "red" },
+    sla === "degraded" && { href: "/desk/global-pulse", text: h.slaDegraded, tone: "amber" },
+    sla === "offline" && { href: "/desk/global-pulse", text: h.runtimeOffline, tone: "red" },
   ].filter((x): x is { href: string; text: string; tone: string } => Boolean(x));
   const pages = OS_NAV.filter((n) => n.href !== "/desk")
     .map((n) => ({ n, w: usageScore(settings, `page:${n.href}`) }))
@@ -506,17 +515,17 @@ function AdaptiveStrip() {
       ))}
       {pages.length > 0 && (
         <span className="ms-auto flex flex-wrap items-center gap-1.5">
-          <span className="os-label flex items-center gap-1" title="Ranked by how often and how recently you use them, on this device">
-            <BrainCircuit className="size-3 text-os-violet" /> Your shortcuts
+          <span className="os-label flex items-center gap-1" title={h.shortcutsTitle}>
+            <BrainCircuit className="size-3 text-os-violet" /> {h.shortcuts}
           </span>
           {pages.map(({ n }) => (
             <Link key={n.href} href={n.href} className="flex items-center gap-1.5 rounded-full border border-os-line px-2.5 py-1 text-[12px] text-white/70 transition-colors hover:border-os-cyan/40 hover:text-white">
-              <n.icon className="size-3" /> {n.name}
+              <n.icon className="size-3" /> {t.nav[n.href]?.name ?? n.name}
             </Link>
           ))}
           {learned && (
             <button type="button" onClick={() => updateSettings({ usage: {} })} className="px-1 text-[11px] text-white/35 hover:text-white/70">
-              reset
+              {h.reset}
             </button>
           )}
         </span>

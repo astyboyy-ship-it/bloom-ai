@@ -10,6 +10,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
