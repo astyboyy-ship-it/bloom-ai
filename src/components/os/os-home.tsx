@@ -6,13 +6,16 @@ import { useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Boxes, BrainCircuit, Check, CheckCircle2, CircleDot, ClipboardCheck, CornerDownLeft, Download, FileText, Gavel, Loader2, Pencil, ShieldAlert, Terminal, X, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANIES, ENGINES, usdFmt, type EngineKey } from "@/components/bloom/command/engines";
-import { useCommandCopy } from "@/components/bloom/command/locale";
+import { AGENT_LABEL } from "@/components/bloom/command/engine-work-text";
+import type { Lang } from "@/components/bloom/i18n";
+import { architecturesIn } from "@/lib/architecture-text";
+import { localizeEngine, useCommandCopy } from "@/components/bloom/command/locale";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { PRESETS } from "@/components/desk/copy";
 import { fmtMs } from "@/components/desk/format";
 import { can } from "@/components/desk/rbac";
 import { RunConsoleDrawer, type ConsoleStatus } from "@/components/desk/run-console-drawer";
-import { activeEnv, activeMember, audit, completeTask, decideApproval, updateSettings, usageScore, useDeskSettings, verifyAudit, verifyLedger, type DeskSettings, type RunRecord } from "@/components/desk/settings";
+import { activeEnv, activeMember, audit, completeTask, decideApproval, displayName, updateSettings, usageScore, useDeskSettings, verifyAudit, verifyLedger, type DeskSettings, type RunRecord } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
 import { useLicense } from "@/lib/license-context";
 import { OS_NAV } from "./nav";
@@ -48,7 +51,7 @@ export function OsHome() {
       <ArchitectureLauncher runs={settings.runs} />
 
       <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <section aria-label="Live workstream feed" className="min-w-0 space-y-4">
+        <section aria-label={h.ariaFeed} className="min-w-0 space-y-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -199,18 +202,20 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
 
 function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
   const h = useOsCopy().home;
+  const { lang } = useCommandCopy();
+  const archs = architecturesIn(lang);
   const { engines } = useLicense();
   const { settings } = useDeskSettings();
   const recent = [...runs].reverse().flatMap((r) => (r.kind === "architecture" ? [r.target] : []));
   const ids = [...new Set(recent)];
   // Licensed products first; on smaller tiers the rest still show, since their desks explain what unlocks them.
   const fit = (a: (typeof ARCHITECTURES)[number]) => usageScore(settings, `arch:${a.id}`) * 10 + Number(a.engines.every((k) => engines.includes(k)));
-  const licensed = [...ARCHITECTURES].sort((a, b) => fit(b) - fit(a));
-  const list = [...ids.map((id) => ARCHITECTURES.find((a) => a.id === id)).filter((a): a is (typeof ARCHITECTURES)[number] => Boolean(a)), ...licensed.filter((a) => !ids.includes(a.id))].slice(0, 6);
+  const licensed = [...archs].sort((a, b) => fit(b) - fit(a));
+  const list = [...ids.map((id) => archs.find((a) => a.id === id)).filter((a): a is (typeof ARCHITECTURES)[number] => Boolean(a)), ...licensed.filter((a) => !ids.includes(a.id))].slice(0, 6);
   const pipelines = settings.pipelines.slice(-2).reverse();
 
   return (
-    <nav aria-label="Quick architecture launcher" className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+    <nav aria-label={h.ariaLauncher} className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
       <span className="os-label shrink-0">{ids.length ? h.recent : h.launch}</span>
       {list.map((a) => (
         <Link key={a.id} href={`/desk/architectures/${a.slug}`} className="group flex shrink-0 items-center gap-2 rounded-full border border-os-line bg-os-panel/70 py-1 ps-2.5 pe-3 text-[12px] text-white/75 transition-colors hover:border-os-cyan/40 hover:text-white">
@@ -229,7 +234,7 @@ function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
         </Link>
       ))}
       <Link href="/desk/architectures" className="flex shrink-0 items-center gap-1 px-2 text-[12px] text-os-cyan/80 hover:text-os-cyan">
-        {h.allProducts} <ArrowUpRight className="size-3" />
+        {h.allProducts} <ArrowUpRight className="size-3 rtl:-scale-x-100" />
       </Link>
     </nav>
   );
@@ -240,22 +245,23 @@ function ArchitectureLauncher({ runs }: { runs: RunRecord[] }) {
 type Stream = { engine: EngineKey; task: string; line: string; progress: number; at: number };
 
 /** One stream per licensed engine, from its own workforce data: what it's working on and its latest action. */
-function useWorkstreams(engines: EngineKey[]) {
+function useWorkstreams(engines: EngineKey[], lang: Lang) {
   const reduce = useReducedMotion();
   const make = (k: EngineKey, progress = Math.random() * 0.8): Stream => {
-    const card = pick(ENGINES[k].cards);
+    const card = pick(localizeEngine(ENGINES[k], lang).cards);
     const ev = pick(card.events);
     const amt = ev.amt ? Math.round((ev.amt[0] + Math.random() * (ev.amt[1] - ev.amt[0])) / 100) * 100 : 0;
     const line = ev.text
-      .replace("{agent}", `Agent #${String(1 + Math.floor(Math.random() * card.agents)).padStart(2, "0")}`)
+      .replace("{agent}", `${AGENT_LABEL[lang]} #${String(1 + Math.floor(Math.random() * card.agents)).padStart(2, "0")}`)
       .replace("{co}", pick(COMPANIES))
       .replace("{amt}", usdFmt(amt))
       .replace("{ch}", pick(["LinkedIn", "Reddit", "X", "Instagram"]));
-    const task = card.title(card.agents, card.count).replace(/^\d+ agents? /, "");
+    // The title without its leading agent count ("6 agents enforcing…" → "Enforcing…"), in any language.
+    const task = card.title(card.agents, card.count).replace(/^(\d+ \S+|\S+ אחד) /, "");
     return { engine: k, task: task.charAt(0).toUpperCase() + task.slice(1), line, progress, at: Date.now() };
   };
   const [streams, setStreams] = useState<Stream[]>([]);
-  const key = engines.join(",");
+  const key = `${engines.join(",")}:${lang}`;
   useEffect(() => {
     setStreams(engines.map((k) => make(k)));
     // `make` reads only static engine data.
@@ -274,7 +280,9 @@ function useWorkstreams(engines: EngineKey[]) {
       );
     }, 1600);
     return () => clearInterval(t);
-  }, [reduce]);
+    // `make` reads the language; restart the ticker when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduce, lang]);
   return streams;
 }
 
@@ -282,7 +290,8 @@ function Workstreams({ live, onOpen }: { live: ConsoleStatus; onOpen: () => void
   const { engines } = useLicense();
   const { settings } = useDeskSettings();
   const h = useOsCopy().home;
-  const streams = useWorkstreams(byUsage(settings, engines, (k) => `engine:${k}`));
+  const { lang } = useCommandCopy();
+  const streams = useWorkstreams(byUsage(settings, engines, (k) => `engine:${k}`), lang);
   const elapsed = useTicker(live.status === "running", live.startedAt);
   return (
     <div className="os-panel rounded-2xl">
@@ -371,6 +380,7 @@ function Deliverables({ runs }: { runs: RunRecord[] }) {
 
 function ApprovalBay() {
   const { settings } = useDeskSettings();
+  const { lang } = useCommandCopy();
   const role = activeMember(settings).role;
   const mayApprove = can(role, "approve");
   const pending = settings.approvals.filter((a) => a.status === "pending").reverse();
@@ -380,7 +390,7 @@ function ApprovalBay() {
   const h = useOsCopy().home;
 
   return (
-    <aside aria-label="Approval and action bay" className="min-w-0 space-y-4">
+    <aside aria-label={h.ariaBay} className="min-w-0 space-y-4">
       <section className={cn("os-panel rounded-2xl", pending.length && "border-amber-300/30 shadow-[0_0_40px_-24px_rgb(252_211_77/0.6)]")}>
         <h2 className="os-label flex items-center justify-between border-b border-os-line px-4 py-2.5 text-white/60">
           <span className="flex items-center gap-2">
@@ -435,7 +445,7 @@ function ApprovalBay() {
                 <span className="min-w-0 flex-1">
                   <span dir="auto" className="block text-[12.5px] text-white">{a.title}</span>
                   <span className="block text-[11px] text-white/40">
-                    {a.source} · {h.approvedBy(a.by ?? "")}
+                    {a.source} · {h.approvedBy(displayName(a.by ?? "", lang))}
                   </span>
                 </span>
                 <button type="button" onClick={() => completeTask(a.id)} className="shrink-0 rounded-full border border-os-line px-2.5 py-1 text-[11px] text-white/65 transition-colors hover:border-os-emerald/40 hover:text-os-emerald">
@@ -464,7 +474,7 @@ function ApprovalBay() {
           </ul>
         )}
         <Link href="/desk/audit" className="flex items-center justify-end gap-1 border-t border-os-line px-4 py-2 text-[11.5px] text-os-cyan/75 hover:text-os-cyan">
-          {h.auditTrail} <ArrowUpRight className="size-3" />
+          {h.auditTrail} <ArrowUpRight className="size-3 rtl:-scale-x-100" />
         </Link>
       </section>
     </aside>
@@ -520,7 +530,7 @@ function AdaptiveStrip() {
           </span>
           {pages.map(({ n }) => (
             <Link key={n.href} href={n.href} className="flex items-center gap-1.5 rounded-full border border-os-line px-2.5 py-1 text-[12px] text-white/70 transition-colors hover:border-os-cyan/40 hover:text-white">
-              <n.icon className="size-3" /> {t.nav[n.href]?.name ?? n.name}
+              <n.icon className="size-3" /> {t.nav[n.href].name}
             </Link>
           ))}
           {learned && (

@@ -174,6 +174,10 @@ export type DeskSettings = {
 
 const OWNER: Member = { id: "owner", name: "Workspace Owner", email: "", role: "owner" };
 
+const OWNER_NAMES = { en: "Workspace Owner", es: "Propietario del espacio", he: "בעלי סביבת העבודה" } as const;
+/** A member's name for display: the built-in default owner name follows the language. */
+export const displayName = (name: string, lang: "en" | "es" | "he") => (name === OWNER.name ? OWNER_NAMES[lang] : name);
+
 export const DEFAULT_SETTINGS: DeskSettings = {
   keys: { anthropic: "", openrouter: "", openai: "", vectorDbUrl: "", vectorDbKey: "", customUrl: "", customKey: "" },
   licenseKey: "",

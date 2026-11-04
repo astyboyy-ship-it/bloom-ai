@@ -19,6 +19,79 @@ import { activeMember, audit, setCalibration, useDeskSettings } from "./settings
 
 type C = (typeof HUB_COPY)["en"];
 
+/** This bay's remaining copy, per language (the shared strings come in as `c`). Model names are product names. */
+const CB = {
+  en: {
+    viewOnly: "Your role can view calibration but not change it.",
+    model: "Model & runtime",
+    modelLabel: "Model",
+    notes: { "Deepest reasoning. Default.": "Deepest reasoning. Default.", "Fast, strong all-rounder.": "Fast, strong all-rounder.", "Lowest latency and cost.": "Lowest latency and cost.", "Requires an OpenRouter key.": "Requires an OpenRouter key." } as Record<string, string>,
+    temperature: "Temperature",
+    tempOn: "Lower is more consistent; higher is more varied.",
+    tempOff: "Claude 5.x models manage sampling themselves; temperature applies to GPT-4o, DeepSeek and Llama.",
+    latency: "Latency cap",
+    latencyNote: "The engine stops if one run takes longer than this.",
+    budget: "Token budget",
+    tokens: " tokens",
+    budgetNote: "Output tokens this engine may spend per run, across all its turns.",
+    hitl: "Human-in-the-loop threshold",
+    hitlNote: "Actions moving at least this much, or done by a person, wait for approval on the desk.",
+    overrides: "System rules & situational overrides",
+    memory: "Memory retention",
+    remembers: "Recent results the engine remembers",
+    memoryNote: "Each completed run stores its summary. The latest ones go back to the engine as context on its next run (as data, never as instructions). 0 turns memory off.",
+    forget: "Forget this memory",
+    clearAll: "Clear all memory",
+    nothing: "Nothing retained yet.",
+  },
+  es: {
+    viewOnly: "Tu rol puede ver la calibración, pero no cambiarla.",
+    model: "Modelo y runtime",
+    modelLabel: "Modelo",
+    notes: { "Deepest reasoning. Default.": "El razonamiento más profundo. Predeterminado.", "Fast, strong all-rounder.": "Rápido y sólido para todo.", "Lowest latency and cost.": "La menor latencia y el menor coste.", "Requires an OpenRouter key.": "Necesita una clave de OpenRouter." } as Record<string, string>,
+    temperature: "Temperatura",
+    tempOn: "Más baja es más consistente; más alta es más variada.",
+    tempOff: "Los modelos Claude 5.x gestionan su propio muestreo; la temperatura se aplica a GPT-4o, DeepSeek y Llama.",
+    latency: "Límite de latencia",
+    latencyNote: "El motor se detiene si una ejecución tarda más que esto.",
+    budget: "Presupuesto de tokens",
+    tokens: " tokens",
+    budgetNote: "Tokens de salida que este motor puede gastar por ejecución, sumando todos sus turnos.",
+    hitl: "Umbral de intervención humana",
+    hitlNote: "Las acciones que mueven al menos esta cantidad, o que debe hacer una persona, esperan aprobación en el escritorio.",
+    overrides: "Reglas del sistema y ajustes por situación",
+    memory: "Retención de memoria",
+    remembers: "Resultados recientes que recuerda el motor",
+    memoryNote: "Cada ejecución completada guarda su resumen. Los más recientes vuelven al motor como contexto en su siguiente ejecución (como datos, nunca como instrucciones). Con 0 la memoria se desactiva.",
+    forget: "Olvidar este recuerdo",
+    clearAll: "Borrar toda la memoria",
+    nothing: "Aún no hay nada guardado.",
+  },
+  he: {
+    viewOnly: "התפקיד שלכם יכול לצפות בכיול אבל לא לשנות אותו.",
+    model: "מודל וסביבת ריצה",
+    modelLabel: "מודל",
+    notes: { "Deepest reasoning. Default.": "החשיבה העמוקה ביותר. ברירת מחדל.", "Fast, strong all-rounder.": "מהיר וחזק לכל משימה.", "Lowest latency and cost.": "ההשהיה והעלות הנמוכות ביותר.", "Requires an OpenRouter key.": "דורש מפתח OpenRouter." } as Record<string, string>,
+    temperature: "טמפרטורה",
+    tempOn: "נמוך יותר עקבי יותר; גבוה יותר מגוון יותר.",
+    tempOff: "מודלי Claude 5.x מנהלים את הדגימה בעצמם; הטמפרטורה חלה על GPT-4o, ‏DeepSeek ו־Llama.",
+    latency: "תקרת השהיה",
+    latencyNote: "המנוע עוצר אם הרצה אחת לוקחת יותר מזה.",
+    budget: "תקציב טוקנים",
+    tokens: " טוקנים",
+    budgetNote: "טוקני הפלט שהמנוע רשאי להוציא בכל הרצה, בכל הסבבים שלו יחד.",
+    hitl: "סף מעורבות אנושית",
+    hitlNote: "פעולות שמזיזות לפחות את הסכום הזה, או שאדם צריך לבצע, ממתינות לאישור בשולחן.",
+    overrides: "כללי מערכת והתאמות למצבים",
+    memory: "שמירת זיכרון",
+    remembers: "תוצאות אחרונות שהמנוע זוכר",
+    memoryNote: "כל הרצה שהושלמה שומרת את הסיכום שלה. האחרונים חוזרים למנוע כהקשר בהרצה הבאה (כמידע, לעולם לא כהוראות). 0 מכבה את הזיכרון.",
+    forget: "לשכוח את הזיכרון הזה",
+    clearAll: "איפוס כל הזיכרון",
+    nothing: "עדיין לא נשמר כלום.",
+  },
+} satisfies Record<Lang, unknown>;
+
 /** Hub 03: per-engine tuning bay. Every change is saved locally and sent with the next run. */
 export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: Lang; selected: EngineKey; onSelect: (k: EngineKey) => void }) {
   const { settings } = useDeskSettings();
@@ -45,6 +118,7 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
   const ownKey = Boolean(settings.keys.anthropic.trim() || settings.keys.openrouter.trim());
   const promptBlocked = manifest?.promptOverrides === "own-key" && !ownKey;
   const engine = localizeEngine(ENGINES[selected], lang);
+  const t = CB[lang];
 
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -95,7 +169,7 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
             </button>
           </header>
 
-          {!mayCalibrate && <p className="rounded-lg border border-white/15 bg-white/[0.03] p-2.5 text-[12px] text-white/60">Your role can view calibration but not change it.</p>}
+          {!mayCalibrate && <p className="rounded-lg border border-white/15 bg-white/[0.03] p-2.5 text-[12px] text-white/60">{t.viewOnly}</p>}
           {failed && <p className="text-[13px] text-red-300">{c.loadFailed}</p>}
           <EngineLock engine={selected} lang={lang} className="rounded-2xl">
           <fieldset disabled={!mayCalibrate} className="min-w-0 space-y-5">
@@ -139,9 +213,9 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
             )}
           </Section>
 
-          <Section icon={Cpu} title="Model & runtime">
+          <Section icon={Cpu} title={t.model}>
             <label className="block text-[12.5px] text-white/70" htmlFor="cal-model">
-              Model
+              {t.modelLabel}
             </label>
             <select
               id="cal-model"
@@ -158,28 +232,28 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-[11.5px] text-white/45">{modelInfo(cal.model).note}</p>
+            <p className="mt-1.5 text-[11.5px] text-white/45">{t.notes[modelInfo(cal.model).note] ?? modelInfo(cal.model).note}</p>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
-                <Range label="Temperature" value={cal.temperature} min={0} max={1} step={0.05} suffix="" disabled={!modelInfo(cal.model).temperature} onChange={(v) => save({ temperature: v })} />
-                <p className="mt-1 text-[11px] text-white/40">{modelInfo(cal.model).temperature ? "Lower is more consistent; higher is more varied." : "Claude 5.x models manage sampling themselves; temperature applies to GPT-4o, DeepSeek and Llama."}</p>
+                <Range label={t.temperature} value={cal.temperature} min={0} max={1} step={0.05} suffix="" disabled={!modelInfo(cal.model).temperature} onChange={(v) => save({ temperature: v })} />
+                <p className="mt-1 text-[11px] text-white/40">{modelInfo(cal.model).temperature ? t.tempOn : t.tempOff}</p>
               </div>
               <div>
-                <Range label="Latency cap" value={cal.latencyCapS} min={10} max={240} step={5} suffix="s" onChange={(v) => save({ latencyCapS: v })} />
-                <p className="mt-1 text-[11px] text-white/40">The engine stops if one run takes longer than this.</p>
+                <Range label={t.latency} value={cal.latencyCapS} min={10} max={240} step={5} suffix="s" onChange={(v) => save({ latencyCapS: v })} />
+                <p className="mt-1 text-[11px] text-white/40">{t.latencyNote}</p>
               </div>
               <div>
-                <Range label="Token budget" value={cal.tokenBudget} min={2000} max={64000} step={1000} suffix=" tokens" onChange={(v) => save({ tokenBudget: v })} />
-                <p className="mt-1 text-[11px] text-white/40">Output tokens this engine may spend per run, across all its turns.</p>
+                <Range label={t.budget} value={cal.tokenBudget} min={2000} max={64000} step={1000} suffix={t.tokens} onChange={(v) => save({ tokenBudget: v })} />
+                <p className="mt-1 text-[11px] text-white/40">{t.budgetNote}</p>
               </div>
               <div>
-                <Range label="Human-in-the-loop threshold" value={cal.approvalThresholdUsd} min={0} max={250000} step={5000} suffix="" format={(v) => `$${v.toLocaleString("en-US")}`} onChange={(v) => save({ approvalThresholdUsd: v })} />
-                <p className="mt-1 text-[11px] text-white/40">Actions moving at least this much, or done by a person, wait for approval on the desk.</p>
+                <Range label={t.hitl} value={cal.approvalThresholdUsd} min={0} max={250000} step={5000} suffix="" format={(v) => `$${v.toLocaleString("en-US")}`} onChange={(v) => save({ approvalThresholdUsd: v })} />
+                <p className="mt-1 text-[11px] text-white/40">{t.hitlNote}</p>
               </div>
             </div>
           </Section>
 
-          <Section icon={SlidersHorizontal} title="System rules & situational overrides">
+          <Section icon={SlidersHorizontal} title={t.overrides}>
             <textarea
               value={raw.overrides ?? ""}
               onChange={(e) => save({ overrides: e.target.value || undefined })}
@@ -204,9 +278,9 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
             )}
           </Section>
 
-          <Section icon={Brain} title="Memory retention">
-            <Range label="Recent results the engine remembers" value={cal.memoryRuns} min={0} max={10} step={1} suffix="" onChange={(v) => save({ memoryRuns: v })} />
-            <p className="mt-1 text-[11px] text-white/40">Each completed run stores its summary. The latest ones go back to the engine as context on its next run (as data, never as instructions). 0 turns memory off.</p>
+          <Section icon={Brain} title={t.memory}>
+            <Range label={t.remembers} value={cal.memoryRuns} min={0} max={10} step={1} suffix="" onChange={(v) => save({ memoryRuns: v })} />
+            <p className="mt-1 text-[11px] text-white/40">{t.memoryNote}</p>
             {cal.memory.length > 0 ? (
               <>
                 <ol className="mt-3 space-y-1.5">
@@ -214,7 +288,7 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
                     <li key={i} className={cn("flex items-start gap-2 rounded-lg border p-2 text-[12px]", i >= cal.memory.length - cal.memoryRuns ? "border-c-edge/50 text-white/75" : "border-white/[0.06] text-white/35")}>
                       <span className="font-mono text-[10px] text-white/35">{i + 1}</span>
                       <span dir="auto" className="min-w-0 flex-1">{m}</span>
-                      <button type="button" aria-label="Forget this memory" onClick={() => save({ memory: cal.memory.filter((_, j) => j !== i) })} className="text-white/35 hover:text-red-300">
+                      <button type="button" aria-label={t.forget} onClick={() => save({ memory: cal.memory.filter((_, j) => j !== i) })} className="text-white/35 hover:text-red-300">
                         <Trash2 className="size-3.5" />
                       </button>
                     </li>
@@ -228,11 +302,11 @@ export function CalibrationHub({ c, lang, selected, onSelect }: { c: C; lang: La
                   }}
                   className="mt-2 text-[11.5px] text-white/45 hover:text-white/80"
                 >
-                  Clear all memory
+                  {t.clearAll}
                 </button>
               </>
             ) : (
-              <p className="mt-3 text-[12px] text-white/35">Nothing retained yet.</p>
+              <p className="mt-3 text-[12px] text-white/35">{t.nothing}</p>
             )}
           </Section>
 

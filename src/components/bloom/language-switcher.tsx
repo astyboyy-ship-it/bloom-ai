@@ -51,7 +51,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={SNAP}
-            className="glass absolute right-0 top-full z-50 mt-2 w-44 origin-top-right overflow-hidden rounded-2xl p-1.5"
+            className="glass absolute end-0 top-full z-50 mt-2 w-44 origin-top-right overflow-hidden rounded-2xl p-1.5 rtl:origin-top-left"
           >
             {LANGUAGES.map((l) => (
               <li key={l.code} role="none">
@@ -64,7 +64,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
                     lang === l.code ? "bg-white/[0.08] text-white" : "text-white/65 hover:bg-white/[0.05] hover:text-white",
                   )}
                 >

@@ -19,6 +19,12 @@ import { useLicense } from "@/lib/license-context";
 import { useOsTelemetry } from "./telemetry-context";
 import { OsPage } from "./os-shell";
 
+const COPY = {
+  en: { sample: "Metric previews are sample data.", online: "Online", command: "Command center", commandOf: (n: string) => `${n} command center`, console: "Console" },
+  es: { sample: "Las métricas de muestra son datos de ejemplo.", online: "En línea", command: "Centro de mando", commandOf: (n: string) => `Centro de mando de ${n}`, console: "Consola" },
+  he: { sample: "תצוגות המדדים הן נתוני דוגמה.", online: "מחובר", command: "מרכז פיקוד", commandOf: (n: string) => `מרכז הפיקוד של ${n}`, console: "קונסולה" },
+} satisfies Record<"en" | "es" | "he", unknown>;
+
 /** The complete engine network: the live hand-off graph, then all eight engines as bento cards. */
 export function EngineNetwork() {
   const { lang } = useCommandCopy();
@@ -29,7 +35,7 @@ export function EngineNetwork() {
   const go = (k: EngineKey) => router.push(`/desk/engines/${k}`);
 
   return (
-    <OsPage kicker="Engine network · 8 engines" title="Every engine, one network" lede={`Each engine is a full command center with its own live console and calibration. ${engines.length} of 8 are unlocked by your license; lines show who may hand work to whom.`}>
+    <OsPage route="/desk/engines" vars={{ n: engines.length }}>
       <div className="grid items-start gap-5 xl:grid-cols-[1.1fr_1fr]">
         <div className="os-panel rounded-2xl p-2">
           <NetworkView unlocked={isUnlocked} label={HUB_COPY[lang].network} hint={HUB_COPY[lang].networkHint} engines={manifest?.engines} agents={{}} statuses={{}} selected="sovereign" onSelect={go} />
@@ -45,13 +51,14 @@ export function EngineNetwork() {
           <EngineCard key={k} k={k} lang={lang} value={metrics[k]} unlocked={isUnlocked(k)} />
         ))}
       </div>
-      <p className="mt-4 text-[11.5px] text-white/35">Metric previews are sample data.</p>
+      <p className="mt-4 text-[11.5px] text-white/35">{COPY[lang].sample}</p>
     </OsPage>
   );
 }
 
 function EngineCard({ k, lang, value, unlocked }: { k: EngineKey; lang: "en" | "es" | "he"; value: number; unlocked: boolean }) {
   const e = localizeEngine(ENGINES[k], lang);
+  const t = COPY[lang];
   const p = paintings[e.painting];
   return (
     <article style={paletteVars(PALETTES[k])} className="group relative isolate overflow-hidden rounded-2xl border border-os-line bg-os-panel/80 transition-[border-color,box-shadow] hover:border-c-1/50 hover:shadow-[0_0_40px_-16px_var(--c-glow)]">
@@ -62,7 +69,7 @@ function EngineCard({ k, lang, value, unlocked }: { k: EngineKey; lang: "en" | "
           <span className="font-mono text-[10.5px] tracking-[0.2em] text-c-2">
             {e.index} · {e.badge}
           </span>
-          {unlocked ? <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em] text-os-emerald"><span className="size-1.5 rounded-full bg-os-emerald shadow-[0_0_6px_#34f5b5]" /> Online</span> : <LockBadge engine={k} />}
+          {unlocked ? <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em] text-os-emerald"><span className="size-1.5 rounded-full bg-os-emerald shadow-[0_0_6px_#34f5b5]" /> {t.online}</span> : <LockBadge engine={k} />}
         </div>
         <h2 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-white">{e.name}</h2>
         <p className="text-[12.5px] text-white/55">{e.role}</p>
@@ -73,11 +80,11 @@ function EngineCard({ k, lang, value, unlocked }: { k: EngineKey; lang: "en" | "
             <p className="font-mono text-[16px] tabular-nums text-c-2">{fmtUsdCompact(value)}</p>
           </div>
           <div className="flex gap-1.5">
-            <Link href={`/desk/engines/${k}?tab=command`} title="Command center" aria-label={`${e.name} command center`} className="flex size-8 items-center justify-center rounded-lg border border-os-line text-white/60 hover:border-c-1/50 hover:text-white">
+            <Link href={`/desk/engines/${k}?tab=command`} title={t.command} aria-label={t.commandOf(e.name)} className="flex size-8 items-center justify-center rounded-lg border border-os-line text-white/60 hover:border-c-1/50 hover:text-white">
               <Gauge className="size-4" />
             </Link>
             <Link href={`/desk/engines/${k}`} className="flex items-center gap-1 rounded-lg bg-linear-to-r from-c-1 to-c-2 px-3 py-1.5 text-[12px] font-semibold text-black">
-              <Terminal className="size-3.5" /> Console <ArrowUpRight className="size-3" />
+              <Terminal className="size-3.5" /> {t.console} <ArrowUpRight className="size-3 rtl:-scale-x-100" />
             </Link>
           </div>
         </div>

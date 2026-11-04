@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useDeskUi } from "./desk-ui-copy";
 import { animate, useReducedMotion } from "framer-motion";
 import { Check, Download, FileJson, FileText, ShieldAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ export function BriefPanel({
   const o = (output && typeof output === "object" ? output : {}) as { confidence?: number; actions?: Action[] };
   const actions = o.actions ?? [];
   const typed = useTypewriter(brief?.markdown ?? "");
+  const u = useDeskUi();
 
   // Approval-gated actions join the workspace queue, so the Home approval bay sees the same decisions.
   useEffect(() => {
@@ -77,9 +79,9 @@ export function BriefPanel({
   const pending = brief.approvals.filter((i) => !decisions[i]).length;
 
   return (
-    <section aria-label="Executive output" style={paletteVars(PALETTES[engine])} className="os-panel rounded-2xl p-4 sm:p-5">
+    <section aria-label={u.brief.section} style={paletteVars(PALETTES[engine])} className="os-panel rounded-2xl p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#f0d59a]/85">Executive output · {ENGINES[engine].name}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#f0d59a]/85">{u.brief.title(ENGINES[engine].name)}</p>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => download("md")} className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-[11.5px] text-white/75 hover:border-c-edge hover:text-white">
             <FileText className="size-3.5" /> Markdown
@@ -114,17 +116,17 @@ export function BriefPanel({
       {brief.approvals.length > 0 && (
         <div className="mt-4">
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
-            <ShieldAlert className="size-3.5 text-[#f3e2b8]" /> Human-in-the-loop · {pending ? `${pending} awaiting approval` : "all decided"}
+            <ShieldAlert className="size-3.5 text-[#f3e2b8]" /> {u.brief.hitl} · {pending ? u.brief.awaiting(pending) : u.brief.allDecided}
           </p>
           <ul className="mt-2 space-y-2">
             {brief.approvals.map((i) => {
               const a = actions[i];
               if (!a) return null;
               const d = decisions[i];
-              const owner = isEngineKey(a.owner) ? ENGINES[a.owner].name : "Human";
+              const owner = isEngineKey(a.owner) ? ENGINES[a.owner].name : u.brief.human;
               return (
                 <li key={i} className="flex flex-wrap items-start gap-3 rounded-xl border border-white/[0.08] bg-black/25 p-3">
-                  <span className={cn("h-fit shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9.5px] uppercase", PRIORITY[a.priority])}>{a.priority}</span>
+                  <span className={cn("h-fit shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9.5px] uppercase", PRIORITY[a.priority])}>{u.brief.priority[a.priority] ?? a.priority}</span>
                   <div className="min-w-0 flex-1">
                     <p dir="auto" className="text-[13px] font-medium text-white">
                       {a.title} <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-white/45">· {owner}</span>
@@ -134,15 +136,15 @@ export function BriefPanel({
                   {d ? (
                     <span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px]", d.decision === "approved" ? "bg-emerald-400/15 text-emerald-200" : "bg-red-500/15 text-red-200")}>
                       {d.decision === "approved" ? <Check className="size-3.5" /> : <X className="size-3.5" />}
-                      {d.decision === "approved" ? "Approved" : "Rejected"} · {d.by}
+                      {d.decision === "approved" ? u.brief.approved : u.brief.rejected} · {d.by}
                     </span>
                   ) : (
                     <span className="flex gap-1.5">
-                      <button type="button" disabled={!mayApprove} onClick={() => decide(i, "approved")} className="rounded-full border border-emerald-400/40 px-3 py-1 text-[11.5px] text-emerald-200 hover:bg-emerald-400/10 disabled:opacity-35" title={mayApprove ? undefined : "Your role can't approve actions"}>
-                        Approve
+                      <button type="button" disabled={!mayApprove} onClick={() => decide(i, "approved")} className="rounded-full border border-emerald-400/40 px-3 py-1 text-[11.5px] text-emerald-200 hover:bg-emerald-400/10 disabled:opacity-35" title={mayApprove ? undefined : u.brief.noApprove}>
+                        {u.brief.approve}
                       </button>
                       <button type="button" disabled={!mayApprove} onClick={() => decide(i, "rejected")} className="rounded-full border border-red-400/40 px-3 py-1 text-[11.5px] text-red-200 hover:bg-red-500/10 disabled:opacity-35">
-                        Reject
+                        {u.brief.reject}
                       </button>
                     </span>
                   )}

@@ -8,7 +8,8 @@ import { paintings } from "@/components/bloom/art/paintings";
 import { ENGINES } from "@/components/bloom/command/engines";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { useDeskSettings } from "@/components/desk/settings";
-import { ARCHITECTURES } from "@/lib/architectures";
+import { useCommandCopy } from "@/components/bloom/command/locale";
+import { architecturesIn } from "@/lib/architecture-text";
 import { useLicense } from "@/lib/license-context";
 import { TIER_INFO } from "@/lib/license/tiers";
 import { tierFor } from "./architecture-workspace";
@@ -16,15 +17,24 @@ import { OsPage } from "./os-shell";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
+const COPY = {
+  en: { arch: (n: string) => `ARCH Nº ${n}`, deployable: "Deployable", runs: (n: number) => ` · ${n} runs`, perMonth: "/mo", open: "Open workspace" },
+  es: { arch: (n: string) => `ARQ. Nº ${n}`, deployable: "Disponible", runs: (n: number) => ` · ${n} ejecuciones`, perMonth: "/mes", open: "Abrir espacio" },
+  he: { arch: (n: string) => `ארכ׳ מס׳ ${n}`, deployable: "זמין לפריסה", runs: (n: number) => ` · ${n} הרצות`, perMonth: " לחודש", open: "פתיחת סביבת העבודה" },
+} satisfies Record<"en" | "es" | "he", unknown>;
+
 /** All ten architecture products. Each opens its own full-screen workspace; locked ones show the tier they need. */
 export function ArchitectureGallery() {
+  const { lang } = useCommandCopy();
+  const t = COPY[lang];
+  const archs = architecturesIn(lang);
   const { engines } = useLicense();
   const { settings } = useDeskSettings();
-  const open = ARCHITECTURES.filter((a) => a.engines.every((k) => engines.includes(k))).length;
+  const open = archs.filter((a) => a.engines.every((k) => engines.includes(k))).length;
   return (
-    <OsPage kicker="Architectures · 10 products" title="Flagship architecture products" lede={`Each architecture is a multi-agent product with its own topology, simulation testbed, governance and audit history. ${open} of 10 are available on your license.`}>
+    <OsPage route="/desk/architectures" vars={{ n: open }}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {ARCHITECTURES.map((a, i) => {
+        {archs.map((a, i) => {
           const unlocked = a.engines.every((k) => engines.includes(k));
           const lead = a.engines.at(-1)!;
           const p = paintings[ENGINES[lead].painting];
@@ -39,9 +49,9 @@ export function ArchitectureGallery() {
               <Image src={p.src} alt="" fill sizes="(min-width: 1280px) 33vw, 50vw" className={cn("-z-10 object-cover opacity-20 transition-[opacity,transform] duration-700 group-hover:scale-105 group-hover:opacity-30", !unlocked && "grayscale")} style={{ objectPosition: p.focus }} />
               <div className="absolute inset-0 -z-10 bg-linear-to-t from-os-bg via-os-bg/80 to-os-bg/30" />
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10.5px] tracking-[0.22em] text-os-cyan/80">ARCH Nº {String(i + 1).padStart(2, "0")}</span>
+                <span className="font-mono text-[10.5px] tracking-[0.22em] text-os-cyan/80">{t.arch(String(i + 1).padStart(2, "0"))}</span>
                 {unlocked ? (
-                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-os-emerald">● Deployable{runs ? ` · ${runs} runs` : ""}</span>
+                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-os-emerald">● {t.deployable}{runs ? t.runs(runs) : ""}</span>
                 ) : (
                   <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-white/70">
                     <Lock className="size-3" /> {TIER_INFO[tierFor(a.engines)].short}
@@ -59,10 +69,10 @@ export function ArchitectureGallery() {
               </p>
               <div className="mt-auto flex items-end justify-between pt-4">
                 <span className="font-mono text-[11px] text-white/45">
-                  {usd(a.setup)} · {usd(a.retainer)}/mo
+                  {usd(a.setup)} · {usd(a.retainer)}{t.perMonth}
                 </span>
                 <span className="flex items-center gap-1 text-[12.5px] text-os-cyan">
-                  Open workspace <ArrowUpRight className="size-3.5" />
+                  {t.open} <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />
                 </span>
               </div>
             </Link>

@@ -30,3 +30,27 @@ export function upgradeTierFor(engine: EngineKey): Tier {
 }
 
 export const engineAllowed = (tier: Tier, engine: EngineKey) => TIER_ENGINES[tier].includes(engine);
+
+/** Tier labels and blurbs in Spanish and Hebrew; `short` (EVAL, T1…) is a code and stays the same. */
+const TIER_TEXT: Record<"es" | "he", Record<Tier, { label: string; blurb: string }>> = {
+  es: {
+    evaluation: { label: "Evaluación", blurb: "Sin clave de licencia. CoreOps e IntentPulse en modo de evaluación." },
+    tier1: { label: "Nivel 1 · Señales y operaciones", blurb: "CoreOps e IntentPulse: radar de mercado y automatización silenciosa del back office." },
+    tier2: { label: "Nivel 2 · Mando y cierre", blurb: "Sovereign, Apex y CoreOps: gobierno, cierre de acuerdos y operaciones." },
+    tier3: { label: "Nivel 3 · Enterprise", blurb: "Los ocho motores desbloqueados, con delegación completa entre motores." },
+    admin: { label: "Control maestro de administrador", blurb: "Todos los motores y todos los controles. Para el equipo de Bloom AI y desarrollo." },
+  },
+  he: {
+    evaluation: { label: "הערכה", blurb: "בלי מפתח רישיון. CoreOps ו־IntentPulse במצב הערכה." },
+    tier1: { label: "רמה 1 · אותות ותפעול", blurb: "CoreOps ו־IntentPulse: מכ״ם שוק ואוטומציה שקטה של הבק־אופיס." },
+    tier2: { label: "רמה 2 · פיקוד וסגירה", blurb: "Sovereign, Apex ו־CoreOps: משילות, סגירת עסקאות ותפעול." },
+    tier3: { label: "רמה 3 · אנטרפרייז", blurb: "כל שמונת המנועים פתוחים, עם האצלה מלאה בין מנועים." },
+    admin: { label: "עקיפת מנהל ראשי", blurb: "כל המנועים וכל הבקרות. לצוות Bloom AI ולפיתוח." },
+  },
+};
+
+/** TIER_INFO in the given language. */
+export function tierInfo(lang: "en" | "es" | "he"): Record<Tier, { label: string; short: string; blurb: string }> {
+  if (lang === "en") return TIER_INFO;
+  return Object.fromEntries(TIERS.map((t) => [t, { ...TIER_INFO[t], ...TIER_TEXT[lang][t] }])) as Record<Tier, { label: string; short: string; blurb: string }>;
+}

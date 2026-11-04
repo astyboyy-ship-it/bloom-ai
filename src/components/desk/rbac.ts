@@ -22,3 +22,28 @@ export const ROLE_INFO: Record<Role, { label: string; blurb: string }> = {
 };
 
 export const can = (role: Role, p: Permission) => GRANTS[role].includes(p);
+
+const ROLE_TEXT: Record<"es" | "he", Record<Role, { label: string; blurb: string }>> = {
+  es: {
+    owner: { label: "Propietario", blurb: "Todo, incluida la licencia." },
+    admin: { label: "Administrador", blurb: "Ejecuciones, calibración, ajustes y equipo; no la licencia." },
+    operator: { label: "Operador", blurb: "Ejecuta motores y aprueba acciones." },
+    viewer: { label: "Observador", blurb: "Solo lectura: sigue las ejecuciones y los informes." },
+  },
+  he: {
+    owner: { label: "בעלים", blurb: "הכול, כולל הרישיון." },
+    admin: { label: "מנהל", blurb: "הרצות, כיול, הגדרות וצוות; לא הרישיון." },
+    operator: { label: "מפעיל", blurb: "מריץ מנועים ומאשר פעולות." },
+    viewer: { label: "צופה", blurb: "קריאה בלבד: עוקב אחרי הרצות ודוחות." },
+  },
+};
+
+/** ROLE_INFO in the given language. */
+export const roleInfo = (lang: "en" | "es" | "he"): Record<Role, { label: string; blurb: string }> => (lang === "en" ? ROLE_INFO : ROLE_TEXT[lang]);
+
+/** Permission names in each language. */
+export const PERMISSION_TEXT: Record<"en" | "es" | "he", Record<Permission, string>> = {
+  en: { run: "run", approve: "approve", calibrate: "calibrate", settings: "settings", members: "members", license: "license" },
+  es: { run: "ejecutar", approve: "aprobar", calibrate: "calibrar", settings: "ajustes", members: "miembros", license: "licencia" },
+  he: { run: "הרצה", approve: "אישור", calibrate: "כיול", settings: "הגדרות", members: "חברי צוות", license: "רישיון" },
+};

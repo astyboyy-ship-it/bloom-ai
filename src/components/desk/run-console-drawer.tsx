@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useDeskUi } from "./desk-ui-copy";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Loader2, Square, X } from "lucide-react";
@@ -31,6 +32,7 @@ export function RunConsoleDrawer({
   onStatus?: (s: ConsoleStatus) => void;
 }) {
   const c = DESK_COPY[lang];
+  const u = useDeskUi();
   const { settings } = useDeskSettings();
   const { state, run, abort } = useRun(c.networkError, c.aborted);
   const started = useRef<number | null>(null);
@@ -87,7 +89,7 @@ export function RunConsoleDrawer({
           >
             <header className="flex items-start justify-between gap-3 border-b border-white/10 p-5">
               <div className="min-w-0">
-                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-c-2/90">Run console · Engine Nº {ENGINES[request.engine].index}</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-c-2/90">{u.console.kicker(ENGINES[request.engine].index)}</p>
                 <h2 className="mt-1 font-logo text-[28px] font-medium leading-none tracking-[-0.04em]">{ENGINES[request.engine].name}</h2>
                 <p dir="auto" className="mt-2 line-clamp-2 text-[12.5px] text-white/55">{request.command}</p>
               </div>
@@ -98,10 +100,10 @@ export function RunConsoleDrawer({
                   </button>
                 ) : (
                   <Link href={`/desk/engines/${request.engine}`} className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/15 px-3 py-1.5 text-[12px] text-white/70 hover:text-white">
-                    Open in desk <ArrowUpRight className="size-3.5" />
+                    {u.console.openInDesk} <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />
                   </Link>
                 )}
-                <button type="button" onClick={close} aria-label="Close" className="rounded-lg p-2 text-white/60 hover:bg-white/5 hover:text-white">
+                <button type="button" onClick={close} aria-label={u.console.close} className="rounded-lg p-2 text-white/60 hover:bg-white/5 hover:text-white">
                   <X className="size-5" />
                 </button>
               </div>

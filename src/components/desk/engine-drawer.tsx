@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDeskUi } from "./desk-ui-copy";
 import { AnimatePresence, animate, motion } from "framer-motion";
 import { CircleDashed, Clock, Loader2, Pause, Play, SlidersHorizontal, Terminal, X, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ function DrawerBody({ engine, lang, onClose, onCommand, onCalibrate }: Omit<Prop
   const [paused, setPaused] = useState(false);
   const t = useEngineTelemetry(engine, cal.memory, paused);
   const e = localizeEngine(ENGINES[engine], lang);
+  const u = useDeskUi();
   const agents = e.cards.reduce((s, c) => s + c.agents, 0);
   const running = t.jobs.filter((j) => j.status === "running").length;
 
@@ -63,27 +65,27 @@ function DrawerBody({ engine, lang, onClose, onCommand, onCalibrate }: Omit<Prop
       <header className="flex items-start justify-between gap-3 border-b border-white/10 p-5">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-c-2/90">
-            Architecture · Engine Nº {e.index} · {modelInfo(cal.model).label}
+            {u.drawer.kicker(e.index, modelInfo(cal.model).label)}
           </p>
           <h2 className="mt-1 font-logo text-[34px] font-medium leading-none tracking-[-0.04em]">{e.name}</h2>
           <p className="mt-1 text-[13px] text-white/55">{e.role}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-2 text-white/60 hover:bg-white/5 hover:text-white">
+        <button type="button" onClick={onClose} aria-label={u.drawer.close} className="rounded-lg p-2 text-white/60 hover:bg-white/5 hover:text-white">
           <X className="size-5" />
         </button>
       </header>
 
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         <div className="grid grid-cols-3 gap-2">
-          <Gauge label="$ generated" value={t.gauges.generated} kind="usd" />
-          <Gauge label="Hours saved" value={t.gauges.hours} kind="hours" />
-          <Gauge label="Active pipeline" value={t.gauges.pipeline} kind="usd" />
+          <Gauge label={u.drawer.generated} value={t.gauges.generated} kind="usd" />
+          <Gauge label={u.drawer.hours} value={t.gauges.hours} kind="hours" />
+          <Gauge label={u.drawer.pipeline} value={t.gauges.pipeline} kind="usd" />
         </div>
 
         <section className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
           <div className="flex items-baseline justify-between">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">Live topology · {agents} agent nodes</h3>
-            <span className="font-mono text-[10.5px] text-white/40">{running} jobs executing</span>
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">{u.drawer.topology(agents)}</h3>
+            <span className="font-mono text-[10.5px] text-white/40">{u.drawer.executing(running)}</span>
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {e.cards.map((c) => (
@@ -103,16 +105,16 @@ function DrawerBody({ engine, lang, onClose, onCommand, onCalibrate }: Omit<Prop
         </section>
 
         <section className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
-          <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">Active agent memory</h3>
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">{u.drawer.memory}</h3>
           <MemoryGraph nodes={t.graph.nodes} edges={t.graph.edges} />
-          {!cal.memory.length && <p className="mt-1 text-[11.5px] text-white/40">No retained results yet. Each completed run adds one (retention: {cal.memoryRuns}).</p>}
+          {!cal.memory.length && <p className="mt-1 text-[11.5px] text-white/40">{u.drawer.noMemory(cal.memoryRuns)}</p>}
         </section>
 
         <section className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">Execution queue</h3>
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/50">{u.drawer.queue}</h3>
             <button type="button" onClick={() => setPaused((p) => !p)} className="flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1 text-[11.5px] text-white/70 hover:text-white">
-              {paused ? <Play className="size-3" /> : <Pause className="size-3" />} {paused ? "Resume queue" : "Pause queue"}
+              {paused ? <Play className="size-3" /> : <Pause className="size-3" />} {paused ? u.drawer.resume : u.drawer.pause}
             </button>
           </div>
           <ol className="mt-3 max-h-72 space-y-1 overflow-y-auto font-mono text-[11.5px]">
@@ -127,21 +129,21 @@ function DrawerBody({ engine, lang, onClose, onCommand, onCalibrate }: Omit<Prop
                 )}
                 <span className={cn("flex-1 font-sans text-[12px]", j.status === "queued" ? "text-white/40" : "text-white/75")}>{j.text}</span>
                 <span className="flex shrink-0 items-center gap-1 text-[10px] text-white/35">
-                  <Clock className="size-3" /> {j.status === "done" ? `${(j.ms / 1000).toFixed(1)}s` : j.status}
+                  <Clock className="size-3" /> {j.status === "done" ? `${(j.ms / 1000).toFixed(1)}s` : u.drawer.statuses[j.status] ?? j.status}
                 </span>
               </li>
             ))}
           </ol>
-          <p className="mt-2 text-[10.5px] text-white/30">Live simulated workforce telemetry for this architecture.</p>
+          <p className="mt-2 text-[10.5px] text-white/30">{u.drawer.note}</p>
         </section>
       </div>
 
       <footer className="flex flex-wrap gap-2 border-t border-white/10 p-4">
         <button type="button" onClick={() => onCommand(engine)} className="flex items-center gap-2 rounded-full bg-linear-to-r from-c-1 to-c-2 px-5 py-2 text-[13px] font-semibold text-black">
-          <Terminal className="size-4" /> Command {e.name}
+          <Terminal className="size-4" /> {u.drawer.command(e.name)}
         </button>
         <button type="button" onClick={() => onCalibrate(engine)} className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-[13px] text-white/80 hover:text-white">
-          <SlidersHorizontal className="size-4" /> Calibrate
+          <SlidersHorizontal className="size-4" /> {u.drawer.calibrate}
         </button>
       </footer>
     </>
@@ -170,6 +172,7 @@ function Gauge({ label, value, kind }: { label: string; value: number; kind: "us
 
 /** A radial memory graph: engine at the center, memories on the inner ring, accounts and tasks outside. */
 function MemoryGraph({ nodes, edges }: { nodes: MemoryNode[]; edges: [string, string][] }) {
+  const label = useDeskUi().drawer.graph;
   const pos = useMemo(() => {
     const W = 520;
     const H = 240;
@@ -191,7 +194,7 @@ function MemoryGraph({ nodes, edges }: { nodes: MemoryNode[]; edges: [string, st
   }, [nodes]);
   const color = { engine: "var(--c-2)", memory: "var(--c-1)", account: "#c4beb2", task: "var(--c-3)" };
   return (
-    <svg viewBox="0 0 520 240" className="mt-2 h-auto w-full" style={{ direction: "ltr" }} role="img" aria-label="Agent memory graph">
+    <svg viewBox="0 0 520 240" className="mt-2 h-auto w-full" style={{ direction: "ltr" }} role="img" aria-label={label}>
       {edges.map(([a, b]) => pos[a] && pos[b] && <line key={`${a}-${b}`} x1={pos[a].x} y1={pos[a].y} x2={pos[b].x} y2={pos[b].y} stroke="rgb(255 255 255 / 0.12)" strokeDasharray="3 4" className="animate-[net-flow_1.6s_linear_infinite]" />)}
       {nodes.map((n) => {
         const p = pos[n.id];

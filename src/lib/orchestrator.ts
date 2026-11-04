@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { ENGINES, ENGINE_ORDER, type EngineKey } from "@/components/bloom/command/engines";
 import { AGENTS, type EngineAgent } from "@/lib/engines";
+import { BRIEF_TEXT } from "./engines/brief-text";
 import { buildBrief } from "@/lib/engines/brief";
 import { DEFAULT_CALIBRATION, type Calibration } from "@/lib/engines/calibration";
 import { modelInfo, type ModelInfo } from "@/lib/engines/models";
@@ -230,17 +231,18 @@ export async function runCommand(
     const cal = run.calibrations[engine] ?? DEFAULT_CALIBRATION;
     const reach = cal.allowDelegation ? AGENTS[engine].delegates.filter((d) => run.allowed.includes(d)) : [];
     const nodes = ENGINES[engine].cards.reduce((s, c) => s + c.agents, 0);
-    run.emit({ type: "phase", phase: "parse", detail: `Parsing intent · allocating ${nodes} agent nodes on ${ENGINES[engine].name}${reach.length ? ` with ${reach.length} licensed hand-off target${reach.length === 1 ? "" : "s"}` : ""}` });
+    const P = BRIEF_TEXT[run.lang].phases;
+    run.emit({ type: "phase", phase: "parse", detail: P.parse(nodes, ENGINES[engine].name, reach.length) });
     if (rt.mode === "simulation") await sleep(450 * modelInfo(cal.model).pace + 250, run.signal);
 
     // Stage 2: route through the engine pipeline (the agent loops, including delegations).
-    run.emit({ type: "phase", phase: "route", detail: `Routing through the ${ENGINES[engine].name} pipeline on ${rt.mode === "live" ? modelInfo(cal.model).label : "the simulation runtime"}` });
+    run.emit({ type: "phase", phase: "route", detail: P.route(ENGINES[engine].name, rt.mode === "live" ? modelInfo(cal.model).label : null) });
     output = await runAgent(run, engine, input, null, [engine]);
 
     // Stage 3: compose the executive brief from the validated output.
-    run.emit({ type: "phase", phase: "compose", detail: "Composing the executive brief" });
+    run.emit({ type: "phase", phase: "compose", detail: P.compose });
     const parsed = (input ?? {}) as { command?: string };
-    const brief = buildBrief(engine, output, { approvalThresholdUsd: cal.approvalThresholdUsd, command: parsed.command ?? "", mode: rt.mode, model: modelInfo(cal.model).label });
+    const brief = buildBrief(engine, output, { approvalThresholdUsd: cal.approvalThresholdUsd, command: parsed.command ?? "", mode: rt.mode, model: modelInfo(cal.model).label, lang: run.lang });
     run.emit({ type: "brief", ...brief });
     ok = true;
   } catch (err) {
@@ -277,18 +279,19 @@ export async function runPipeline(
   let merged: unknown = null;
   try {
     const nodes = spec.engines.reduce((s, k) => s + ENGINES[k].cards.reduce((n, c) => n + c.agents, 0), 0);
-    run.emit({ type: "phase", phase: "parse", detail: `Parsing intent · allocating ${nodes} agent nodes across ${spec.engines.length} engines of ${spec.label}` });
+    const P = BRIEF_TEXT[run.lang].phases;
+    run.emit({ type: "phase", phase: "parse", detail: P.parseStack(nodes, spec.engines.length, spec.label) });
     if (rt.mode === "simulation") await sleep(500, run.signal);
 
     for (const [i, engine] of spec.engines.entries()) {
-      run.emit({ type: "phase", phase: "route", detail: `Stage ${i + 1} of ${spec.engines.length}: ${ENGINES[engine].name}${i ? ` (with ${i} upstream result${i === 1 ? "" : "s"})` : ""}` });
+      run.emit({ type: "phase", phase: "route", detail: P.stage(i + 1, spec.engines.length, ENGINES[engine].name, i) });
       const upstream = stages.length ? `\n\nUPSTREAM RESULTS (earlier engines in the ${spec.label} stack; build on them)\n${stages.map((s) => `- ${ENGINES[s.engine].name}: ${s.output.summary ?? ""}`).join("\n")}` : "";
       // The whole stack is the chain, so no engine delegates back into it.
       const out = await runAgent(run, engine, { command: `${input.command}${upstream}`.slice(0, 4000), params: {} }, null, spec.engines);
       stages.push({ engine, output: (out ?? {}) as (typeof stages)[number]["output"] });
     }
 
-    run.emit({ type: "phase", phase: "compose", detail: `Composing the ${spec.label} executive brief` });
+    run.emit({ type: "phase", phase: "compose", detail: P.composeStack(spec.label) });
     const last = stages.at(-1)!;
     const confidences = stages.map((s) => s.output.confidence).filter((c): c is number => typeof c === "number");
     merged = {
@@ -298,7 +301,7 @@ export async function runPipeline(
       ...Object.fromEntries(stages.map((s) => [ENGINES[s.engine].name.toLowerCase(), Object.fromEntries(Object.entries(s.output).filter(([k]) => !["summary", "confidence", "actions"].includes(k)))])),
     };
     const threshold = Math.min(...spec.engines.map((k) => (calibrations[k] ?? DEFAULT_CALIBRATION).approvalThresholdUsd));
-    const brief = buildBrief(last.engine, merged, { approvalThresholdUsd: threshold, command: input.command, mode: rt.mode, model: modelInfo((calibrations[last.engine] ?? DEFAULT_CALIBRATION).model).label, title: spec.label, subtitle: `Architecture · ${spec.engines.map((k) => ENGINES[k].name).join(" → ")}` });
+    const brief = buildBrief(last.engine, merged, { approvalThresholdUsd: threshold, command: input.command, mode: rt.mode, model: modelInfo((calibrations[last.engine] ?? DEFAULT_CALIBRATION).model).label, title: spec.label, subtitle: `${BRIEF_TEXT[run.lang].architecture} · ${spec.engines.map((k) => ENGINES[k].name).join(run.lang === "he" ? " ← " : " → ")}`, lang: run.lang });
     run.emit({ type: "brief", ...brief });
     ok = true;
   } catch (err) {

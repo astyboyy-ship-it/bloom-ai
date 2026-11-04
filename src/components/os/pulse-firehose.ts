@@ -1,4 +1,7 @@
 import type { EngineKey } from "@/components/bloom/command/engines";
+import { AGENT_LABEL } from "@/components/bloom/command/engine-work-text";
+import type { Lang } from "@/components/bloom/i18n";
+import { FIREHOSE_TEXT } from "./pulse-firehose-text";
 
 /**
  * The Global Pulse firehose: simulated, high-frequency agent telemetry across many operational domains, on top
@@ -161,9 +164,9 @@ const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)]
 const int = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
 
 /** Fills a template's placeholders. */
-export function fill(t: string, agents = 48): string {
+export function fill(t: string, agents = 48, lang: Lang = "en"): string {
   return t.replace(/\{([^{}]+)\}/g, (_, body: string) => {
-    if (body === "agent") return `Agent #${String(int(1, agents)).padStart(2, "0")}`;
+    if (body === "agent") return `${AGENT_LABEL[lang]} #${String(int(1, agents)).padStart(2, "0")}`;
     if (body === "hex") return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0").slice(0, 7);
     const m = body.match(/^(n|f|usd):(-?[\d.]+)-(-?[\d.]+)$/);
     if (m) {
@@ -178,7 +181,8 @@ export function fill(t: string, agents = 48): string {
 }
 
 /** One synthetic multi-domain action: the handling engine (for color and routing) and its text. */
-export function firehoseEvent(): { engine: EngineKey; text: string; domain: string } {
+export function firehoseEvent(lang: Lang = "en"): { engine: EngineKey; text: string; domain: string } {
   const d = pick(PULSE_DOMAINS);
-  return { engine: d.engine, domain: d.label, text: `[${d.label}] ${fill(pick(d.templates))}` };
+  const tx = lang === "en" ? d : FIREHOSE_TEXT[lang][d.key];
+  return { engine: d.engine, domain: tx.label, text: `[${tx.label}] ${fill(pick(tx.templates), 48, lang)}` };
 }

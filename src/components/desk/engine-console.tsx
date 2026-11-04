@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeskUi } from "./desk-ui-copy";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -26,7 +27,7 @@ import { NetworkView } from "./network-view";
 import { can } from "./rbac";
 import { ResultCard } from "./result-card";
 import { RunStepper } from "./run-stepper";
-import { activeMember, audit, recordRun, requestHeaders, updateSettings, useDeskSettings } from "./settings";
+import { activeMember, audit, recordRun, requestHeaders, updateSettings, useDeskSettings, displayName } from "./settings";
 import { TopologyPanel } from "./topology-panel";
 import { useRun } from "./use-run";
 
@@ -39,6 +40,7 @@ import { useRun } from "./use-run";
 export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
   const { lang, c: cc } = useCommandCopy();
   const c = DESK_COPY[lang];
+  const u = useDeskUi();
   const h = HUB_COPY[lang];
   const router = useRouter();
   const { settings } = useDeskSettings();
@@ -110,7 +112,7 @@ export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
       <div className="grid flex-1 grid-cols-[minmax(0,1fr)] lg:grid-cols-[17rem_minmax(0,1fr)_19rem] xl:grid-cols-[18.5rem_minmax(0,1fr)_21rem]">
         <EngineRail c={c} lang={lang} selected={selected} onSelect={select} statuses={statuses} />
 
-        <section aria-label={`${ENGINES[selected].name} console`} style={paletteVars(PALETTES[selected])} className="relative flex min-h-0 flex-col overflow-hidden">
+        <section aria-label={u.engine.consoleOf(ENGINES[selected].name)} style={paletteVars(PALETTES[selected])} className="relative flex min-h-0 flex-col overflow-hidden">
           {/* The selected engine's painting, far back, so each engine's desk carries its own light. */}
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div key={selected} aria-hidden initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="absolute inset-0 -z-10">
@@ -137,7 +139,7 @@ export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
                     onClick={() => setDrawer(selected)}
                     className="flex items-center gap-1.5 rounded-full border border-c-edge/60 bg-c-deep/50 px-3 py-1.5 text-[12px] text-white/80 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-c-2"
                   >
-                    <Layers3 className="size-3.5" /> Open architecture
+                    <Layers3 className="size-3.5" /> {u.engine.openArchitecture}
                   </button>
                 )}
               </div>
@@ -156,7 +158,7 @@ export function EngineConsole({ engine: selected }: { engine: EngineKey }) {
                   {c.command}
                   {!mayRun && (
                     <span className="flex items-center gap-1 normal-case tracking-normal text-white/50">
-                      <Lock className="size-3" /> {member.name} is a Viewer: running engines needs Operator or above.
+                      <Lock className="size-3" /> {u.engine.viewer(displayName(member.name, lang))}
                     </span>
                   )}
                 </label>

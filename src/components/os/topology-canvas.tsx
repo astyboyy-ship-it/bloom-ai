@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { localizeEngine, useCommandCopy } from "@/components/bloom/command/locale";
 import { ENGINES, type EngineKey } from "@/components/bloom/command/engines";
 import { PALETTES } from "@/components/bloom/command/theme";
 import type { EngineRunStatus } from "@/components/desk/engine-status";
@@ -9,6 +10,13 @@ type Node = { id: string; x: number; y: number; label: string; sub: string; kind
 
 const W = 1120;
 const H = 340;
+
+
+const COPY = {
+  en: { input: "Input stream", gate: "Compliance gate", delivery: "Delivery", topology: "Architecture topology" },
+  es: { input: "Flujo de entrada", gate: "Control de cumplimiento", delivery: "Entrega", topology: "Topología de la arquitectura" },
+  he: { input: "זרם קלט", gate: "שער ציות", delivery: "מסירה", topology: "טופולוגיית הארכיטקטורה" },
+} satisfies Record<"en" | "es" | "he", unknown>;
 
 /**
  * An architecture's node topology: input streams → each engine (with its reflection loop) → the compliance
@@ -33,10 +41,12 @@ export function TopologyCanvas({
   onPick?: (n: { kind: Node["kind"]; label: string; engine?: EngineKey }) => void;
 }) {
   const [hover, setHover] = useState<string | null>(null);
+  const { lang } = useCommandCopy();
+  const t = COPY[lang];
   const nodes = useMemo(() => {
     const col = (n: number, i: number, x: number, top = 40, bottom = H - 40) => ({ x, y: n === 1 ? H / 2 : top + (i * (bottom - top)) / (n - 1) });
     const out: Node[] = [];
-    inputs.forEach((label, i) => out.push({ id: `in${i}`, kind: "input", label, sub: "Input stream", ...col(inputs.length, i, 70) }));
+    inputs.forEach((label, i) => out.push({ id: `in${i}`, kind: "input", label, sub: t.input, ...col(inputs.length, i, 70) }));
     // Engines snake through the middle band so long stacks stay readable.
     // Engines get the band between the inputs and the gate; the gate and outputs keep columns of their own.
     const left = 250;
@@ -44,12 +54,12 @@ export function TopologyCanvas({
     engines.forEach((k, i) => {
       const x = left + (engines.length === 1 ? span / 2 : (i * span) / (engines.length - 1));
       const y = engines.length > 4 ? (i % 2 ? H / 2 + 60 : H / 2 - 60) : H / 2;
-      out.push({ id: `e${i}`, kind: "engine", engine: k, label: ENGINES[k].name, sub: ENGINES[k].role, x, y });
+      out.push({ id: `e${i}`, kind: "engine", engine: k, label: ENGINES[k].name, sub: localizeEngine(ENGINES[k], lang).role, x, y });
     });
-    out.push({ id: "gate", kind: "gate", label: "Compliance gate", sub: `HITL · ${threshold}`, x: W - 250, y: H / 2 });
-    outputs.forEach((label, i) => out.push({ id: `out${i}`, kind: "output", label, sub: "Delivery", ...col(outputs.length, i, W - 80) }));
+    out.push({ id: "gate", kind: "gate", label: t.gate, sub: `HITL · ${threshold}`, x: W - 250, y: H / 2 });
+    outputs.forEach((label, i) => out.push({ id: `out${i}`, kind: "output", label, sub: t.delivery, ...col(outputs.length, i, W - 80) }));
     return out;
-  }, [inputs, engines, outputs, threshold]);
+  }, [inputs, engines, outputs, threshold, t, lang]);
 
   const by = (id: string) => nodes.find((n) => n.id === id)!;
   const edges: [string, string][] = [
@@ -62,7 +72,7 @@ export function TopologyCanvas({
   const done = (n: Node) => n.kind === "engine" && statuses[n.engine!] === "done";
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" style={{ direction: "ltr" }} role="group" aria-label="Architecture topology">
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" style={{ direction: "ltr" }} role="group" aria-label={t.topology}>
       <defs>
         <linearGradient id="topo-edge" x1="0" x2="1">
           <stop offset="0" stopColor="#00f0ff" stopOpacity="0.15" />

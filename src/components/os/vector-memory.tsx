@@ -8,11 +8,106 @@ import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { can } from "@/components/desk/rbac";
 import { activeMember, audit, setCalibration, updateSettings, useDeskSettings } from "@/components/desk/settings";
 import { readCalibration } from "@/lib/engines/calibration";
-import { ENGINE_DEMOS } from "./explore-data";
+import { useCommandCopy } from "@/components/bloom/command/locale";
+import type { Lang } from "@/components/bloom/i18n";
+import { engineDemos } from "./explore-data-text";
 import { MemoryTimeline } from "./memory-timeline";
 import { OsPage } from "./os-shell";
 
 const DIM = 256;
+
+const COPY = {
+  en: {
+    searchPh: "Search across memory, e.g. 'discount pricing pressure'",
+    searchLabel: "Search memory",
+    engineFilter: "Engine filter",
+    allEngines: "All engines",
+    tierLabel: "Memory tier",
+    tiers: { all: "All", long: "Long-term", short: "Short-term" },
+    space: "Embedding space · 2D projection",
+    legend: (n: number) => `${n} vectors · ● long-term ○ short-term`,
+    mapLabel: "Memory embedding map",
+    emptyMap: "No memory yet. Seed some context, or complete a run.",
+    inspector: "Inspector",
+    longTerm: "long-term",
+    shortTerm: "short-term",
+    neighbours: "Nearest neighbours",
+    forget: "Forget this memory",
+    pick: "Click a point to inspect it and its nearest neighbours.",
+    seedTitle: "Seed context into an engine",
+    seedEngine: "Engine to seed",
+    seedPh: "e.g. Acme Corp prefers annual prepay; never discount below 12%.",
+    seed: "Seed memory",
+    seedSet: "Seed synthetic set",
+    clear: (x: string) => `Clear ${x}`,
+    all: "all",
+    confirmClear: (x: string) => `Clear long-term memory for ${x}?`,
+    allEnginesLower: "all engines",
+    results: "Search results · ranked by cosine similarity",
+    entries: "Memory entries",
+    noMatch: "Nothing matches these filters.",
+  },
+  es: {
+    searchPh: "Busca en la memoria, p. ej. «presión de precios por descuentos»",
+    searchLabel: "Buscar en la memoria",
+    engineFilter: "Filtro de motor",
+    allEngines: "Todos los motores",
+    tierLabel: "Tipo de memoria",
+    tiers: { all: "Todo", long: "Largo plazo", short: "Corto plazo" },
+    space: "Espacio de embeddings · proyección 2D",
+    legend: (n: number) => `${n} vectores · ● largo plazo ○ corto plazo`,
+    mapLabel: "Mapa de embeddings de la memoria",
+    emptyMap: "Aún no hay memoria. Siembra contexto o completa una ejecución.",
+    inspector: "Inspector",
+    longTerm: "largo plazo",
+    shortTerm: "corto plazo",
+    neighbours: "Vecinos más cercanos",
+    forget: "Olvidar este recuerdo",
+    pick: "Haz clic en un punto para inspeccionarlo junto con sus vecinos más cercanos.",
+    seedTitle: "Sembrar contexto en un motor",
+    seedEngine: "Motor a sembrar",
+    seedPh: "p. ej. Acme Corp prefiere pago anual por adelantado; nunca descontar por debajo del 12%.",
+    seed: "Sembrar memoria",
+    seedSet: "Sembrar conjunto sintético",
+    clear: (x: string) => `Borrar ${x}`,
+    all: "todo",
+    confirmClear: (x: string) => `¿Borrar la memoria a largo plazo de ${x}?`,
+    allEnginesLower: "todos los motores",
+    results: "Resultados · ordenados por similitud coseno",
+    entries: "Entradas de memoria",
+    noMatch: "Nada coincide con estos filtros.",
+  },
+  he: {
+    searchPh: "חיפוש בזיכרון, למשל ״לחץ מחירים בגלל הנחות״",
+    searchLabel: "חיפוש בזיכרון",
+    engineFilter: "סינון לפי מנוע",
+    allEngines: "כל המנועים",
+    tierLabel: "סוג הזיכרון",
+    tiers: { all: "הכול", long: "טווח ארוך", short: "טווח קצר" },
+    space: "מרחב ההטמעות · הטלה דו־ממדית",
+    legend: (n: number) => `${n} וקטורים · ● טווח ארוך ○ טווח קצר`,
+    mapLabel: "מפת ההטמעות של הזיכרון",
+    emptyMap: "עדיין אין זיכרון. הזינו הקשר או השלימו הרצה.",
+    inspector: "בודק",
+    longTerm: "טווח ארוך",
+    shortTerm: "טווח קצר",
+    neighbours: "השכנים הקרובים",
+    forget: "לשכוח את הזיכרון הזה",
+    pick: "לחצו על נקודה כדי לבדוק אותה ואת השכנים הקרובים אליה.",
+    seedTitle: "הזנת הקשר למנוע",
+    seedEngine: "המנוע להזנה",
+    seedPh: "למשל Acme Corp מעדיפים תשלום שנתי מראש; לעולם לא הנחה מתחת ל־12%.",
+    seed: "הזנת זיכרון",
+    seedSet: "הזנת סט סינתטי",
+    clear: (x: string) => `איפוס ${x}`,
+    all: "הכול",
+    confirmClear: (x: string) => `לאפס את הזיכרון לטווח ארוך של ${x}?`,
+    allEnginesLower: "כל המנועים",
+    results: "תוצאות חיפוש · מדורגות לפי דמיון קוסינוס",
+    entries: "רשומות זיכרון",
+    noMatch: "שום דבר לא תואם את הסינון.",
+  },
+} satisfies Record<Lang, unknown>;
 
 /** FNV-1a, for feature hashing. */
 function hash(s: string, seed = 2166136261) {
@@ -50,6 +145,8 @@ type Item = { id: string; engine: EngineKey; text: string; tier: "long" | "short
 
 /** /desk/vector-memory: inspect, search, filter, clear or seed the agents' memory. */
 export function VectorMemory() {
+  const { lang } = useCommandCopy();
+  const t = COPY[lang];
   const { settings } = useDeskSettings();
   const mayEdit = can(activeMember(settings).role, "calibrate");
   const [engine, setEngine] = useState<EngineKey | "all">("all");
@@ -97,24 +194,24 @@ export function VectorMemory() {
   };
 
   return (
-    <OsPage kicker="Vector memory · time-travel" title="What the agents remember, and when" lede="Long-term memory is each engine's retained results, sent back as context on its next run; short-term is the last 24 hours of runs. Embeddings here are computed locally (256-d feature hashing over words and character trigrams), not by a model, so search is lexical rather than semantic. Every memory change is a snapshot you can roll back to or fork.">
+    <OsPage route="/desk/vector-memory">
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex min-w-60 flex-1 items-center gap-2 rounded-lg border border-os-line bg-os-panel/80 px-3 py-2">
           <Search className="size-4 text-os-cyan" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search across memory, e.g. 'discount pricing pressure'" aria-label="Search memory" className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/30 focus:outline-none" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.searchPh} aria-label={t.searchLabel} className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/30 focus:outline-none" />
         </label>
-        <select value={engine} onChange={(e) => setEngine(e.target.value as EngineKey | "all")} aria-label="Engine filter" className="rounded-lg border border-os-line bg-os-panel px-3 py-2 text-[12.5px] text-white">
-          <option value="all">All engines</option>
+        <select value={engine} onChange={(e) => setEngine(e.target.value as EngineKey | "all")} aria-label={t.engineFilter} className="rounded-lg border border-os-line bg-os-panel px-3 py-2 text-[12.5px] text-white">
+          <option value="all">{t.allEngines}</option>
           {ENGINE_ORDER.map((k) => (
             <option key={k} value={k}>
               {ENGINES[k].name}
             </option>
           ))}
         </select>
-        <div role="radiogroup" aria-label="Memory tier" className="flex rounded-lg border border-os-line p-0.5">
+        <div role="radiogroup" aria-label={t.tierLabel} className="flex rounded-lg border border-os-line p-0.5">
           {(["all", "long", "short"] as const).map((t) => (
             <button key={t} type="button" role="radio" aria-checked={tier === t} onClick={() => setTier(t)} className={cn("rounded-md px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.12em]", tier === t ? "bg-os-cyan/15 text-os-cyan" : "text-white/50")}>
-              {t === "all" ? "All" : t === "long" ? "Long-term" : "Short-term"}
+              {COPY[lang].tiers[t]}
             </button>
           ))}
         </div>
@@ -123,10 +220,10 @@ export function VectorMemory() {
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.3fr_1fr]">
         <section className="os-panel rounded-2xl p-3">
           <div className="flex items-center justify-between px-1">
-            <p className="os-label">Embedding space · 2D projection</p>
-            <p className="font-mono text-[10.5px] text-white/40">{visible.length} vectors · ● long-term ○ short-term</p>
+            <p className="os-label">{t.space}</p>
+            <p className="font-mono text-[10.5px] text-white/40">{t.legend(visible.length)}</p>
           </div>
-          <svg viewBox="0 0 600 320" className="mt-2 h-auto w-full" style={{ direction: "ltr" }} role="group" aria-label="Memory embedding map">
+          <svg viewBox="0 0 600 320" className="mt-2 h-auto w-full" style={{ direction: "ltr" }} role="group" aria-label={t.mapLabel}>
             {[0.25, 0.5, 0.75].map((f) => (
               <g key={f}>
                 <line x1={600 * f} y1={0} x2={600 * f} y2={320} stroke="rgb(0 240 255 / 0.06)" />
@@ -157,7 +254,7 @@ export function VectorMemory() {
             })}
             {items.length === 0 && (
               <text x={300} y={160} textAnchor="middle" fontSize={13} fill="rgb(255 255 255 / 0.4)">
-                No memory yet. Seed some context, or complete a run.
+                {t.emptyMap}
               </text>
             )}
           </svg>
@@ -166,16 +263,16 @@ export function VectorMemory() {
         <section className="space-y-4">
           <div className="os-panel rounded-2xl p-4">
             <p className="os-label flex items-center gap-2">
-              <Database className="size-3.5 text-os-cyan" /> Inspector
+              <Database className="size-3.5 text-os-cyan" /> {t.inspector}
             </p>
             {pick ? (
               <div style={paletteVars(PALETTES[pick.engine])} className="mt-2">
                 <p className="font-mono text-[10.5px] text-c-2">
-                  {ENGINES[pick.engine].name} · {pick.tier === "long" ? "long-term" : "short-term"}
-                  {pick.at ? ` · ${new Date(pick.at).toLocaleString()}` : ""}
+                  {ENGINES[pick.engine].name} · {pick.tier === "long" ? t.longTerm : t.shortTerm}
+                  {pick.at ? ` · ${new Date(pick.at).toLocaleString(lang)}` : ""}
                 </p>
                 <p dir="auto" className="mt-1.5 text-[13px] leading-relaxed text-white/85">{pick.text}</p>
-                <p className="mt-3 os-label">Nearest neighbours</p>
+                <p className="mt-3 os-label">{t.neighbours}</p>
                 <ul className="mt-1 space-y-1">
                   {neighbours.map(({ i, score }) => (
                     <li key={i.id}>
@@ -188,28 +285,28 @@ export function VectorMemory() {
                 </ul>
                 {pick.tier === "long" && (
                   <button type="button" disabled={!mayEdit} onClick={() => forget(pick)} className="mt-3 flex items-center gap-1.5 text-[12px] text-red-300/80 hover:text-red-300 disabled:opacity-40">
-                    <Trash2 className="size-3.5" /> Forget this memory
+                    <Trash2 className="size-3.5" /> {t.forget}
                   </button>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-[12.5px] text-white/40">Click a point to inspect it and its nearest neighbours.</p>
+              <p className="mt-2 text-[12.5px] text-white/40">{t.pick}</p>
             )}
           </div>
 
           <div className="os-panel rounded-2xl p-4">
             <p className="os-label flex items-center gap-2">
-              <Plus className="size-3.5 text-os-cyan" /> Seed context into an engine
+              <Plus className="size-3.5 text-os-cyan" /> {t.seedTitle}
             </p>
             <fieldset disabled={!mayEdit} className="mt-2 space-y-2 disabled:opacity-50">
-              <select value={seedEngine} onChange={(e) => setSeedEngine(e.target.value as EngineKey)} aria-label="Engine to seed" className="w-full rounded-lg border border-os-line bg-os-panel px-3 py-2 text-[12.5px] text-white">
+              <select value={seedEngine} onChange={(e) => setSeedEngine(e.target.value as EngineKey)} aria-label={t.seedEngine} className="w-full rounded-lg border border-os-line bg-os-panel px-3 py-2 text-[12.5px] text-white">
                 {ENGINE_ORDER.map((k) => (
                   <option key={k} value={k}>
                     {ENGINES[k].name}
                   </option>
                 ))}
               </select>
-              <textarea value={seedText} onChange={(e) => setSeedText(e.target.value)} rows={2} placeholder="e.g. Acme Corp prefers annual prepay; never discount below 12%." className="w-full resize-none rounded-lg border border-os-line bg-black/40 p-2.5 text-[12.5px] text-white placeholder:text-white/30 focus:border-os-cyan/50 focus:outline-none" />
+              <textarea value={seedText} onChange={(e) => setSeedText(e.target.value)} rows={2} placeholder={t.seedPh} className="w-full resize-none rounded-lg border border-os-line bg-black/40 p-2.5 text-[12.5px] text-white placeholder:text-white/30 focus:border-os-cyan/50 focus:outline-none" />
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -221,30 +318,30 @@ export function VectorMemory() {
                   }}
                   className="rounded-full border border-os-cyan/40 px-3 py-1.5 text-[12px] text-os-cyan disabled:opacity-40"
                 >
-                  Seed memory
+                  {t.seed}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    ENGINE_ORDER.forEach((k) => seed(k, ENGINE_DEMOS[k].output));
+                    ENGINE_ORDER.forEach((k) => seed(k, engineDemos(lang)[k].output));
                     audit("calibration", "Seeded synthetic memory into all 8 engines");
                   }}
                   className="flex items-center gap-1.5 rounded-full border border-os-line px-3 py-1.5 text-[12px] text-white/70 hover:text-white"
                 >
-                  <Sparkles className="size-3.5" /> Seed synthetic set
+                  <Sparkles className="size-3.5" /> {t.seedSet}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     const targets = engine === "all" ? ENGINE_ORDER : [engine];
-                    if (!window.confirm(`Clear long-term memory for ${engine === "all" ? "all engines" : ENGINES[engine].name}?`)) return;
+                    if (!window.confirm(t.confirmClear(engine === "all" ? t.allEnginesLower : ENGINES[engine].name))) return;
                     updateSettings((s) => ({ calibrations: Object.fromEntries(Object.entries(s.calibrations).map(([k, v]) => [k, targets.includes(k as EngineKey) ? { ...v, memory: [] } : v])) }));
                     audit("calibration", `Cleared long-term memory for ${engine === "all" ? "all engines" : ENGINES[engine].name}`);
                     setPicked(null);
                   }}
                   className="flex items-center gap-1.5 rounded-full border border-red-400/30 px-3 py-1.5 text-[12px] text-red-200 hover:bg-red-500/10"
                 >
-                  <Eraser className="size-3.5" /> Clear {engine === "all" ? "all" : ENGINES[engine].name}
+                  <Eraser className="size-3.5" /> {t.clear(engine === "all" ? t.all : ENGINES[engine].name)}
                 </button>
               </div>
             </fieldset>
@@ -255,19 +352,19 @@ export function VectorMemory() {
       <MemoryTimeline />
 
       <section className="os-panel mt-4 rounded-2xl p-4">
-        <p className="os-label">{qv ? "Search results · ranked by cosine similarity" : "Memory entries"}</p>
+        <p className="os-label">{qv ? t.results : t.entries}</p>
         <ul className="mt-2 divide-y divide-os-line/60">
           {ranked.slice(0, 12).map(({ i, score }) => (
             <li key={i.id} style={paletteVars(PALETTES[i.engine])} className="flex items-start gap-3 py-2">
               <span className="w-24 shrink-0 font-mono text-[10.5px] text-c-2">{ENGINES[i.engine].name}</span>
-              <span className="w-16 shrink-0 font-mono text-[10px] uppercase text-white/35">{i.tier}</span>
+              <span className="w-20 shrink-0 font-mono text-[10px] uppercase text-white/35">{i.tier === "long" ? t.longTerm : t.shortTerm}</span>
               <button type="button" onClick={() => setPicked(i.id)} dir="auto" className="min-w-0 flex-1 text-start text-[12.5px] text-white/75 hover:text-white">
                 {i.text}
               </button>
               {qv && <span className="font-mono text-[11px] text-os-cyan">{score.toFixed(2)}</span>}
             </li>
           ))}
-          {ranked.length === 0 && <li className="py-4 text-[12.5px] text-white/40">Nothing matches these filters.</li>}
+          {ranked.length === 0 && <li className="py-4 text-[12.5px] text-white/40">{t.noMatch}</li>}
         </ul>
       </section>
     </OsPage>

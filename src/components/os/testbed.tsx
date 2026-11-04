@@ -19,6 +19,60 @@ import { rateWindow, rulesToCalibrations } from "./architecture-rules";
 type Run = ReturnType<typeof useRun>;
 export type StackSpec = { id: string; label: string; engines: EngineKey[] };
 
+const COPY = {
+  en: {
+    commandFor: (n: string) => `Command for ${n}`,
+    commandPh: (n: string, chain: string) => `Command the ${n}: ${chain}`,
+    loadSample: "Load sample",
+    quota: (used: number, max: number) => `${used}/${max} runs this hour`,
+    noRun: "Your role can't run architectures.",
+    abort: "Abort",
+    limit: "This product's hourly run limit is reached (Rules & Governance).",
+    run: "Run simulation",
+    elapsed: "Elapsed",
+    tokensEst: "Tokens (est.)",
+    tokens: "Tokens",
+    cost: "Est. cost",
+    model: "Model",
+    sim: " (sim)",
+    log: "Execution log",
+  },
+  es: {
+    commandFor: (n: string) => `Orden para ${n}`,
+    commandPh: (n: string, chain: string) => `Da una orden a ${n}: ${chain}`,
+    loadSample: "Cargar ejemplo",
+    quota: (used: number, max: number) => `${used}/${max} ejecuciones esta hora`,
+    noRun: "Tu rol no puede ejecutar arquitecturas.",
+    abort: "Cancelar",
+    limit: "Se alcanzó el límite de ejecuciones por hora de este producto (Reglas y gobierno).",
+    run: "Ejecutar simulación",
+    elapsed: "Tiempo",
+    tokensEst: "Tokens (est.)",
+    tokens: "Tokens",
+    cost: "Coste est.",
+    model: "Modelo",
+    sim: " (sim.)",
+    log: "Registro de ejecución",
+  },
+  he: {
+    commandFor: (n: string) => `פקודה ל־${n}`,
+    commandPh: (n: string, chain: string) => `תנו פקודה ל־${n}: ${chain}`,
+    loadSample: "טעינת דוגמה",
+    quota: (used: number, max: number) => `${used}/${max} הרצות בשעה הזו`,
+    noRun: "לתפקיד שלכם אין הרשאה להריץ ארכיטקטורות.",
+    abort: "ביטול",
+    limit: "הגעתם למגבלת ההרצות השעתית של המוצר (כללים ומשילות).",
+    run: "הרצת סימולציה",
+    elapsed: "זמן",
+    tokensEst: "טוקנים (הערכה)",
+    tokens: "טוקנים",
+    cost: "עלות משוערת",
+    model: "מודל",
+    sim: " (סימולציה)",
+    log: "יומן ביצוע",
+  },
+} satisfies Record<"en" | "es" | "he", unknown>;
+
 /**
  * The Autonomous Simulation Testbed for an architecture or a builder pipeline: one command through the whole
  * stack, with live stages, token and latency meters, an estimated cost on the governed model, the log, and the
@@ -27,6 +81,7 @@ export type StackSpec = { id: string; label: string; engines: EngineKey[] };
 export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackSpec; rules: ArchitectureRules; sample: string; kind: "architecture" | "pipeline" }) {
   const { lang } = useCommandCopy();
   const c = DESK_COPY[lang];
+  const t = COPY[lang];
   const { settings } = useDeskSettings();
   const [command, setCommand] = useState("");
   const { state, runPipeline, abort } = r;
@@ -75,34 +130,35 @@ export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackS
           rows={3}
           disabled={!mayRun}
           maxLength={3500}
-          aria-label={`Command for ${spec.label}`}
-          placeholder={`Command the ${spec.label}: ${spec.engines.map((k) => ENGINES[k].name).join(" → ")}`}
+          dir="auto"
+          aria-label={t.commandFor(spec.label)}
+          placeholder={t.commandPh(spec.label, spec.engines.map((k) => ENGINES[k].name).join(lang === "he" ? " ← " : " → "))}
           className="w-full resize-none rounded-xl border border-os-line bg-black/40 p-3 text-[14px] leading-relaxed text-white placeholder:text-white/30 focus:border-os-cyan/50 focus:outline-none disabled:opacity-50"
         />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <button type="button" disabled={!mayRun} onClick={() => setCommand(sample)} className="rounded-full border border-os-line px-3 py-1 text-[11.5px] text-white/60 hover:text-white disabled:opacity-40">
-            Load sample
+            {t.loadSample}
           </button>
           <span className={cn("font-mono text-[10.5px]", quota.blocked ? "text-red-300" : "text-white/40")}>
-            {quota.used}/{rules.runsPerHour} runs this hour
+            {t.quota(quota.used, rules.runsPerHour)}
           </span>
           {!mayRun && (
             <span className="flex items-center gap-1 text-[11.5px] text-white/50">
-              <Lock className="size-3" /> Your role can&apos;t run architectures.
+              <Lock className="size-3" /> {t.noRun}
             </span>
           )}
           {running ? (
             <button type="button" onClick={abort} className="ms-auto flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-[13px] text-red-100">
-              <Square className="size-3.5" /> Abort
+              <Square className="size-3.5" /> {t.abort}
             </button>
           ) : (
             <button
               type="submit"
               disabled={command.trim().length < 3 || !mayRun || quota.blocked}
-              title={quota.blocked ? "This product's hourly run limit is reached (Rules & Governance)." : undefined}
+              title={quota.blocked ? t.limit : undefined}
               className="ms-auto flex items-center gap-2 rounded-full bg-os-cyan px-5 py-2 text-[13px] font-semibold text-black shadow-[0_0_30px_-8px_rgb(0_240_255/0.8)] disabled:opacity-35"
             >
-              Run simulation <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
+              {t.run} <CornerDownLeft className="size-3.5 rtl:-scale-x-100" />
             </button>
           )}
         </div>
@@ -112,10 +168,10 @@ export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackS
         <>
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
-              ["Elapsed", running ? fmtMs(elapsed) : state.ms !== null ? fmtMs(state.ms) : "—"],
-              [state.mode === "simulation" ? "Tokens (est.)" : "Tokens", `${usage.input.toLocaleString("en-US")} / ${usage.output.toLocaleString("en-US")}`],
-              ["Est. cost", `$${costOf(model, usage).toFixed(4)}`],
-              ["Model", `${modelInfo(model).label}${state.mode === "simulation" ? " (sim)" : ""}`],
+              [t.elapsed, running ? fmtMs(elapsed) : state.ms !== null ? fmtMs(state.ms) : "—"],
+              [state.mode === "simulation" ? t.tokensEst : t.tokens, `${usage.input.toLocaleString("en-US")} / ${usage.output.toLocaleString("en-US")}`],
+              [t.cost, `$${costOf(model, usage).toFixed(4)}`],
+              [t.model, `${modelInfo(model).label}${state.mode === "simulation" ? t.sim : ""}`],
             ].map(([k, v]) => (
               <div key={k} className="os-panel rounded-xl px-3 py-2">
                 <dt className="os-label">{k}</dt>
@@ -125,7 +181,7 @@ export function Testbed({ r, spec, rules, sample, kind }: { r: Run; spec: StackS
           </dl>
           <RunStepper phases={state.phases} now={state.startedAt + elapsed} />
           <section className="demo-hide os-panel flex max-h-80 min-h-40 flex-col overflow-hidden rounded-2xl">
-            <p className="os-label border-b border-os-line px-4 py-2">Execution log {running && <Loader2 className="ms-2 inline size-3 animate-spin text-os-cyan" />}</p>
+            <p className="os-label border-b border-os-line px-4 py-2">{t.log} {running && <Loader2 className="ms-2 inline size-3 animate-spin text-os-cyan" />}</p>
             <ExecutionLog c={c} log={state.log} agents={state.agents} />
           </section>
           {state.status === "done" && state.engine && state.brief && <BriefPanel key={state.runId} engine={state.engine} runId={state.runId} output={state.output} brief={state.brief} source={spec.label} />}

@@ -13,12 +13,18 @@ import { useOsTelemetry } from "./telemetry-context";
 
 const REGIONS = ["us-east", "us-west", "eu-central", "eu-west", "ap-southeast", "ap-northeast", "sa-east", "me-central"];
 
+const COPY = {
+  en: { title: "Deployment environments", body: "Runs, audit entries and Global Pulse are tagged with the active environment. Switch it from the header.", remove: (n: string) => `Remove ${n}`, namePh: "Environment name, e.g. Staging-US-West", nameLabel: "Environment name", region: "Region", add: "Add environment" },
+  es: { title: "Entornos de despliegue", body: "Las ejecuciones, las entradas de auditoría y el Pulso global se etiquetan con el entorno activo. Cámbialo desde la cabecera.", remove: (n: string) => `Eliminar ${n}`, namePh: "Nombre del entorno, p. ej. Staging-US-West", nameLabel: "Nombre del entorno", region: "Región", add: "Añadir entorno" },
+  he: { title: "סביבות פריסה", body: "הרצות, רשומות ביקורת והדופק הגלובלי מתויגים בסביבה הפעילה. החליפו אותה מהכותרת.", remove: (n: string) => `הסרת ${n}`, namePh: "שם הסביבה, למשל Staging-US-West", nameLabel: "שם הסביבה", region: "אזור", add: "הוספת סביבה" },
+} satisfies Record<"en" | "es" | "he", unknown>;
+
 /** App Settings: license, gateways, branding and RBAC, shifts, persistence, diagnostics, plus deployment environments. */
 export function OsSettings() {
   const { lang } = useCommandCopy();
   const { manifest, latency, sla } = useOsTelemetry();
   return (
-    <OsPage kicker="App settings" title="Workspace, license & white-label" lede="Everything here is saved on this device and applies across the Operating Desk. License keys are verified by the Bloom AI server.">
+    <OsPage route="/desk/settings">
       {/* Matches the hub's own padding below, so the two line up. */}
       <div className="mx-auto max-w-6xl p-4 pb-0 sm:p-6 sm:pb-0">
         <Environments />
@@ -29,12 +35,13 @@ export function OsSettings() {
 }
 
 function Environments() {
+  const t = COPY[useCommandCopy().lang];
   const { settings } = useDeskSettings();
   const allowed = can(activeMember(settings).role, "settings");
   const [name, setName] = useState("");
   const [region, setRegion] = useState("us-east");
   return (
-    <Panel icon={Globe2} title="Deployment environments" body="Runs, audit entries and Global Pulse are tagged with the active environment. Switch it from the header." locked={!allowed}>
+    <Panel icon={Globe2} title={t.title} body={t.body} locked={!allowed}>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {settings.environments.map((e) => (
           <li key={e.id} className={cn("flex items-center gap-3 rounded-xl border p-3", e.id === settings.activeEnvId ? "border-os-cyan/40 bg-os-cyan/[0.05]" : "border-os-line")}>
@@ -50,7 +57,7 @@ function Environments() {
                 updateSettings((s) => ({ environments: s.environments.filter((x) => x.id !== e.id) }));
                 audit("settings", `Removed environment ${e.name}`);
               }}
-              aria-label={`Remove ${e.name}`}
+              aria-label={t.remove(e.name)}
               className="rounded-lg p-1.5 text-white/40 hover:text-red-300 disabled:opacity-25"
             >
               <Trash2 className="size-4" />
@@ -70,14 +77,14 @@ function Environments() {
           setName("");
         }}
       >
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Environment name, e.g. Staging-US-West" aria-label="Environment name" className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:border-os-cyan/50 focus:outline-none" />
-        <select value={region} onChange={(e) => setRegion(e.target.value)} aria-label="Region" className="rounded-lg border border-os-line bg-os-panel px-2 text-[12.5px] text-white">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePh} aria-label={t.nameLabel} className="min-w-0 flex-1 rounded-lg border border-os-line bg-black/40 px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:border-os-cyan/50 focus:outline-none" />
+        <select value={region} onChange={(e) => setRegion(e.target.value)} aria-label={t.region} className="rounded-lg border border-os-line bg-os-panel px-2 text-[12.5px] text-white">
           {REGIONS.map((r) => (
             <option key={r}>{r}</option>
           ))}
         </select>
         <button type="submit" className="inline-flex items-center gap-1.5 rounded-full border border-os-cyan/40 px-3.5 py-1.5 text-[12px] text-os-cyan hover:bg-os-cyan/10">
-          <Plus className="size-3.5" /> Add environment
+          <Plus className="size-3.5" /> {t.add}
         </button>
       </form>
     </Panel>

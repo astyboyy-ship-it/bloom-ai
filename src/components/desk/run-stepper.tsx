@@ -1,22 +1,24 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useDeskUi } from "./desk-ui-copy";
 import { Check, Cpu, FileText, Route, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RunPhase } from "@/lib/engines/events";
 import { fmtMs } from "./format";
 import { PHASES, type PhaseState } from "./use-run";
 
-const STEP: Record<RunPhase, { n: string; title: string; icon: typeof Cpu }> = {
-  parse: { n: "01", title: "Parsing intent & allocating agent nodes", icon: Cpu },
-  route: { n: "02", title: "Routing through the engine pipeline", icon: Route },
-  compose: { n: "03", title: "Composing the executive output", icon: FileText },
+const STEP: Record<RunPhase, { n: string; icon: typeof Cpu }> = {
+  parse: { n: "01", icon: Cpu },
+  route: { n: "02", icon: Route },
+  compose: { n: "03", icon: FileText },
 };
 
 /** The run's three stages, each with its live detail line and how long it took. */
 export function RunStepper({ phases, now }: { phases: Record<RunPhase, PhaseState>; now: number }) {
+  const u = useDeskUi();
   return (
-    <ol className="grid gap-2 sm:grid-cols-3" aria-label="Run progress">
+    <ol className="grid gap-2 sm:grid-cols-3" aria-label={u.steps.progress}>
       {PHASES.map((p) => {
         const ph = phases[p];
         const s = STEP[p];
@@ -46,7 +48,7 @@ export function RunStepper({ phases, now }: { phases: Record<RunPhase, PhaseStat
               <span className="font-mono text-[10px] tracking-[0.18em] text-white/40">{s.n}</span>
               <span className="ms-auto font-mono text-[10.5px] tabular-nums text-white/45">{elapsed !== null ? fmtMs(elapsed) : ""}</span>
             </div>
-            <p className="mt-2 text-[12.5px] font-medium leading-snug text-white/90">{s.title}</p>
+            <p className="mt-2 text-[12.5px] font-medium leading-snug text-white/90">{u.steps[p]}</p>
             <p className="mt-1 line-clamp-2 min-h-[2.4em] text-[11.5px] leading-snug text-white/45">{ph.detail}</p>
             {ph.status === "active" && (
               <motion.span

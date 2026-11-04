@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, FilePlus2, FlaskConical, Lock, LogIn, LogOut, Save, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ENGINE_ORDER, ENGINES, type EngineKey } from "@/components/bloom/command/engines";
-import { useCommandCopy } from "@/components/bloom/command/locale";
+import { localizeEngine, useCommandCopy } from "@/components/bloom/command/locale";
+import type { Lang } from "@/components/bloom/i18n";
 import { PALETTES, paletteVars } from "@/components/bloom/command/theme";
 import { DESK_COPY } from "@/components/desk/copy";
 import { engineStatuses } from "@/components/desk/engine-status";
@@ -23,9 +24,130 @@ const NODE_W = 168;
 const NODE_H = 64;
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-const blank = (): Pipeline => ({
+const COPY = {
+  en: {
+    untitled: "Untitled pipeline",
+    input: "Input",
+    output: "Output",
+    oneInput: "A pipeline needs exactly one input.",
+    oneOutput: "A pipeline needs exactly one output.",
+    addEngine: "Add at least one engine.",
+    manyOut: (n: string) => `${n} has more than one outgoing link; chain engines one after another.`,
+    manyIn: (n: string) => `${n} has more than one incoming link.`,
+    stops: (n: string) => `The chain stops at ${n}; connect it onward to the output.`,
+    loops: "The chain loops back on itself.",
+    stray: (names: string, one: boolean) => `${names} ${one ? "isn't" : "aren't"} on the path from input to output.`,
+    once: "Each engine can appear once in a pipeline.",
+    pipelineName: "Pipeline name",
+    newP: "New",
+    save: "Save",
+    runSandbox: "Run in sandbox",
+    palette: "Engines · drag or click",
+    placed: "placed",
+    autoLink: "Auto-link left to right",
+    saved: "Saved pipelines",
+    del: (n: string) => `Delete ${n}`,
+    removeLink: "Click to remove this link",
+    linkInto: (n: string) => `Link into ${n}`,
+    linkFrom: (n: string) => `Link from ${n}`,
+    remove: (n: string) => `Remove ${n}`,
+    command: "Operator command",
+    brief: "Executive brief",
+    linkHint: "Now click the input port (left dot) of the next node. Click the same port again to cancel.",
+    valid: (chain: string) => `Valid chain: ${chain}`,
+    needTier: (names: string) => `· ${names} need a higher license tier to run.`,
+    pipeline: "Pipeline",
+    edit: "Edit in builder",
+    noneSaved: "No saved pipelines yet.",
+    buildOne: "Build one",
+    appear: "and it will appear here.",
+    incomplete: "This pipeline isn't a complete chain yet. Open it in the builder to finish linking it.",
+    sample: "Run this pipeline on our pipeline for this quarter: find buyers, open conversations and protect margin.",
+  },
+  es: {
+    untitled: "Pipeline sin nombre",
+    input: "Entrada",
+    output: "Salida",
+    oneInput: "Un pipeline necesita exactamente una entrada.",
+    oneOutput: "Un pipeline necesita exactamente una salida.",
+    addEngine: "Añade al menos un motor.",
+    manyOut: (n: string) => `${n} tiene más de un enlace de salida; encadena los motores uno tras otro.`,
+    manyIn: (n: string) => `${n} tiene más de un enlace de entrada.`,
+    stops: (n: string) => `La cadena se detiene en ${n}; conéctalo hasta la salida.`,
+    loops: "La cadena vuelve sobre sí misma.",
+    stray: (names: string, one: boolean) => `${names} ${one ? "no está" : "no están"} en el camino de la entrada a la salida.`,
+    once: "Cada motor solo puede aparecer una vez en un pipeline.",
+    pipelineName: "Nombre del pipeline",
+    newP: "Nuevo",
+    save: "Guardar",
+    runSandbox: "Ejecutar en el sandbox",
+    palette: "Motores · arrastra o haz clic",
+    placed: "colocado",
+    autoLink: "Enlazar de izquierda a derecha",
+    saved: "Pipelines guardados",
+    del: (n: string) => `Eliminar ${n}`,
+    removeLink: "Haz clic para quitar este enlace",
+    linkInto: (n: string) => `Enlazar hacia ${n}`,
+    linkFrom: (n: string) => `Enlazar desde ${n}`,
+    remove: (n: string) => `Quitar ${n}`,
+    command: "Orden del operador",
+    brief: "Informe ejecutivo",
+    linkHint: "Ahora haz clic en el puerto de entrada (punto izquierdo) del siguiente nodo. Vuelve a hacer clic en el mismo puerto para cancelar.",
+    valid: (chain: string) => `Cadena válida: ${chain}`,
+    needTier: (names: string) => `· ${names} necesitan un nivel de licencia superior para ejecutarse.`,
+    pipeline: "Pipeline",
+    edit: "Editar en el constructor",
+    noneSaved: "Aún no hay pipelines guardados.",
+    buildOne: "Crea uno",
+    appear: "y aparecerá aquí.",
+    incomplete: "Este pipeline todavía no es una cadena completa. Ábrelo en el constructor para terminar de enlazarlo.",
+    sample: "Ejecuta este pipeline sobre nuestro pipeline de este trimestre: encuentra compradores, abre conversaciones y protege el margen.",
+  },
+  he: {
+    untitled: "פייפליין ללא שם",
+    input: "קלט",
+    output: "פלט",
+    oneInput: "לפייפליין צריך להיות בדיוק קלט אחד.",
+    oneOutput: "לפייפליין צריך להיות בדיוק פלט אחד.",
+    addEngine: "הוסיפו לפחות מנוע אחד.",
+    manyOut: (n: string) => `ל־${n} יש יותר מקישור יוצא אחד; שרשרו את המנועים אחד אחרי השני.`,
+    manyIn: (n: string) => `ל־${n} יש יותר מקישור נכנס אחד.`,
+    stops: (n: string) => `השרשרת נעצרת ב־${n}; חברו אותו הלאה עד הפלט.`,
+    loops: "השרשרת חוזרת לעצמה.",
+    stray: (names: string, one: boolean) => `${names} ${one ? "לא נמצא" : "לא נמצאים"} בנתיב מהקלט לפלט.`,
+    once: "כל מנוע יכול להופיע פעם אחת בפייפליין.",
+    pipelineName: "שם הפייפליין",
+    newP: "חדש",
+    save: "שמירה",
+    runSandbox: "הרצה בארגז החול",
+    palette: "מנועים · גררו או לחצו",
+    placed: "הוצב",
+    autoLink: "קישור אוטומטי משמאל לימין",
+    saved: "פייפליינים שמורים",
+    del: (n: string) => `מחיקת ${n}`,
+    removeLink: "לחצו כדי להסיר את הקישור",
+    linkInto: (n: string) => `קישור אל ${n}`,
+    linkFrom: (n: string) => `קישור מ־${n}`,
+    remove: (n: string) => `הסרת ${n}`,
+    command: "פקודת המפעיל",
+    brief: "תדריך מנהלים",
+    linkHint: "עכשיו לחצו על פתח הקלט (הנקודה השמאלית) של הצומת הבא. לחצו שוב על אותו פתח כדי לבטל.",
+    valid: (chain: string) => `שרשרת תקינה: ${chain}`,
+    needTier: (names: string) => `· ${names} דורשים רמת רישיון גבוהה יותר כדי לרוץ.`,
+    pipeline: "פייפליין",
+    edit: "עריכה בבונה",
+    noneSaved: "עדיין אין פייפליינים שמורים.",
+    buildOne: "בנו אחד",
+    appear: "והוא יופיע כאן.",
+    incomplete: "הפייפליין הזה עדיין לא שרשרת שלמה. פתחו אותו בבונה כדי לסיים לקשר.",
+    sample: "הריצו את הפייפליין הזה על הפייפליין שלנו לרבעון: מצאו קונים, פתחו שיחות ושמרו על הרווחיות.",
+  },
+} satisfies Record<Lang, unknown>;
+type BuilderCopy = (typeof COPY)[Lang];
+
+const blank = (name = COPY.en.untitled): Pipeline => ({
   id: `pl-${uid()}`,
-  name: "Untitled pipeline",
+  name,
   nodes: [
     { id: "in", kind: "input", x: 40, y: 160 },
     { id: "out", kind: "output", x: 760, y: 160 },
@@ -35,17 +157,18 @@ const blank = (): Pipeline => ({
 });
 
 /** Walks input → … → output. Returns the engines in order, or the problems that stop it being a single chain. */
-export function validate(p: Pipeline): { ok: true; engines: EngineKey[] } | { ok: false; problems: string[] } {
+export function validate(p: Pipeline, t: BuilderCopy = COPY.en): { ok: true; engines: EngineKey[] } | { ok: false; problems: string[] } {
   const problems: string[] = [];
+  const label = (n: PipelineNode) => labelOf(n, t);
   const inputs = p.nodes.filter((n) => n.kind === "input");
   const outputs = p.nodes.filter((n) => n.kind === "output");
-  if (inputs.length !== 1) problems.push("A pipeline needs exactly one input.");
-  if (outputs.length !== 1) problems.push("A pipeline needs exactly one output.");
+  if (inputs.length !== 1) problems.push(t.oneInput);
+  if (outputs.length !== 1) problems.push(t.oneOutput);
   const engines = p.nodes.filter((n) => n.kind === "engine");
-  if (!engines.length) problems.push("Add at least one engine.");
+  if (!engines.length) problems.push(t.addEngine);
   for (const n of p.nodes) {
-    if (p.edges.filter(([a]) => a === n.id).length > 1) problems.push(`${label(n)} has more than one outgoing link; chain engines one after another.`);
-    if (p.edges.filter(([, b]) => b === n.id).length > 1) problems.push(`${label(n)} has more than one incoming link.`);
+    if (p.edges.filter(([a]) => a === n.id).length > 1) problems.push(t.manyOut(label(n)));
+    if (p.edges.filter(([, b]) => b === n.id).length > 1) problems.push(t.manyIn(label(n)));
   }
   if (problems.length) return { ok: false, problems };
   const order: EngineKey[] = [];
@@ -53,8 +176,8 @@ export function validate(p: Pipeline): { ok: true; engines: EngineKey[] } | { ok
   const seen = new Set<string>();
   for (;;) {
     const next = p.edges.find(([a]) => a === cur)?.[1];
-    if (!next) return { ok: false, problems: [`The chain stops at ${label(p.nodes.find((n) => n.id === cur)!)}; connect it onward to the output.`] };
-    if (seen.has(next)) return { ok: false, problems: ["The chain loops back on itself."] };
+    if (!next) return { ok: false, problems: [t.stops(label(p.nodes.find((n) => n.id === cur)!))] };
+    if (seen.has(next)) return { ok: false, problems: [t.loops] };
     seen.add(next);
     const node = p.nodes.find((n) => n.id === next)!;
     if (node.kind === "output") break;
@@ -62,24 +185,27 @@ export function validate(p: Pipeline): { ok: true; engines: EngineKey[] } | { ok
     cur = next;
   }
   const stray = engines.filter((n) => !seen.has(n.id));
-  if (stray.length) return { ok: false, problems: [`${stray.map(label).join(", ")} ${stray.length === 1 ? "isn't" : "aren't"} on the path from input to output.`] };
-  if (new Set(order).size !== order.length) return { ok: false, problems: ["Each engine can appear once in a pipeline."] };
+  if (stray.length) return { ok: false, problems: [t.stray(stray.map(label).join(", "), stray.length === 1)] };
+  if (new Set(order).size !== order.length) return { ok: false, problems: [t.once] };
   return { ok: true, engines: order };
 }
 
-const label = (n: PipelineNode) => (n.kind === "engine" ? ENGINES[n.engine!].name : n.kind === "input" ? "Input" : "Output");
+const labelOf = (n: PipelineNode, t: BuilderCopy) => (n.kind === "engine" ? ENGINES[n.engine!].name : n.kind === "input" ? t.input : t.output);
 
 /** /desk/builder: node-based drag-and-drop canvas for chaining engines into a custom architecture. */
 export function PipelineBuilder() {
   const router = useRouter();
+  const { lang } = useCommandCopy();
+  const t = COPY[lang];
+  const label = (n: PipelineNode) => labelOf(n, t);
   const { settings } = useDeskSettings();
   const { isUnlocked } = useLicense();
   const mayEdit = can(activeMember(settings).role, "calibrate");
-  const [p, setP] = useState<Pipeline>(blank);
+  const [p, setP] = useState<Pipeline>(() => blank(t.untitled));
   const [link, setLink] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const canvas = useRef<HTMLDivElement>(null);
-  const v = useMemo(() => validate(p), [p]);
+  const v = useMemo(() => validate(p, t), [p, t]);
   const locked = p.nodes.filter((n) => n.kind === "engine" && !isUnlocked(n.engine!));
 
   useEffect(() => {
@@ -128,30 +254,28 @@ export function PipelineBuilder() {
 
   return (
     <OsPage
-      kicker="Pipeline builder"
-      title="Compose your own architecture"
-      lede="Drag engines onto the canvas, link them from output port to input port, and run the chain in the sandbox. Data flows input → engines → output."
+      route="/desk/builder"
       actions={
         <>
-          <input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value.slice(0, 60) })} aria-label="Pipeline name" className="rounded-lg border border-os-line bg-black/40 px-3 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
-          <button type="button" onClick={() => setP(blank())} className="flex items-center gap-1.5 rounded-full border border-os-line px-3 py-1.5 text-[12px] text-white/70 hover:text-white">
-            <FilePlus2 className="size-3.5" /> New
+          <input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value.slice(0, 60) })} aria-label={t.pipelineName} className="rounded-lg border border-os-line bg-black/40 px-3 py-1.5 text-[13px] text-white focus:border-os-cyan/50 focus:outline-none" />
+          <button type="button" onClick={() => setP(blank(t.untitled))} className="flex items-center gap-1.5 rounded-full border border-os-line px-3 py-1.5 text-[12px] text-white/70 hover:text-white">
+            <FilePlus2 className="size-3.5" /> {t.newP}
           </button>
           <button type="button" disabled={!mayEdit} onClick={save} className="flex items-center gap-1.5 rounded-full border border-os-cyan/40 px-3 py-1.5 text-[12px] text-os-cyan disabled:opacity-40">
-            <Save className="size-3.5" /> Save
+            <Save className="size-3.5" /> {t.save}
           </button>
           <button type="button" disabled={!v.ok || locked.length > 0} onClick={() => {
               save();
               router.push(`/desk/sandbox?id=${p.id}`);
             }} className="flex items-center gap-1.5 rounded-full bg-os-cyan px-4 py-1.5 text-[12px] font-semibold text-black disabled:opacity-40">
-            <FlaskConical className="size-3.5" /> Run in sandbox
+            <FlaskConical className="size-3.5" /> {t.runSandbox}
           </button>
         </>
       }
     >
       <div className="grid gap-4 lg:grid-cols-[14rem_1fr]">
         <aside className="os-panel rounded-2xl p-3">
-          <p className="os-label">Engines · drag or click</p>
+          <p className="os-label">{t.palette}</p>
           <ul className="mt-2 space-y-1.5">
             {ENGINE_ORDER.map((k) => {
               const used = p.nodes.some((n) => n.engine === k);
@@ -169,18 +293,18 @@ export function PipelineBuilder() {
                   >
                     <span className="font-mono text-[10px] text-c-2">{ENGINES[k].index}</span>
                     {ENGINES[k].name}
-                    {!ok ? <Lock className="ms-auto size-3" /> : used ? <span className="ms-auto font-mono text-[9px] text-white/40">placed</span> : null}
+                    {!ok ? <Lock className="ms-auto size-3" /> : used ? <span className="ms-auto font-mono text-[9px] text-white/40">{t.placed}</span> : null}
                   </button>
                 </li>
               );
             })}
           </ul>
           <button type="button" onClick={autoChain} className="mt-3 w-full rounded-lg border border-os-line py-1.5 text-[11.5px] text-white/60 hover:text-white">
-            Auto-link left to right
+            {t.autoLink}
           </button>
           {settings.pipelines.length > 0 && (
             <>
-              <p className="os-label mt-4">Saved pipelines</p>
+              <p className="os-label mt-4">{t.saved}</p>
               <ul className="mt-1.5 space-y-1">
                 {settings.pipelines.map((x) => (
                   <li key={x.id} className="flex items-center gap-1">
@@ -189,7 +313,7 @@ export function PipelineBuilder() {
                     </button>
                     <button
                       type="button"
-                      aria-label={`Delete ${x.name}`}
+                      aria-label={t.del(x.name)}
                       onClick={() => {
                         updateSettings((s) => ({ pipelines: s.pipelines.filter((y) => y.id !== x.id) }));
                         audit("calibration", `Deleted pipeline "${x.name}"`);
@@ -226,17 +350,17 @@ export function PipelineBuilder() {
             <svg className="pointer-events-none absolute inset-0 h-[60rem] w-[90rem]">
               {p.edges.map(([a, b]) => {
                 const s = p.nodes.find((n) => n.id === a);
-                const t = p.nodes.find((n) => n.id === b);
-                if (!s || !t) return null;
+                const tgt = p.nodes.find((n) => n.id === b);
+                if (!s || !tgt) return null;
                 const x1 = s.x + NODE_W;
                 const y1 = s.y + NODE_H / 2;
-                const x2 = t.x;
-                const y2 = t.y + NODE_H / 2;
+                const x2 = tgt.x;
+                const y2 = tgt.y + NODE_H / 2;
                 const mx = (x1 + x2) / 2;
                 const d = `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`;
                 return (
                   <g key={`${a}-${b}`} className="pointer-events-auto cursor-pointer" onClick={() => setP((q) => ({ ...q, edges: q.edges.filter(([x, y]) => !(x === a && y === b)) }))}>
-                    <title>Click to remove this link</title>
+                    <title>{t.removeLink}</title>
                     <path d={d} fill="none" stroke="transparent" strokeWidth={12} />
                     <path d={d} fill="none" stroke="#00f0ff" strokeOpacity={0.7} strokeWidth={1.6} strokeDasharray="5 6" className="animate-[net-flow_1s_linear_infinite]" />
                   </g>
@@ -253,7 +377,7 @@ export function PipelineBuilder() {
                   style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H, borderColor: `${color}66` }}
                 >
                   {n.kind !== "input" && (
-                    <button type="button" aria-label={`Link into ${label(n)}`} onClick={() => connect(n.id)} className={cn("absolute -start-2 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 bg-os-bg", link ? "border-os-cyan animate-pulse" : "border-white/40")} />
+                    <button type="button" aria-label={t.linkInto(label(n))} onClick={() => connect(n.id)} className={cn("absolute -start-2 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 bg-os-bg", link ? "border-os-cyan animate-pulse" : "border-white/40")} />
                   )}
                   <div
                     onPointerDown={(e) => {
@@ -265,28 +389,28 @@ export function PipelineBuilder() {
                     {n.kind === "input" ? <LogIn className="size-4" style={{ color }} /> : n.kind === "output" ? <LogOut className="size-4" style={{ color }} /> : <span className="font-mono text-[11px]" style={{ color }}>{ENGINES[n.engine!].index}</span>}
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-medium text-white">{label(n)}</span>
-                      <span className="block truncate font-mono text-[9.5px] text-white/40">{n.kind === "engine" ? ENGINES[n.engine!].badge : n.kind === "input" ? "Operator command" : "Executive brief"}</span>
+                      <span className="block truncate font-mono text-[9.5px] text-white/40">{n.kind === "engine" ? localizeEngine(ENGINES[n.engine!], lang).badge : n.kind === "input" ? t.command : t.brief}</span>
                     </span>
                   </div>
                   {n.kind === "engine" && (
-                    <button type="button" aria-label={`Remove ${label(n)}`} onClick={() => removeNode(n.id)} className="absolute end-1 top-1 rounded p-0.5 text-white/30 hover:text-red-300">
+                    <button type="button" aria-label={t.remove(label(n))} onClick={() => removeNode(n.id)} className="absolute end-1 top-1 rounded p-0.5 text-white/30 hover:text-red-300">
                       <X className="size-3" />
                     </button>
                   )}
                   {n.kind !== "output" && (
-                    <button type="button" aria-label={`Link from ${label(n)}`} onClick={() => setLink(link === n.id ? null : n.id)} className={cn("absolute -end-2 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 bg-os-bg", link === n.id ? "border-os-cyan bg-os-cyan" : "border-white/40 hover:border-os-cyan")} />
+                    <button type="button" aria-label={t.linkFrom(label(n))} onClick={() => setLink(link === n.id ? null : n.id)} className={cn("absolute -end-2 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 bg-os-bg", link === n.id ? "border-os-cyan bg-os-cyan" : "border-white/40 hover:border-os-cyan")} />
                   )}
                 </div>
               );
             })}
-            {link && <p className="absolute bottom-3 start-3 rounded-md bg-os-bg/90 px-2.5 py-1 text-[11.5px] text-os-cyan">Now click the input port (left dot) of the next node. Click the same port again to cancel.</p>}
+            {link && <p dir={lang === "he" ? "rtl" : "ltr"} className="absolute bottom-3 left-3 rounded-md bg-os-bg/90 px-2.5 py-1 text-[11.5px] text-os-cyan">{t.linkHint}</p>}
           </div>
 
           <div className={cn("os-panel rounded-xl p-3 text-[12.5px]", v.ok && !locked.length ? "border-os-emerald/40" : "border-amber-400/30")}>
             {v.ok ? (
               <p className="flex flex-wrap items-center gap-2 text-os-emerald">
-                <CheckCircle2 className="size-4" /> Valid chain: Input → {v.engines.map((k) => ENGINES[k].name).join(" → ")} → Output
-                {locked.length > 0 && <span className="text-amber-200">· {locked.map((n) => ENGINES[n.engine!].name).join(", ")} need a higher license tier to run.</span>}
+                <CheckCircle2 className="size-4" /> {t.valid([t.input, ...v.engines.map((k) => ENGINES[k].name), t.output].join(lang === "he" ? " ← " : " → "))}
+                {locked.length > 0 && <span className="text-amber-200">{t.needTier(locked.map((n) => ENGINES[n.engine!].name).join(", "))}</span>}
               </p>
             ) : (
               <ul className="space-y-1 text-amber-200/90">
@@ -308,24 +432,24 @@ export function PipelineBuilder() {
 export function Sandbox() {
   const { lang } = useCommandCopy();
   const c = DESK_COPY[lang];
+  const t = COPY[lang];
   const { settings } = useDeskSettings();
   const [id, setId] = useState<string | null>(null);
   const r = useRun(c.networkError, c.aborted);
   useEffect(() => setId(new URLSearchParams(window.location.search).get("id") ?? settings.pipelines.at(-1)?.id ?? null), [settings.pipelines]);
   const p = settings.pipelines.find((x) => x.id === id);
-  const v = p ? validate(p) : null;
+  const v = p ? validate(p, t) : null;
   const statuses = useMemo(() => engineStatuses(r.state.agents), [r.state.agents]);
   const spec = useMemo(() => (p && v?.ok ? { id: p.id, label: p.name, engines: v.engines } : null), [p, v]);
 
   return (
     <OsPage
-      kicker="Sandbox"
-      title={p ? p.name : "Pipeline sandbox"}
-      lede="Run a custom pipeline end to end: each engine hands its result to the next, with the same testbed, meters and brief as the architecture products."
+      route="/desk/sandbox"
+      name={p?.name}
       actions={
         <>
           {settings.pipelines.length > 0 && (
-            <select value={id ?? ""} onChange={(e) => setId(e.target.value)} aria-label="Pipeline" className="rounded-lg border border-os-line bg-os-panel px-3 py-1.5 text-[13px] text-white">
+            <select value={id ?? ""} onChange={(e) => setId(e.target.value)} aria-label={t.pipeline} className="rounded-lg border border-os-line bg-os-panel px-3 py-1.5 text-[13px] text-white">
               {settings.pipelines.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.name}
@@ -334,27 +458,27 @@ export function Sandbox() {
             </select>
           )}
           <Link href={p ? `/desk/builder?id=${p.id}` : "/desk/builder"} className="rounded-full border border-os-line px-3.5 py-1.5 text-[12.5px] text-white/75 hover:text-white">
-            Edit in builder
+            {t.edit}
           </Link>
         </>
       }
     >
       {!p ? (
         <div className="os-panel rounded-2xl p-8 text-center text-[13.5px] text-white/55">
-          No saved pipelines yet.{" "}
+          {t.noneSaved}{" "}
           <Link href="/desk/builder" className="text-os-cyan">
-            Build one
+            {t.buildOne}
           </Link>{" "}
-          and it will appear here.
+          {t.appear}
         </div>
       ) : !spec ? (
-        <div className="os-panel rounded-2xl p-6 text-[13px] text-amber-200">This pipeline isn&apos;t a complete chain yet. Open it in the builder to finish linking it.</div>
+        <div className="os-panel rounded-2xl p-6 text-[13px] text-amber-200">{t.incomplete}</div>
       ) : (
         <div className="space-y-4">
           <div className="os-panel rounded-2xl p-3">
-            <TopologyCanvas inputs={["Operator command"]} engines={spec.engines} outputs={["Executive brief"]} statuses={statuses} composing={r.state.phases.compose.status === "active"} threshold={`≥ $${rulesFor(settings.architectureRules, spec.id).approvalThresholdUsd.toLocaleString("en-US")}`} />
+            <TopologyCanvas inputs={[t.command]} engines={spec.engines} outputs={[t.brief]} statuses={statuses} composing={r.state.phases.compose.status === "active"} threshold={`≥ $${rulesFor(settings.architectureRules, spec.id).approvalThresholdUsd.toLocaleString("en-US")}`} />
           </div>
-          <Testbed r={r} spec={spec} rules={rulesFor(settings.architectureRules, spec.id)} sample="Run this pipeline on our pipeline for this quarter: find buyers, open conversations and protect margin." kind="pipeline" />
+          <Testbed r={r} spec={spec} rules={rulesFor(settings.architectureRules, spec.id)} sample={t.sample} kind="pipeline" />
         </div>
       )}
     </OsPage>

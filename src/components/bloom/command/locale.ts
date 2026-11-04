@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useI18n, type Lang } from "../i18n";
 import { ENGINES, type Engine, type EngineKey } from "./engines";
 import { PERSONAS, type Persona } from "./tutorial-script";
+import { DASHBOARD_LABEL, ENGINE_WORK } from "./engine-work-text";
 
 /**
  * Spanish and Hebrew for the engine command pages: the panel chrome, each engine's identity and 3-step
@@ -533,6 +534,12 @@ export function localizeEngine(e: Engine, lang: Lang): Engine {
     cta: tx.cta,
     badge: tx.badge ?? e.badge,
     metric: tx.metric ?? e.metric,
+    cards: e.cards.map((c, i) => {
+      const w = ENGINE_WORK[lang][e.key].cards[i];
+      return { ...c, title: w.title, events: c.events.map((ev, j) => ({ ...ev, text: w.events[j] })) };
+    }),
+    flows: e.flows.map((f, i) => ({ ...f, text: ENGINE_WORK[lang][e.key].flows[i], toLabel: f.toLabel && DASHBOARD_LABEL[lang] })),
+    brief: { ...e.brief, lines: ENGINE_WORK[lang][e.key].brief },
     steps: e.steps.map((st, i) => ({
       ...st,
       title: tx.steps[i].title,

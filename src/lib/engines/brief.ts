@@ -1,4 +1,5 @@
 import { ENGINES, type EngineKey } from "@/components/bloom/command/engines";
+import { BRIEF_TEXT, type RunLang } from "./brief-text";
 
 /**
  * Turns an engine's validated output into the executive brief the desk types out and offers as a Markdown
@@ -11,7 +12,7 @@ export type Brief = { markdown: string; metrics: Metric[]; approvals: number[] }
 
 type Action = { title: string; owner: string; priority: string; detail: string };
 
-const human = (key: string) =>
+const humanEn = (key: string) =>
   key
     .replace(/Usd$/, "")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -30,7 +31,7 @@ function unitOf(key: string): Metric["unit"] | null {
 const RANK: Record<Metric["unit"], number> = { usd: 0, hours: 1, count: 2, percent: 3, score: 4 };
 
 /** Every labeled number in the output, money first; nested objects and arrays of objects are searched too. */
-function collectMetrics(value: unknown, path = "", out: Metric[] = []): Metric[] {
+function collectMetrics(value: unknown, human: (k: string) => string, total: (l: string) => string, path = "", out: Metric[] = []): Metric[] {
   if (Array.isArray(value)) {
     // Sum money across lists (e.g. every account's ARR at risk); other list numbers are per-item detail.
     const sums = new Map<string, number>();
@@ -38,7 +39,7 @@ function collectMetrics(value: unknown, path = "", out: Metric[] = []): Metric[]
       if (item && typeof item === "object")
         // Only additive money is summed: ARR at risk across accounts adds up; alternative prices (proposal tiers) don't.
         for (const [k, v] of Object.entries(item)) if (typeof v === "number" && unitOf(k) === "usd" && /arr|risk|pipeline|value|revenue|spend|budget/i.test(k)) sums.set(k, (sums.get(k) ?? 0) + v);
-    for (const [k, v] of sums) out.push({ label: `Total ${human(k).toLowerCase()}`, value: v, unit: "usd" });
+    for (const [k, v] of sums) out.push({ label: total(human(k)), value: v, unit: "usd" });
     return out;
   }
   if (!value || typeof value !== "object") return out;
@@ -47,7 +48,7 @@ function collectMetrics(value: unknown, path = "", out: Metric[] = []): Metric[]
     if (typeof v === "number") {
       const unit = unitOf(k);
       if (unit) out.push({ label: path ? `${human(path)} · ${human(k).toLowerCase()}` : human(k), value: v, unit });
-    } else if (v && typeof v === "object") collectMetrics(v, k, out);
+    } else if (v && typeof v === "object") collectMetrics(v, human, total, k, out);
   }
   return out;
 }
@@ -69,7 +70,7 @@ function dollars(text: string): number {
   return n * (m[2]?.toLowerCase() === "k" ? 1e3 : m[2]?.toLowerCase() === "m" ? 1e6 : 1);
 }
 
-function section(key: string, v: unknown): string {
+function section(key: string, v: unknown, human: (k: string) => string): string {
   if (v === null || v === undefined) return "";
   if (Array.isArray(v)) {
     if (!v.length) return "";
@@ -90,12 +91,16 @@ function section(key: string, v: unknown): string {
   return `\n**${human(key)}:** ${v}\n`;
 }
 
-export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalThresholdUsd: number; command: string; mode: string; model: string; title?: string; subtitle?: string }): Brief {
+export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalThresholdUsd: number; command: string; mode: string; model: string; title?: string; subtitle?: string; lang?: RunLang }): Brief {
   const o = (output && typeof output === "object" ? output : {}) as { summary?: string; confidence?: number; actions?: Action[] } & Record<string, unknown>;
   const { summary = "", confidence, actions = [], ...rest } = o;
   const e = ENGINES[engine];
+  const T = BRIEF_TEXT[opts.lang ?? "en"];
+  // Output field names are labeled in the run's language; unknown fields fall back to their English label.
+  const human = (k: string) => T.fields[k] ?? humanEn(k);
+  const owner = (x: string) => (x === "human" ? T.human : ENGINES[x as EngineKey]?.name ?? x);
 
-  const metrics = collectMetrics(rest)
+  const metrics = collectMetrics(rest, human, T.total)
     .sort((a, b) => RANK[a.unit] - RANK[b.unit])
     .filter((m, i, all) => all.findIndex((x) => x.label === m.label) === i)
     .slice(0, 4);
@@ -105,15 +110,15 @@ export function buildBrief(engine: EngineKey, output: unknown, opts: { approvalT
 
   // Sections are separated by blank lines; omitted sections are null, not empty strings.
   const md = [
-    `# ${opts.title ?? e.name} · Executive Brief`,
-    `_${opts.subtitle ?? `Engine Nº ${e.index} · ${e.role}`} · ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC · ${opts.mode === "live" ? opts.model : "simulation"}_`,
+    `# ${T.title(opts.title ?? e.name)}`,
+    `_${opts.subtitle ?? `${T.engineNo(e.index)} · ${T.roles[engine]}`} · ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC · ${opts.mode === "live" ? opts.model : T.simulation}_`,
     `> ${opts.command.replace(/\n+/g, " ")}`,
-    `## Summary\n${summary}${typeof confidence === "number" ? `\n\n**Confidence:** ${Math.round(confidence * 100)}%` : ""}`,
-    metrics.length ? `## Key metrics\n| Metric | Value |\n| --- | --- |\n${metrics.map((m) => `| ${m.label} | ${fmt(m)} |`).join("\n")}` : null,
+    `## ${T.summary}\n${summary}${typeof confidence === "number" ? `\n\n**${T.confidence}:** ${Math.round(confidence * 100)}%` : ""}`,
+    metrics.length ? `## ${T.keyMetrics}\n| ${T.metric} | ${T.value} |\n| --- | --- |\n${metrics.map((m) => `| ${m.label} | ${fmt(m)} |`).join("\n")}` : null,
     actions.length
-      ? `## Actions\n${actions.map((a, i) => `${i + 1}. **[${a.priority.toUpperCase()}] ${a.title}** · ${a.owner}${approvals.includes(i) ? " · _requires approval_" : ""}\n   ${a.detail}`).join("\n")}`
+      ? `## ${T.actions}\n${actions.map((a, i) => `${i + 1}. **[${(T.priority[a.priority] ?? a.priority).toUpperCase()}] ${a.title}** · ${owner(a.owner)}${approvals.includes(i) ? ` · _${T.requiresApproval}_` : ""}\n   ${a.detail}`).join("\n")}`
       : null,
-    Object.keys(rest).length ? `## Detail${Object.entries(rest).map(([k, v]) => section(k, v)).join("")}` : null,
+    Object.keys(rest).length ? `## ${T.detail}${Object.entries(rest).map(([k, v]) => section(k, v, human)).join("")}` : null,
   ]
     .filter((x): x is string => x !== null)
     .join("\n\n");

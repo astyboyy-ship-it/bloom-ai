@@ -12,11 +12,11 @@ import { allocate, clockShift, SHIFTS } from "@/components/bloom/shift-plan";
 import { useCommandCopy } from "@/components/bloom/command/locale";
 import { useLicense } from "@/lib/license-context";
 import type { Tier } from "@/lib/license/tiers";
-import { ROLE_INFO } from "@/components/desk/rbac";
-import { activeEnv, audit, touchUsage, updateSettings, useDeskSettings } from "@/components/desk/settings";
+import { ROLE_INFO, roleInfo } from "@/components/desk/rbac";
+import { activeEnv, audit, displayName, touchUsage, updateSettings, useDeskSettings } from "@/components/desk/settings";
 import { ARCHITECTURES } from "@/lib/architectures";
 import { NAV_GROUPS, OS_NAV, type NavItem } from "./nav";
-import { useOsCopy } from "./os-copy";
+import { useOsCopy, type NavGroupKey, type PageRoute } from "./os-copy";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
@@ -88,6 +88,7 @@ function Header() {
   const { latency, uptime, sla } = useOsTelemetry();
   const env = activeEnv(settings);
   const t = useOsCopy();
+  const { lang } = useCommandCopy();
 
   // Active nodes: every agent in the licensed engines, plus the compute nodes the current shift runs.
   const nodes = useMemo(() => {
@@ -183,7 +184,7 @@ function Header() {
               >
                 {settings.members.map((m) => (
                   <option key={m.id} value={m.id} className="bg-os-panel">
-                    {m.name} · {ROLE_INFO[m.role].label}
+                    {displayName(m.name, lang)} · {roleInfo(lang)[m.role].label}
                   </option>
                 ))}
               </select>
@@ -203,9 +204,9 @@ function Header() {
 }
 
 /** One header menu: shows its active pillar, opens on click, closes on outside click, Escape or navigation. */
-function NavGroup({ label: groupKey, items, path }: { label: string; items: NavItem[]; path: string }) {
+function NavGroup({ label: groupKey, items, path }: { label: NavGroupKey; items: NavItem[]; path: string }) {
   const t = useOsCopy();
-  const label = t.groups[groupKey] ?? groupKey;
+  const label = t.groups[groupKey];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const active = items.find((i) => i.match(path));
@@ -246,7 +247,7 @@ function NavGroup({ label: groupKey, items, path }: { label: string; items: NavI
           <span className="hidden items-center gap-1 tracking-normal text-white/70 normal-case sm:flex">
             <span className="text-white/25">·</span>
             <Icon className="size-3" />
-            {t.nav[active.href]?.name ?? active.name}
+            {t.nav[active.href].name}
           </span>
         )}
         <span className="text-white/25">]</span>
@@ -254,7 +255,7 @@ function NavGroup({ label: groupKey, items, path }: { label: string; items: NavI
       </button>
       {open && (
         <div role="menu" aria-label={label} className="os-backdrop absolute start-0 top-full z-50 mt-1.5 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-os-line bg-os-panel/95 p-1.5 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.9),0_0_30px_-18px_rgb(0_240_255/0.5)]">
-          {items.map(({ href, label: text, icon: ItemIcon, match }) => {
+          {items.map(({ href, icon: ItemIcon, match }) => {
             const on = match(path);
             return (
               <Link
@@ -266,7 +267,7 @@ function NavGroup({ label: groupKey, items, path }: { label: string; items: NavI
                 className={cn("flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors", on ? "bg-os-cyan/[0.08] text-os-cyan" : "text-white/70 hover:bg-white/[0.04] hover:text-white")}
               >
                 <ItemIcon className="size-4 shrink-0" />
-                {t.nav[href]?.label ?? text}
+                {t.nav[href].label}
               </Link>
             );
           })}
@@ -277,12 +278,16 @@ function NavGroup({ label: groupKey, items, path }: { label: string; items: NavI
 }
 
 /** Page frame for an OS view: kicker, title, optional lede and actions, then the content. */
-export function OsPage({ kicker: kickerEn, title: titleEn, lede: ledeEn, actions, children, className }: { kicker: string; title: string; lede?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
-  // Pages pass English; other languages take this route's entry (an empty field keeps the page's own, e.g. a pipeline name).
-  const tr = useOsCopy().pages[usePathname()];
-  const kicker = tr?.kicker || kickerEn;
-  const title = tr?.title || titleEn;
-  const lede = tr ? tr.lede || ledeEn : ledeEn;
+/**
+ * Page frame for an OS view. The title block comes from the dictionary for `route`, in the current language;
+ * `vars` fills its {n}/{city} slots and `name` replaces the title with user content (a pipeline's name).
+ */
+export function OsPage({ route, vars = {}, name, actions, children, className }: { route: PageRoute; vars?: Record<string, string | number>; name?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  const page = useOsCopy().pages[route];
+  const fill = (x: string) => x.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+  const kicker = fill(page.kicker);
+  const title = name || fill(page.title);
+  const lede = fill(page.lede);
   return (
     <main className={cn("mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 sm:px-6", className)}>
       <div className="flex flex-wrap items-end justify-between gap-4">
