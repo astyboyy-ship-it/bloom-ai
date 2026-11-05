@@ -1,5 +1,5 @@
-import { OsHome } from "@/components/os/os-home";
+import { DeskHome } from "@/components/modes/desk-home";
 
 export default function Page() {
-  return <OsHome />;
+  return <DeskHome />;
 }

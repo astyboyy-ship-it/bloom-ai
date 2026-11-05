@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif, Outfit } from "next/font/google";
 import { LanguageProvider } from "@/components/bloom/i18n";
 import { LicenseProvider } from "@/lib/license-context";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -42,7 +43,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${cormorant.variable} ${outfit.variable} min-h-dvh bg-background antialiased`}>
         {/* Site-wide, so the chosen language follows the visitor from the home page into every engine. */}
         <LanguageProvider>
-          <LicenseProvider>{children}</LicenseProvider>
+          <LicenseProvider>
+            {/* The access key decides the obsidian glass theme: accent, glass and density. */}
+            <ThemeProvider>{children}</ThemeProvider>
+          </LicenseProvider>
         </LanguageProvider>
         <Toaster richColors />
       </body>

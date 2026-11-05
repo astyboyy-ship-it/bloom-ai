@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -215,6 +215,12 @@ export function SetupWizard() {
   const router = useRouter();
   const { settings } = useDeskSettings();
   const [diagnosticsPassed, setDiagnosticsPassed] = useState(false);
+  const { role } = useLicense();
+
+  // Operator keys bypass the setup wizard, including when one is activated mid-wizard.
+  useEffect(() => {
+    if (role === "operator") router.replace("/desk");
+  }, [role, router]);
 
   const finish = () => {
     updateSettings({ onboarded: true });

@@ -3,8 +3,8 @@ import { ENGINE_ORDER, ENGINES, type EngineKey } from "@/components/bloom/comman
 import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
 import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
-import { verifyLicense } from "@/lib/license/keys";
-import { TIER_ENGINES, TIER_INFO, type Tier } from "@/lib/license/tiers";
+import { readOnlyRefusal, resolveLicense } from "@/lib/licensing/server";
+import { traceRun } from "@/lib/datasets/trace-log";
 import { runPipeline } from "@/lib/orchestrator";
 import { ownKeys } from "../command/keys";
 
@@ -37,10 +37,12 @@ export async function POST(req: Request) {
   const body = Body.safeParse(json.body);
   if (!body.success) return fail(422, "Invalid pipeline payload.", body.error.issues.map((i) => i.message));
 
-  const license = verifyLicense(req.headers.get("x-bloom-license"));
-  const tier: Tier = license.ok ? license.license.tier : "evaluation";
-  const missing = body.data.engines.filter((k) => !TIER_ENGINES[tier].includes(k));
-  if (missing.length) return fail(403, `${body.data.label} needs ${missing.map((k) => ENGINES[k].name).join(", ")}, which ${missing.length === 1 ? "isn't" : "aren't"} in ${TIER_INFO[tier].label}.`, { tier, missing });
+  const license = await resolveLicense(req.headers.get("x-bloom-license"));
+  const tier = license.tier;
+  const refusal = readOnlyRefusal(license);
+  if (refusal) return fail(403, refusal, { tier, readOnly: true });
+  const missing = body.data.engines.filter((k) => !license.engines.includes(k));
+  if (missing.length) return fail(403, `${body.data.label} needs ${missing.map((k) => ENGINES[k].name).join(", ")}, which ${missing.length === 1 ? "isn't" : "aren't"} in ${license.label}.`, { tier, missing });
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -59,7 +61,14 @@ export async function POST(req: Request) {
         await runPipeline(
           { id: body.data.id, label: body.data.label, engines: body.data.engines },
           { command: body.data.command },
-          { emit: (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`), signal: req.signal, lang: body.data.lang, keys, calibrations: body.data.calibrations, allowed: TIER_ENGINES[tier] },
+          {
+            emit: traceRun({ kind: "pipeline", target: body.data.id, engines: body.data.engines, command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`)),
+            signal: req.signal,
+            lang: body.data.lang,
+            keys,
+            calibrations: body.data.calibrations,
+            allowed: license.engines,
+          },
         );
       } finally {
         clearInterval(keepAlive);

@@ -5,6 +5,7 @@ import type { EngineKey } from "@/components/bloom/command/engines";
 import type { ShiftMode } from "@/components/bloom/shift-plan";
 import type { CalibrationInput } from "@/lib/engines/calibration";
 import type { Tier } from "@/lib/license/tiers";
+import type { BloomLicensePayload } from "@/lib/licensing/types";
 import { redactSecrets } from "@/lib/security/injection";
 import { sha256 } from "@/lib/sha256";
 import type { Role } from "./rbac";
@@ -34,7 +35,8 @@ export type Credentials = {
 };
 
 /** A license the server has verified: what the desk shows and gates on (the server re-verifies every run). */
-export type LicenseInfo = { tier: Exclude<Tier, "evaluation">; org: string; expiresAt: string | null; issuedAt: string; dev: boolean; verifiedAt: number };
+/** `access` is set for BLOOMK- access keys: the verified payload (role, permissions, theme) as the server returned it. */
+export type LicenseInfo = { tier: Exclude<Tier, "evaluation">; org: string; expiresAt: string | null; issuedAt: string; dev: boolean; verifiedAt: number; access?: BloomLicensePayload | null };
 
 export type Member = { id: string; name: string; email: string; role: Role };
 
@@ -359,6 +361,22 @@ export function forkMemory(id: string, branch: string, scenario: string) {
     return { calibrations: { ...s.calibrations, [k]: { ...s.calibrations[k], memory } }, memorySnapshots: [...s.memorySnapshots, snap].slice(-SNAPSHOTS_CAP), memoryHeads: { ...s.memoryHeads, [k]: snap.id } };
   });
   if (label) audit("calibration", label);
+}
+
+/**
+ * Commits an engine's current memory as an explicit snapshot on its current branch, even when nothing changed:
+ * a named checkpoint to roll back or fork from. Returns the new snapshot's id.
+ */
+export function commitMemory(engine: EngineKey, label: string): string | null {
+  let id: string | null = null;
+  updateSettings((s) => {
+    const head = s.memorySnapshots.find((x) => x.id === s.memoryHeads[engine]) ?? null;
+    const snap = makeSnapshot(s, engine, head?.id ?? null, head?.branch ?? "main", memOf(s, engine), label.slice(0, 80));
+    id = snap.id;
+    return { memorySnapshots: [...s.memorySnapshots, snap].slice(-SNAPSHOTS_CAP), memoryHeads: { ...s.memoryHeads, [engine]: snap.id } };
+  });
+  if (id) audit("calibration", `Committed ${engine} memory state as snapshot ${(id as string).slice(0, 7)}`);
+  return id;
 }
 
 /** Switches an engine to the latest snapshot on a branch. */

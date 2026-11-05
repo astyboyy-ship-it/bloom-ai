@@ -3,8 +3,9 @@ import { isEngineKey } from "@/components/bloom/command/engines";
 import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
 import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
-import { verifyLicense } from "@/lib/license/keys";
-import { TIER_ENGINES, TIER_INFO, engineAllowed, upgradeTierFor, type Tier } from "@/lib/license/tiers";
+import { TIER_INFO, upgradeTierFor } from "@/lib/license/tiers";
+import { readOnlyRefusal, resolveLicense } from "@/lib/licensing/server";
+import { traceRun } from "@/lib/datasets/trace-log";
 import { runCommand } from "@/lib/orchestrator";
 import { ownKeys } from "../keys";
 
@@ -28,11 +29,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
   if (!isEngineKey(engine)) return fail(404, `Unknown engine "${engine}".`);
 
   // The license is verified here on every run; the desk's own gating is a convenience, not the control.
-  const license = verifyLicense(req.headers.get("x-bloom-license"));
-  const tier: Tier = license.ok ? license.license.tier : "evaluation";
-  if (!engineAllowed(tier, engine)) {
+  const license = await resolveLicense(req.headers.get("x-bloom-license"));
+  const tier = license.tier;
+  const refusal = readOnlyRefusal(license);
+  if (refusal) return fail(403, refusal, { tier, readOnly: true });
+  if (!license.engines.includes(engine)) {
     const need = upgradeTierFor(engine);
-    return fail(403, `${engine} isn't included in ${TIER_INFO[tier].label}. Upgrade to ${TIER_INFO[need].label} to run it.`, { tier, requires: need });
+    return fail(403, `${engine} isn't included in ${license.label}. Upgrade to ${TIER_INFO[need].label} to run it.`, { tier, requires: need });
   }
   const keys = ownKeys(req);
   // Runs on the operator's own key cost the server nothing, so they get more room.
@@ -59,12 +62,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
       const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
       try {
         await runCommand(engine, { command: body.data.command, params: body.data.params }, {
-          emit: (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`),
+          emit: traceRun({ kind: "engine", target: engine, engines: [engine], command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`)),
           signal: req.signal,
           lang: body.data.lang,
           keys,
           calibrations: body.data.calibrations,
-          allowed: TIER_ENGINES[tier],
+          allowed: license.engines,
         });
       } finally {
         clearInterval(keepAlive);

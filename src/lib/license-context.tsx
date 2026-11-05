@@ -1,14 +1,19 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { EngineKey } from "@/components/bloom/command/engines";
+import { ENGINE_ORDER, type EngineKey } from "@/components/bloom/command/engines";
 import { audit, updateSettings, useDeskSettings, type LicenseInfo } from "@/components/desk/settings";
 import { TIER_ENGINES, TIER_INFO, type Tier } from "@/lib/license/tiers";
+import { engineScope } from "@/lib/licensing/codec";
+import { DEFAULT_THEME, type BloomLicensePayload, type BloomPermissions, type BloomThemeConfig, type KeyRole } from "@/lib/licensing/types";
 
 /**
  * The workspace's Client License. The key lives in the persisted desk settings; the server verifies it on
  * activation, again whenever the desk loads (so a revoked or expired key falls back to Evaluation), and on
  * every engine run. Gating in the UI follows this context; enforcement is the run API's.
+ *
+ * BLOOMK- access keys add a role, permissions and a theme on top: `access` is the verified payload, `role` drives
+ * the desk's behavior mode, and `engines` follows the key's own unlockedEngines.
  */
 
 type ActivateResult = { ok: true; info: LicenseInfo } | { ok: false; message: string };
@@ -25,11 +30,20 @@ type LicenseContextValue = {
   devIssue: (tier: Exclude<Tier, "evaluation">) => Promise<ActivateResult>;
   devAvailable: boolean;
   checking: boolean;
+  /** The verified BLOOMK- payload, or null for tier keys and Evaluation. */
+  access: BloomLicensePayload | null;
+  role: KeyRole | null;
+  permissions: BloomPermissions | null;
+  theme: BloomThemeConfig;
+  /** Neural Control Plane access, exactly as signed into the key. */
+  canAccessControlPlane: boolean;
+  /** Eval keys preview the desk read-only. */
+  readOnly: boolean;
 };
 
 const LicenseContext = createContext<LicenseContextValue | null>(null);
 
-type LicenseResponse = { key: string; tier: LicenseInfo["tier"]; org: string; expiresAt: string | null; issuedAt: string; dev: boolean };
+type LicenseResponse = { key: string; tier: LicenseInfo["tier"]; org: string; expiresAt: string | null; issuedAt: string; dev: boolean; access?: BloomLicensePayload | null };
 
 async function postLicense(body: unknown): Promise<{ ok: true; data: LicenseResponse } | { ok: false; message: string }> {
   try {
@@ -49,8 +63,9 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
   const revalidated = useRef(false);
 
   const apply = useCallback((d: LicenseResponse): LicenseInfo => {
-    const info: LicenseInfo = { tier: d.tier, org: d.org, expiresAt: d.expiresAt, issuedAt: d.issuedAt, dev: d.dev, verifiedAt: Date.now() };
-    updateSettings({ licenseKey: d.key, license: info });
+    const info: LicenseInfo = { tier: d.tier, org: d.org, expiresAt: d.expiresAt, issuedAt: d.issuedAt, dev: d.dev, verifiedAt: Date.now(), access: d.access ?? null };
+    // An Operator key skips the setup wizard: the desk is the operator's own.
+    updateSettings({ licenseKey: d.key, license: info, ...(d.access?.role === "operator" && { onboarded: true }) });
     return info;
   }, []);
 
@@ -64,7 +79,8 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
         return r;
       }
       const info = apply(r.data);
-      audit("license", `Activated ${TIER_INFO[info.tier].label} for ${info.org}${info.dev ? " (development key)" : ""}`);
+      const what = info.access ? `${info.access.role} access key ${info.access.keyId}` : TIER_INFO[info.tier].label;
+      audit("license", `Activated ${what} for ${info.org}${info.dev ? " (development key)" : ""}`);
       return { ok: true, info };
     },
     [apply],
@@ -85,6 +101,8 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
 
   const deactivate = useCallback(() => {
     updateSettings({ licenseKey: "", license: null });
+    // Drops the httpOnly cookie that unlocks the control plane route.
+    fetch("/api/license", { method: "DELETE" }).catch(() => undefined);
     audit("license", "Removed the license; the workspace is back in Evaluation");
   }, []);
 
@@ -103,6 +121,7 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       // Only a definite rejection clears the license; a network blip keeps the last verified state.
       else if (!/reach/.test(r.message)) {
         updateSettings({ licenseKey: "", license: null });
+        fetch("/api/license", { method: "DELETE" }).catch(() => undefined);
         audit("license", `License no longer valid: ${r.message}`);
       }
     });
@@ -110,8 +129,25 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<LicenseContextValue>(() => {
     const tier: Tier = settings.license?.tier ?? "evaluation";
-    const engines = TIER_ENGINES[tier];
-    return { tier, info: settings.license, engines, isUnlocked: (k) => engines.includes(k), activate, deactivate, devIssue, devAvailable, checking };
+    const access = settings.license?.access ?? null;
+    const engines = access ? engineScope(access.unlockedEngines).filter((k): k is EngineKey => (ENGINE_ORDER as string[]).includes(k)) : TIER_ENGINES[tier];
+    return {
+      tier,
+      info: settings.license,
+      engines,
+      isUnlocked: (k) => engines.includes(k),
+      activate,
+      deactivate,
+      devIssue,
+      devAvailable,
+      checking,
+      access,
+      role: access?.role ?? null,
+      permissions: access?.permissions ?? null,
+      theme: access?.themeConfig ?? DEFAULT_THEME,
+      canAccessControlPlane: access?.permissions.accessNeuralControlPlane === true,
+      readOnly: access?.role === "eval",
+    };
   }, [settings.license, activate, deactivate, devIssue, devAvailable, checking]);
 
   return <LicenseContext.Provider value={value}>{children}</LicenseContext.Provider>;

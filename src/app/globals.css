@@ -19,11 +19,12 @@
   --color-os-bg: #07080c;
   --color-os-panel: #0c0e14;
   --color-os-raise: #11141c;
-  --color-os-cyan: #00f0ff;
+  /* Morphs to the access key accent (ThemeProvider sets --bloom-accent); cyan when no key sets one. */
+  --color-os-cyan: var(--bloom-accent, #00f0ff);
   --color-os-emerald: #34f5b5;
   --color-os-violet: #a78bfa;
   --color-os-gold: #f0d59a;
-  --color-os-line: rgb(0 240 255 / 0.12);
+  --color-os-line: color-mix(in srgb, var(--bloom-accent, #00f0ff) 12%, transparent);
   /* Sunset palette: rose gold, sun gold, ember orange, dusk violet. */
   --color-rose: #f5a9b0;
   --color-sun: #ffbd6e;
@@ -1257,5 +1258,67 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------
+   BLOOM obsidian glass theme engine. ThemeProvider writes these from the access key's themeConfig on <html>;
+   the defaults below are what a desk with no access key looks like. The base is always obsidian #07080C.
+   --------------------------------------------------------------------------------------------------- */
+:root {
+  --bloom-accent: #00f0ff;
+  --bloom-accent-rgb: 0 240 255;
+  --bloom-obsidian-bg: #07080c;
+  --bloom-glass: rgba(7, 8, 12, 0.85);
+  --bloom-glass-blur: 20px;
+  --bloom-gap: 1rem;
+}
+[data-bloom-density="high_density"] {
+  --bloom-gap: 0.625rem;
+}
+[data-bloom-density="executive"] {
+  --bloom-gap: 1.25rem;
+}
+[data-bloom-density="minimal"] {
+  --bloom-gap: 1.5rem;
+}
+/* Minimal density hides secondary readouts; they're marked .bloom-detail. */
+[data-bloom-density="minimal"] .bloom-detail {
+  display: none !important;
+}
+
+/* A pane of key-tinted obsidian glass. */
+@utility bloom-glass {
+  background: var(--bloom-glass);
+  border: 1px solid rgb(var(--bloom-accent-rgb) / 0.16);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 0 0 1px rgb(0 0 0 / 0.4),
+    0 24px 60px -32px rgb(0 0 0 / 0.95),
+    0 0 40px -28px rgb(var(--bloom-accent-rgb) / 0.55);
+  -webkit-backdrop-filter: blur(var(--bloom-glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--bloom-glass-blur)) saturate(140%);
+}
+
+/* Glowing accent text and edges in the key's color. */
+@utility bloom-glow {
+  color: var(--bloom-accent);
+  text-shadow: 0 0 14px rgb(var(--bloom-accent-rgb) / 0.55);
+}
+@utility bloom-edge-glow {
+  border-color: rgb(var(--bloom-accent-rgb) / 0.55);
+  box-shadow:
+    0 0 0 1px rgb(var(--bloom-accent-rgb) / 0.18),
+    0 0 24px -6px rgb(var(--bloom-accent-rgb) / 0.7),
+    inset 0 0 18px -10px rgb(var(--bloom-accent-rgb) / 0.6);
+}
+
+@keyframes bloom-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }

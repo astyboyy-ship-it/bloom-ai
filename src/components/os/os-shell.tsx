@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, ChevronDown, Gauge, KeyRound, Presentation, Server, Sparkles, UserRound } from "lucide-react";
+import { Activity, ChevronDown, Cpu, Eye, Gauge, KeyRound, Presentation, Server, Sparkles, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
@@ -18,6 +18,7 @@ import { ARCHITECTURES } from "@/lib/architectures";
 import { NAV_GROUPS, OS_NAV, type NavItem } from "./nav";
 import { useOsCopy, type NavGroupKey, type PageRoute } from "./os-copy";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
+import { useLicensingCopy } from "@/components/control-plane/copy";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
 
@@ -40,6 +41,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const t = useOsCopy();
+  const { role } = useLicense();
+  const lc = useLicensingCopy();
 
   // Older links (/desk?engine=…, /desk?hub=…) and the desktop app's first route land on the right pillar.
   useEffect(() => {
@@ -67,7 +70,14 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div lang={lang} dir={dir} data-demo={settings.demoMode ? "on" : "off"} className="os-backdrop relative isolate flex min-h-dvh flex-col font-sans text-white">
       <Header />
-      {!settings.onboarded && path !== "/desk/settings" && (
+      {role === "eval" && (
+        <div role="status" className="flex items-center gap-3 border-b border-amber-300/20 bg-amber-300/[0.05] px-4 py-2 text-[12.5px] text-amber-100/85">
+          <Eye className="size-4 shrink-0 text-amber-300" />
+          {lc.modes.eval.banner}
+        </div>
+      )}
+      {/* Operator keys bypass the setup wizard. */}
+      {!settings.onboarded && role !== "operator" && path !== "/desk/settings" && (
         <div className="flex flex-wrap items-center gap-3 border-b border-os-line bg-os-cyan/[0.04] px-4 py-2 text-[12.5px] text-white/75">
           <Sparkles className="size-4 shrink-0 text-os-cyan" />
           {t.shell.setup}
@@ -84,7 +94,8 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Header() {
   const path = usePathname();
   const { settings } = useDeskSettings();
-  const { tier, engines } = useLicense();
+  const { tier, engines, role, canAccessControlPlane } = useLicense();
+  const lc = useLicensingCopy();
   const { latency, uptime, sla } = useOsTelemetry();
   const env = activeEnv(settings);
   const t = useOsCopy();
@@ -151,9 +162,12 @@ function Header() {
           <Link
             href="/desk/settings#license"
             title={env.region}
-            className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.16em]", tier === "evaluation" ? "border-white/20 text-white/60" : "border-os-gold/50 text-os-gold")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.16em]",
+              role ? "bloom-edge-glow text-os-cyan" : tier === "evaluation" ? "border-white/20 text-white/60" : "border-os-gold/50 text-os-gold",
+            )}
           >
-            <KeyRound className="size-3" /> {TIER_PILL[tier]}
+            <KeyRound className="size-3" /> {role ? lc.pill[role] : TIER_PILL[tier]}
           </Link>
           <button
             type="button"
@@ -196,15 +210,48 @@ function Header() {
 
       <nav aria-label="Operating Desk" className="flex flex-wrap gap-1.5 px-3 pb-2">
         {NAV_GROUPS.map((g) => (
-          <NavGroup key={g.label} label={g.label} items={g.items} path={path} />
+          <NavGroup
+            key={g.label}
+            label={g.label}
+            items={g.items}
+            path={path}
+            extra={
+              g.label === "Command" && canAccessControlPlane ? (
+                <Link
+                  href="/desk/control-plane"
+                  role="menuitem"
+                  aria-current={path.startsWith("/desk/control-plane") ? "page" : undefined}
+                  className="mt-1 flex items-center gap-2.5 rounded-lg border border-os-cyan/25 px-3 py-2 font-mono text-[11px] tracking-[0.12em] text-os-cyan transition-colors hover:bloom-edge-glow"
+                >
+                  <Cpu className="size-4 shrink-0" />[ {lc.nav.controlPlane} ]
+                </Link>
+              ) : undefined
+            }
+          />
         ))}
+        {/* Rendered only for keys that grant it; the middleware enforces the same rule on the route itself. */}
+        {canAccessControlPlane && (
+          <Link
+            href="/desk/control-plane"
+            aria-current={path.startsWith("/desk/control-plane") ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-os-cyan",
+              path.startsWith("/desk/control-plane") ? "bloom-edge-glow bg-os-cyan/[0.1] text-os-cyan" : "border-os-cyan/30 text-os-cyan/80 hover:bloom-edge-glow hover:text-os-cyan",
+            )}
+          >
+            <span className="text-white/25">[</span>
+            <Cpu className="size-3" style={{ animation: "bloom-pulse 2.4s ease-in-out infinite" }} />
+            {lc.nav.controlPlane}
+            <span className="text-white/25">]</span>
+          </Link>
+        )}
       </nav>
     </header>
   );
 }
 
 /** One header menu: shows its active pillar, opens on click, closes on outside click, Escape or navigation. */
-function NavGroup({ label: groupKey, items, path }: { label: NavGroupKey; items: NavItem[]; path: string }) {
+function NavGroup({ label: groupKey, items, path, extra }: { label: NavGroupKey; items: NavItem[]; path: string; extra?: React.ReactNode }) {
   const t = useOsCopy();
   const label = t.groups[groupKey];
   const [open, setOpen] = useState(false);
@@ -271,6 +318,7 @@ function NavGroup({ label: groupKey, items, path }: { label: NavGroupKey; items:
               </Link>
             );
           })}
+          {extra && <div onClick={() => setOpen(false)}>{extra}</div>}
         </div>
       )}
     </div>
