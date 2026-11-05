@@ -38,16 +38,18 @@ export function signWithNodeCrypto(payload: UnsignedBloomPayload, secret: string
   return `${ACCESS_KEY_PREFIX}${body}.${sig}`;
 }
 
-/** Signs, proves the key verifies through the production verifier, and writes it to `file` (owner-only). */
-export async function issueAndSave(payload: UnsignedBloomPayload, file: string): Promise<{ key: string; verified: BloomLicensePayload; path: string }> {
-  const secret = resolveSecret();
+/**
+ * Signs, proves the key verifies through the production verifier, and writes it to `file` (owner-only).
+ * Pass `secret` to sign a batch with one resolved secret (and one warning).
+ */
+export async function issueAndSave(payload: UnsignedBloomPayload, file: string, secret = resolveSecret()): Promise<{ key: string; verified: BloomLicensePayload; path: string; dev: boolean }> {
   const key = signWithNodeCrypto(payload, secret.value);
   const check = await verifyAccessKey(key);
   if (!check.ok) throw new Error(`Self-check failed: the signed key did not verify (${check.reason}).`);
   const path = resolve(file);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${key}\n`, { encoding: "utf8", mode: 0o600 });
-  return { key, verified: check.payload, path };
+  return { key, verified: check.payload, path, dev: secret.dev };
 }
 
 export function printSummary(v: BloomLicensePayload, path: string, key: string) {

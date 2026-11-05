@@ -21,6 +21,10 @@ export const BLOOM_OBSIDIAN = "#07080C";
 
 export type BloomDensity = "high_density" | "executive" | "minimal";
 
+/** The Demo Engine architectures a demo partner key can open on. */
+export const DEMO_ARCHITECTURES = ["music", "trading", "coreops", "intentpulse"] as const;
+export type DemoArchitecture = (typeof DEMO_ARCHITECTURES)[number];
+
 export interface BloomThemeConfig {
   /** Hex glowing accent, locked to the BLOOM palette (see BLOOM_ACCENTS). */
   accentColor: string;
@@ -37,6 +41,8 @@ export interface BloomPermissions {
   canIssueKeys: boolean;
   isDemoOnly: boolean;
   partnerReferralId?: string;
+  /** Demo partner keys only: the architecture Demo Engine Mode opens on (a domain-specific demo key). */
+  demoTarget?: DemoArchitecture;
   maxClients: number;
   maxActiveNodes: number;
 }

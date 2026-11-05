@@ -72,15 +72,20 @@ export function DemoEngineMode() {
   const [paused, setPaused] = useState(false);
   const gen = useRef(createDemoGenerator(target));
 
-  // The partner's last architecture is restored on return.
+  // A domain-specific demo key opens on its architecture; otherwise the partner's last one is restored.
+  const pinned = access?.permissions.demoTarget;
   useEffect(() => {
+    if (pinned) {
+      setTarget(pinned);
+      return;
+    }
     try {
       const saved = localStorage.getItem(STORE) as DemoTargetId | null;
       if (saved && DEMO_TARGETS.some((t) => t.id === saved)) setTarget(saved);
     } catch {
       // Storage blocked: start on the default target.
     }
-  }, []);
+  }, [pinned]);
 
   // A new target gets a fresh, primed stream so the charts open with history.
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { BLOOM_ACCENTS, DEFAULT_THEME, ENGINE_IDS, DEMO_ENGINE_ID, ROLE_TIER, type BloomLicensePayload, type BloomThemeConfig, type KeyRole, type UnsignedBloomPayload } from "./types.ts";
+import { BLOOM_ACCENTS, DEFAULT_THEME, DEMO_ARCHITECTURES, ENGINE_IDS, DEMO_ENGINE_ID, ROLE_TIER, type BloomLicensePayload, type BloomThemeConfig, type KeyRole, type UnsignedBloomPayload } from "./types.ts";
 
 /**
  * BLOOM access key codec: `BLOOMK-<base64url(JSON payload)>.<base64url(HMAC-SHA256)>`.
@@ -131,6 +131,7 @@ export async function verifyAccessKey(key: string | null | undefined): Promise<A
       canIssueKeys: bool(perms.canIssueKeys) && !isDemoOnly,
       isDemoOnly,
       ...(typeof perms.partnerReferralId === "string" && { partnerReferralId: perms.partnerReferralId.slice(0, 64) }),
+      ...(isDemoOnly && (DEMO_ARCHITECTURES as readonly string[]).includes(perms.demoTarget as string) && { demoTarget: perms.demoTarget as BloomLicensePayload["permissions"]["demoTarget"] }),
       maxClients: Number.isFinite(perms.maxClients) ? Math.max(0, Number(perms.maxClients)) : 0,
       maxActiveNodes: Number.isFinite(perms.maxActiveNodes) ? Math.max(0, Number(perms.maxActiveNodes)) : 0,
     },

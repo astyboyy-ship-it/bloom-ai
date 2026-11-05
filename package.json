@@ -20,6 +20,7 @@
     "license:issue": "node scripts/issue-license.mts",
     "key:master": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-master-key.ts",
     "key:demo": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-demo-key.ts",
+    "key:all": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-all-keys.ts",
     "postinstall": "prisma generate",
     "db:up": "docker compose up -d postgres",
     "db:migrate": "prisma migrate dev",

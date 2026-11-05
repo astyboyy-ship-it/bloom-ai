@@ -1,4 +1,5 @@
 import { sha256 } from "@/lib/sha256";
+import type { DemoArchitecture } from "@/lib/licensing/types";
 
 /**
  * Tier 5 Demo Partner Mode: domain-specific mock telemetry. Everything here is synthesized, on purpose, so a
@@ -9,7 +10,7 @@ import { sha256 } from "@/lib/sha256";
  * with occasional shocks, so numbers move like real telemetry rather than flicker like noise.
  */
 
-export type DemoTargetId = "music" | "trading" | "coreops" | "intentpulse";
+export type DemoTargetId = DemoArchitecture;
 
 export type DemoUnit = "ms" | "pct" | "count" | "usd" | "per_s" | "per_min" | "score" | "lufs";
 export type DemoTone = "ok" | "warn" | "alert";
