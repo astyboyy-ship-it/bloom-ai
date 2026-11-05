@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { ENGINES } from "@/components/bloom/command/engines";
 import type { CommandManifest } from "@/lib/engines/events";
 import { useLicense } from "@/lib/license-context";
+import { useLicensingCopy } from "@/components/control-plane/copy";
+import { KeyRoleBadge } from "@/components/control-plane/key-badge";
 import { TIER_ENGINES, TIER_INFO, tierInfo, type Tier } from "@/lib/license/tiers";
 import { useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
@@ -340,13 +342,16 @@ function LicensePanel({ allowed }: { allowed: boolean }) {
   const { lang } = useCommandCopy();
   const t = SH[lang];
   const tiers = tierInfo(lang);
-  const { tier, info, engines, activate, deactivate, devIssue, devAvailable, checking } = useLicense();
+  const { tier, info, engines, role, activate, deactivate, devIssue, devAvailable, checking } = useLicense();
+  const lc = useLicensingCopy();
   const [key, setKey] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const submit = async () => {
     const r = await activate(key);
-    setMsg(r.ok ? { ok: true, text: t.activated(tiers[r.info.tier].label, r.info.org) } : { ok: false, text: serverText(lang, r.message) });
+    // Access keys are named by role ("Tier 4 // Super Operator"), tier keys by their tier.
+    const label = (i: NonNullable<typeof info>) => (i.access ? lc.roleLabel[i.access.role] : tiers[i.tier].label);
+    setMsg(r.ok ? { ok: true, text: t.activated(label(r.info), r.info.org) } : { ok: false, text: serverText(lang, r.message) });
     if (r.ok) setKey("");
   };
 
@@ -354,7 +359,13 @@ function LicensePanel({ allowed }: { allowed: boolean }) {
     <Panel id="license" icon={ShieldCheck} title={t.licenseTitle} body={t.licenseBody} locked={!allowed}>
       <div className="rounded-xl border border-[#f0d59a]/25 bg-[#f0d59a]/[0.05] p-4">
         <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-white/45">{t.activeLicense}</p>
-        <p className="mt-1 text-[17px] font-medium text-[#f6ead2]">{tiers[tier].label}</p>
+        {role ? (
+          <p className="mt-1.5">
+            <KeyRoleBadge role={role} size="lg" />
+          </p>
+        ) : (
+          <p className="mt-1 text-[17px] font-medium text-[#f6ead2]">{tiers[tier].label}</p>
+        )}
         <p className="mt-0.5 text-[12px] text-white/55">{info ? `${info.org} · ${info.expiresAt ? t.expires(info.expiresAt) : t.noExpiry}${info.dev ? t.devKey : ""}` : tiers[tier].blurb}</p>
         <p className="mt-2 flex flex-wrap gap-1">
           {engines.map((k) => (
@@ -362,6 +373,7 @@ function LicensePanel({ allowed }: { allowed: boolean }) {
               {ENGINES[k].index} {ENGINES[k].name}
             </span>
           ))}
+          {role === "demo_partner" && <span className="rounded-full border border-os-cyan/30 px-2 py-0.5 font-mono text-[9.5px] text-os-cyan/80">{lc.sandboxEngine}</span>}
         </p>
         {info && (
           <button type="button" onClick={deactivate} className="mt-3 text-[11.5px] text-white/45 underline-offset-2 hover:text-white/80 hover:underline">
@@ -377,7 +389,7 @@ function LicensePanel({ allowed }: { allowed: boolean }) {
           submit();
         }}
       >
-        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="BLOOM-…" spellCheck={false} autoComplete="off" dir="ltr" className={cn(input, "font-mono text-[12px]")} aria-label={t.licenseKey} />
+        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="BLOOM-… / BLOOMK-…" spellCheck={false} autoComplete="off" dir="ltr" className={cn(input, "font-mono text-[12px]")} aria-label={t.licenseKey} />
         <button type="submit" disabled={!key.trim() || checking} className={btn}>
           {checking ? <Loader2 className="size-3.5 animate-spin" /> : <KeyRound className="size-3.5" />} {t.activate}
         </button>
@@ -388,7 +400,7 @@ function LicensePanel({ allowed }: { allowed: boolean }) {
         {(["tier1", "tier2", "tier3"] as Tier[]).map((tk) => {
           const t = tk;
           return (
-          <div key={t} className={cn("rounded-lg border p-2.5", tier === t ? "border-[#f0d59a]/50 bg-[#f0d59a]/[0.06]" : "border-white/[0.08]")}>
+          <div key={t} className={cn("rounded-lg border p-2.5", !role && tier === t ? "border-[#f0d59a]/50 bg-[#f0d59a]/[0.06]" : "border-white/[0.08]")}>
             <p className="text-[12px] font-medium text-white/85">{tiers[t].label}</p>
             <p className="mt-0.5 text-[11px] leading-snug text-white/45">{TIER_ENGINES[t].map((k) => ENGINES[k].name).join(" · ")}</p>
           </div>

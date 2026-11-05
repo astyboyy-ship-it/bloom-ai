@@ -20,7 +20,7 @@ export function DatasetMonitor() {
   const c = useLicensingCopy().cp.data;
   const [summary, setSummary] = useState<TraceSummary>(emptySummary);
   const [rows, setRows] = useState<TraceRow[]>([]);
-  const [state, setState] = useState<{ available: boolean; exists: boolean; file: string; size: number } | null>(null);
+  const [state, setState] = useState<{ available: boolean; exists: boolean; file: string; size: number; store: DatasetsResponse["store"] } | null>(null);
   const [paused, setPaused] = useState(false);
   const [flash, setFlash] = useState(0);
   const offset = useRef(0);
@@ -35,7 +35,7 @@ export function DatasetMonitor() {
         if (res.ok) {
           const d = (await res.json()) as DatasetsResponse;
           if (!alive) return;
-          setState({ available: d.available, exists: d.exists, file: d.file, size: d.size });
+          setState({ available: d.available, exists: d.exists, file: d.file, size: d.size, store: d.store });
           // The file shrank (rotated or truncated): start over with a fresh summary.
           const restart = d.next < offset.current;
           if (d.summary || restart) setSummary(d.summary ?? emptySummary());
@@ -102,10 +102,15 @@ export function DatasetMonitor() {
         ))}
       </div>
 
-      <p className="mt-2 truncate font-mono text-[10px] text-white/35" dir="ltr">
-        {state?.file ?? ".bloom/datasets/trace_log.jsonl"}
-        {state?.exists ? ` · ${(state.size / 1024).toFixed(1)} KB` : ""}
+      <p className="mt-2 flex min-w-0 items-center gap-2 font-mono text-[10px] text-white/35">
+        {state && <span className={cn("shrink-0 rounded border px-1.5 py-px uppercase tracking-[0.12em]", state.store === "memory" ? "border-amber-300/40 text-amber-200/80" : "border-os-cyan/30 text-os-cyan/80")}>{c.store[state.store]}</span>}
+        <span className="truncate" dir="ltr">
+          {state?.store === "file" || !state ? (state?.file ?? ".bloom/datasets/trace_log.jsonl") : ""}
+          {state?.store === "file" && state.exists ? ` · ${(state.size / 1024).toFixed(1)} KB` : ""}
+        </span>
+        {state && state.store !== "file" && <span className="truncate">{c.records(state.size)}</span>}
       </p>
+      {state?.store === "memory" && <p className="bloom-detail mt-1 text-[11px] leading-snug text-amber-200/60">{c.memoryNote}</p>}
 
       {state && !state.available ? (
         <p className="mt-4 text-center font-mono text-[12px] text-amber-200/70">{c.unavailable}</p>

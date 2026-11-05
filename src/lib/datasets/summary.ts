@@ -21,7 +21,14 @@ export type TraceRow = {
 
 export type TraceSummary = { traces: number; samples: number; failed: number; ms: number; tokens: number; byEngine: Record<string, number> };
 
-export type DatasetsResponse = { available: boolean; exists: boolean; size: number; next: number; rows: TraceRow[]; summary: TraceSummary | null; file: string };
+/** Where traces live: the local JSONL file, Vercel KV / Redis, or a per-instance in-memory ring buffer. */
+export type TraceStoreKind = "file" | "kv" | "memory";
+
+/**
+ * `next` is the cursor for the following poll: a byte offset for the file store, a sequence number otherwise.
+ * `size` is bytes (file) or records held (kv / memory). `summary` comes with the first poll and after a reset.
+ */
+export type DatasetsResponse = { available: boolean; exists: boolean; size: number; next: number; rows: TraceRow[]; summary: TraceSummary | null; file: string; store: TraceStoreKind };
 
 export const emptySummary = (): TraceSummary => ({ traces: 0, samples: 0, failed: 0, ms: 0, tokens: 0, byEngine: {} });
 

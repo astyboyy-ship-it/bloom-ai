@@ -60,9 +60,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
       };
       // Keeps proxies from closing the connection while a model thinks between events.
       const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
+      const trace = traceRun({ kind: "engine", target: engine, engines: [engine], command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`));
       try {
         await runCommand(engine, { command: body.data.command, params: body.data.params }, {
-          emit: traceRun({ kind: "engine", target: engine, engines: [engine], command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`)),
+          emit: trace.emit,
           signal: req.signal,
           lang: body.data.lang,
           keys,
@@ -71,6 +72,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
         });
       } finally {
         clearInterval(keepAlive);
+        // The trace write must land before the response closes (serverless functions freeze after it).
+        await trace.flush();
         open = false;
         try {
           controller.close();

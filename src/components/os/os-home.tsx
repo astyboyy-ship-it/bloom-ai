@@ -21,6 +21,7 @@ import { useLicense } from "@/lib/license-context";
 import { OS_NAV } from "./nav";
 import { useOsCopy } from "./os-copy";
 import { TIER_PILL } from "./os-shell";
+import { useLicensingCopy } from "@/components/control-plane/copy";
 import { useOsTelemetry } from "./telemetry-context";
 
 const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
@@ -97,7 +98,8 @@ export function OsHome() {
 
 function ContextHeader({ live }: { live: ConsoleStatus }) {
   const { settings } = useDeskSettings();
-  const { tier, engines } = useLicense();
+  const { tier, engines, role } = useLicense();
+  const roleLabel = useLicensingCopy().roleLabel;
   const { manifest, latency, uptime, sla } = useOsTelemetry();
   const h = useOsCopy().home;
   const mayEdit = can(activeMember(settings).role, "settings");
@@ -124,7 +126,7 @@ function ContextHeader({ live }: { live: ConsoleStatus }) {
             <span className="size-1.5 animate-pulse rounded-full bg-os-emerald shadow-[0_0_8px_#34f5b5]" /> {env.name} {"//"} {h.active}
           </span>
           <span className={cn("rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]", live_ ? "border-os-cyan/35 text-os-cyan" : "border-os-gold/35 text-os-gold")}>{h.runtime(manifest ? manifest.mode : null)}</span>
-          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">{h.license(TIER_PILL[tier])}</span>
+          <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">{h.license(role ? roleLabel[role] : TIER_PILL[tier])}</span>
           <span className="rounded-full border border-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">{env.region}</span>
         </div>
         <h1 className="mt-3 font-mono text-[22px] font-semibold uppercase leading-tight tracking-[0.14em] sm:text-[30px]">

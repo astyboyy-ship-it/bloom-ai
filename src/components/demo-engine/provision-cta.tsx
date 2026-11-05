@@ -2,15 +2,15 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { KeyRound, X } from "lucide-react";
-import { toast } from "sonner";
 import type { DemoTargetId } from "@/lib/demo/demoGenerator";
 import { useLicense } from "@/lib/license-context";
 import { audit } from "@/components/desk/settings";
 import { useLicensingCopy } from "@/components/control-plane/copy";
 import { CpButton } from "@/components/control-plane/widget";
+import { obsidianToast } from "@/components/control-plane/obsidian-toast";
 
 const TRACK = "bloom-demo-referrals";
-/** Where requests go. Unset, the request is copied to the clipboard for the partner to forward. */
+/** The checkout / provisioning page. Unset, the request is built in a modal and copied for the partner to forward. */
 const PROVISION_URL = process.env.NEXT_PUBLIC_BLOOM_PROVISION_URL;
 
 type Tally = Record<string, { opens: number; requests: number; last: number }>;
@@ -30,9 +30,10 @@ function track(ref: string, what: "opens" | "requests") {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * The demo's conversion path: a floating "Provision Production Key" button and modal. Every request carries the
- * partner's referral ID from the signed demo key (it can't be edited here), the architecture being shown and
- * the prospect's details; it is sent to NEXT_PUBLIC_BLOOM_PROVISION_URL when configured, else copied as JSON.
+ * The demo's conversion path: a floating "Provision Production Key" button. The partner's referral ID comes from
+ * the signed demo key, so it can't be edited here.
+ *  - NEXT_PUBLIC_BLOOM_PROVISION_URL set: opens it in a new tab with ?ref=<partnerReferralId>&partner=<holderName>.
+ *  - Unset: a modal collects the prospect's details and copies the provisioning payload to the clipboard.
  */
 export function ProvisionCta({ target }: { target: DemoTargetId }) {
   const d = useLicensingCopy().demo;
@@ -53,8 +54,24 @@ export function ProvisionCta({ target }: { target: DemoTargetId }) {
   }, [open]);
 
   const show = () => {
-    setOpen(true);
     track(referral, "opens");
+    if (PROVISION_URL) {
+      // Checkout handler: straight to the provisioning page, attributed to the partner.
+      let url: URL;
+      try {
+        url = new URL(PROVISION_URL, window.location.origin);
+      } catch {
+        setOpen(true);
+        return;
+      }
+      url.searchParams.set("ref", referral);
+      url.searchParams.set("partner", access?.holderName ?? "");
+      track(referral, "requests");
+      audit("license", `Demo partner ${referral}: opened production key checkout (${target})`);
+      window.open(url.toString(), "_blank", "noopener,noreferrer");
+      return;
+    }
+    setOpen(true);
   };
 
   const submit = async () => {
@@ -74,22 +91,12 @@ export function ProvisionCta({ target }: { target: DemoTargetId }) {
     };
     track(referral, "requests");
     audit("license", `Demo partner ${referral}: production key requested for ${request.contact.company} (${target})`);
-    if (PROVISION_URL) {
-      const url = new URL(PROVISION_URL);
-      url.searchParams.set("ref", referral);
-      url.searchParams.set("architecture", target);
-      url.searchParams.set("company", request.contact.company);
-      url.searchParams.set("email", request.contact.email);
-      window.open(url.toString(), "_blank", "noopener,noreferrer");
-      toast.success(m.sent);
-    } else {
-      try {
-        await navigator.clipboard.writeText(JSON.stringify(request, null, 2));
-      } catch {
-        // Clipboard blocked: the audit entry still records the request.
-      }
-      toast.success(m.copied);
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(request, null, 2));
+    } catch {
+      // Clipboard blocked: the audit entry still records the request.
     }
+    obsidianToast(m.copied(referral));
     setOpen(false);
     setError("");
     setForm({ name: "", company: "", email: "", notes: "" });

@@ -57,12 +57,13 @@ export async function POST(req: Request) {
         }
       };
       const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
+      const trace = traceRun({ kind: "pipeline", target: body.data.id, engines: body.data.engines, command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`));
       try {
         await runPipeline(
           { id: body.data.id, label: body.data.label, engines: body.data.engines },
           { command: body.data.command },
           {
-            emit: traceRun({ kind: "pipeline", target: body.data.id, engines: body.data.engines, command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`)),
+            emit: trace.emit,
             signal: req.signal,
             lang: body.data.lang,
             keys,
@@ -72,6 +73,8 @@ export async function POST(req: Request) {
         );
       } finally {
         clearInterval(keepAlive);
+        // The trace write must land before the response closes (serverless functions freeze after it).
+        await trace.flush();
         open = false;
         try {
           controller.close();

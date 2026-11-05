@@ -19,6 +19,7 @@ import { NAV_GROUPS, OS_NAV, type NavItem } from "./nav";
 import { useOsCopy, type NavGroupKey, type PageRoute } from "./os-copy";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 import { useLicensingCopy } from "@/components/control-plane/copy";
+import { KeyRoleBadge } from "@/components/control-plane/key-badge";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
 
@@ -159,16 +160,20 @@ function Header() {
               ))}
             </select>
           </label>
-          <Link
-            href="/desk/settings#license"
-            title={env.region}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.16em]",
-              role ? "bloom-edge-glow text-os-cyan" : tier === "evaluation" ? "border-white/20 text-white/60" : "border-os-gold/50 text-os-gold",
-            )}
-          >
-            <KeyRound className="size-3" /> {role ? lc.pill[role] : TIER_PILL[tier]}
-          </Link>
+          {role ? (
+            // Same badge, label and styling as the Settings license panel.
+            <Link href="/desk/settings#license" title={env.region} className="rounded-full focus-visible:outline-2 focus-visible:outline-os-cyan">
+              <KeyRoleBadge role={role} />
+            </Link>
+          ) : (
+            <Link
+              href="/desk/settings#license"
+              title={env.region}
+              className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.16em]", tier === "evaluation" ? "border-white/20 text-white/60" : "border-os-gold/50 text-os-gold")}
+            >
+              <KeyRound className="size-3" /> {TIER_PILL[tier]}
+            </Link>
+          )}
           <button
             type="button"
             aria-pressed={settings.demoMode}
