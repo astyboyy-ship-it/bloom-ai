@@ -12,7 +12,7 @@ loadEnv();
 
 const payload: UnsignedBloomPayload = {
   keyId: `op_${randomUUID()}`,
-  holderName: "Eliad Krakover / Creator",
+  holderName: "Eliad Rakover / Creator",
   role: "operator",
   tier: ROLE_TIER.operator,
   unlockedEngines: ["*"],

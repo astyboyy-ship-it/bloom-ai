@@ -32,7 +32,7 @@ type Spec = {
 const DEMO_DAYS = 90;
 
 const SUITE: Spec[] = [
-  { id: "operator", label: "Super Operator", role: "operator", holder: "Eliad Krakover / Creator", accent: BLOOM_ACCENTS.cyan, engines: ["*"], file: ".bloom/master-operator.key", days: null },
+  { id: "operator", label: "Super Operator", role: "operator", holder: "Eliad Rakover / Creator", accent: BLOOM_ACCENTS.cyan, engines: ["*"], file: ".bloom/master-operator.key", days: null },
   { id: "agency", label: "Agency", role: "agency", holder: "BLOOM Agency Operations", accent: BLOOM_ACCENTS.emerald, engines: ["sovereign", "apex", "coreops", "cortex"], file: ".bloom/agency.key", days: 365 },
   { id: "enterprise", label: "Enterprise", role: "enterprise", holder: "Enterprise Infrastructure Node", accent: BLOOM_ACCENTS.amber, engines: ["sovereign", "apex", "vanguard", "shield"], file: ".bloom/enterprise.key", days: 365 },
   { id: "eval", label: "Evaluation", role: "eval", holder: "Eval User", accent: BLOOM_ACCENTS.softEmerald, engines: ["sovereign"], file: ".bloom/eval.key", days: 30 },
