@@ -9,6 +9,7 @@ import { scanCommand, type Severity } from "@/lib/security/injection";
 import { OsPage } from "./os-shell";
 import { useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
+import { SAMPLE, SampleTag, useSampleMode } from "@/components/onboarding/sample-data";
 
 type Category = "Prompt injection" | "Prompt extraction" | "Jailbreak" | "Data exfiltration" | "Credential exposure" | "Unauthorized access" | "Rate abuse";
 const CATEGORIES: Category[] = ["Prompt injection", "Prompt extraction", "Jailbreak", "Data exfiltration", "Credential exposure", "Unauthorized access", "Rate abuse"];
@@ -169,6 +170,7 @@ export function ThreatMatrix() {
   const real = useMemo(() => settings.audit.filter((a) => a.kind === "security").map(classify), [settings.audit]);
   // Drill messages are worded in the current language; real events keep the audit record's wording.
   const events = useMemo<Event[]>(() => [...real, ...(drill ? drills.map((d) => ({ ...d, message: t.drill[d.msg], actor: t.drillActor })) : [])].sort((a, b) => b.at - a.at), [real, drills, drill, t]);
+  const sampleMode = useSampleMode();
   const day = events.filter((e) => Date.now() - e.at < 86_400_000);
   const weight = day.reduce((s, e) => s + { low: 1, medium: 2, high: 4, critical: 8 }[e.severity], 0);
   const level = weight === 0 ? { label: t.levels.clear, tone: "text-os-emerald", pct: 4 } : weight < 8 ? { label: t.levels.guarded, tone: "text-os-cyan", pct: 30 } : weight < 20 ? { label: t.levels.elevated, tone: "text-amber-300", pct: 62 } : { label: t.levels.severe, tone: "text-red-400", pct: 92 };
@@ -192,17 +194,26 @@ export function ThreatMatrix() {
             <div className="h-full rounded-full bg-linear-to-r from-os-emerald via-amber-300 to-red-500 transition-[width] duration-700" style={{ width: `${level.pct}%` }} />
           </div>
         </div>
-        {[
-          [t.stats.injection, day.filter((e) => ["Prompt injection", "Prompt extraction", "Jailbreak"].includes(e.category)).length],
-          [t.stats.exfil, day.filter((e) => ["Data exfiltration", "Credential exposure"].includes(e.category)).length],
-          [t.stats.refused, day.filter((e) => e.category === "Unauthorized access").length],
-          [t.stats.mitigations, day.length],
-        ].map(([k, v]) => (
-          <div key={k} className="os-panel rounded-xl p-4">
-            <p className="os-label">{k}</p>
-            <p className="mt-1 font-mono text-[26px] tabular-nums text-white">{v}</p>
-          </div>
-        ))}
+        {(
+          [
+            [t.stats.injection, day.filter((e) => ["Prompt injection", "Prompt extraction", "Jailbreak"].includes(e.category)).length, SAMPLE.threats.injection],
+            [t.stats.exfil, day.filter((e) => ["Data exfiltration", "Credential exposure"].includes(e.category)).length, SAMPLE.threats.exfil],
+            [t.stats.refused, day.filter((e) => e.category === "Unauthorized access").length, SAMPLE.threats.refused],
+            [t.stats.mitigations, day.length, SAMPLE.threats.mitigations],
+          ] as const
+        ).map(([k, v, sample]) => {
+          // A real count always wins; a sample only stands in for a zero, and says so.
+          const useSample = sampleMode && v === 0;
+          return (
+            <div key={k} className="os-panel rounded-xl p-4">
+              <p className="os-label flex items-center justify-between gap-2">
+                {k}
+                {useSample && <SampleTag />}
+              </p>
+              <p className="mt-1 font-mono text-[26px] tabular-nums text-white">{useSample ? sample : v}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_1fr]">

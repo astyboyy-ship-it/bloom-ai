@@ -81,6 +81,8 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       const info = apply(r.data);
       const what = info.access ? `${info.access.role} access key ${info.access.keyId}` : TIER_INFO[info.tier].label;
       audit("license", `Activated ${what} for ${info.org}${info.dev ? " (development key)" : ""}`);
+      // The unlock reveal (components/onboarding/key-unlock-overlay) plays on explicit activations only.
+      if (info.access) window.dispatchEvent(new CustomEvent("bloom:key-unlock", { detail: info.access }));
       return { ok: true, info };
     },
     [apply],

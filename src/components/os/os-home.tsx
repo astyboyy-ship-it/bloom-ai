@@ -23,6 +23,8 @@ import { useOsCopy } from "./os-copy";
 import { TIER_PILL } from "./os-shell";
 import { useLicensingCopy } from "@/components/control-plane/copy";
 import { useOsTelemetry } from "./telemetry-context";
+import { SampleTelemetryStrip } from "@/components/onboarding/sample-data";
+import { TrustBadges } from "@/components/onboarding/trust-badges";
 
 const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
 
@@ -48,6 +50,8 @@ export function OsHome() {
   return (
     <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-5 sm:px-6">
       <ContextHeader live={live} />
+      <TrustBadges />
+      <SampleTelemetryStrip />
       <AdaptiveStrip />
       <ArchitectureLauncher runs={settings.runs} />
 

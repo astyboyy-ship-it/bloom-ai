@@ -77,8 +77,8 @@ function Shell({ children }: { children: React.ReactNode }) {
           {lc.modes.eval.banner}
         </div>
       )}
-      {/* Operator keys bypass the setup wizard. */}
-      {!settings.onboarded && role !== "operator" && path !== "/desk/settings" && (
+      {/* Access keys get their tier's guided setup right after the unlock reveal; the banner covers the rest. */}
+      {!settings.onboarded && !role && path !== "/desk/settings" && (
         <div className="flex flex-wrap items-center gap-3 border-b border-os-line bg-os-cyan/[0.04] px-4 py-2 text-[12.5px] text-white/75">
           <Sparkles className="size-4 shrink-0 text-os-cyan" />
           {t.shell.setup}

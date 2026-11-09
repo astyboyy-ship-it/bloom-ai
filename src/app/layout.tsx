@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif, Outfit } from 
 import { LanguageProvider } from "@/components/bloom/i18n";
 import { LicenseProvider } from "@/lib/license-context";
 import { TierThemeProvider } from "@/components/theme/tier-theme-provider";
+import { KeyUnlockOverlay } from "@/components/onboarding/key-unlock-overlay";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -45,7 +46,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <LanguageProvider>
           <LicenseProvider>
             {/* The access key decides the obsidian glass theme: accent, glass and density. */}
-            <TierThemeProvider>{children}</TierThemeProvider>
+            <TierThemeProvider>
+              {children}
+              <KeyUnlockOverlay />
+            </TierThemeProvider>
           </LicenseProvider>
         </LanguageProvider>
         <Toaster richColors />

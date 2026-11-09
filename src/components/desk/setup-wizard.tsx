@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,6 +14,8 @@ import { TIER_INFO, tierInfo } from "@/lib/license/tiers";
 import { useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
 import { readLogo } from "./logo";
+import { TierWizard } from "@/components/onboarding/tier-wizard";
+import { wizardFor } from "@/components/onboarding/wizard-state";
 import { audit, keyHeaders, requestHeaders, updateSettings, useDeskSettings, type DeskSettings, type ShiftDefault } from "./settings";
 
 const STEP_ICONS = [KeyRound, Plug, Building2, Stethoscope] as const;
@@ -215,18 +217,29 @@ export function SetupWizard() {
   const router = useRouter();
   const { settings } = useDeskSettings();
   const [diagnosticsPassed, setDiagnosticsPassed] = useState(false);
-  const { role } = useLicense();
-
-  // Operator keys bypass the setup wizard, including when one is activated mid-wizard.
-  useEffect(() => {
-    if (role === "operator") router.replace("/desk");
-  }, [role, router]);
+  const { access } = useLicense();
 
   const finish = () => {
     updateSettings({ onboarded: true });
     audit("system", t.completed);
     router.push("/desk");
   };
+
+  // Step 1 is the key. An access key (operator, agency, enterprise, demo partner) then gets its tier's guided
+  // setup in place of the generic steps; tier keys and Evaluation continue with providers, workspace, diagnostics.
+  if (wizardFor(access))
+    return (
+      <div className="os-backdrop relative isolate flex min-h-dvh flex-col px-4 py-8 font-sans text-white sm:px-6">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
+          <Link href="/">
+            <BloomWordmark className="text-[24px]" />
+          </Link>
+        </div>
+        <main className="mt-10">
+          <TierWizard />
+        </main>
+      </div>
+    );
 
   return (
     <div className="relative isolate flex min-h-dvh flex-col bg-ink px-4 py-8 font-sans text-white sm:px-6">

@@ -14,6 +14,8 @@ import { AGENT_LABEL } from "@/components/bloom/command/engine-work-text";
 import { localizeEngine, useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
 import { LAND_DOTS, MAP_H, MAP_W, project, PULSE_NODES, type PulseNode } from "./world";
+import { ArchitectureFeed } from "@/components/pulse/architecture-feed";
+import { useOnboardingCopy } from "@/components/onboarding/copy";
 
 type Pulse = { id: number; at: number; from: PulseNode; to: PulseNode; engine: EngineKey; text: string; mine?: boolean };
 
@@ -97,6 +99,8 @@ export function GlobalPulse() {
   const t = COPY[lang];
   const { settings } = useDeskSettings();
   const reduce = useReducedMotion();
+  const tabs = useOnboardingCopy().pulse.tabs;
+  const [tab, setTab] = useState<"world" | "feed">("world");
   const env = activeEnv(settings);
   const home = PULSE_NODES.find((n) => n.region === env.region) ?? PULSE_NODES[0];
   const [feed, setFeed] = useState<Pulse[]>([]);
@@ -146,11 +150,26 @@ export function GlobalPulse() {
       route="/desk/global-pulse"
       vars={{ city: cityOf(home, lang) }}
       actions={
-        <button type="button" onClick={() => setPaused((p) => !p)} className="flex items-center gap-1.5 rounded-full border border-os-line px-3.5 py-1.5 text-[12.5px] text-white/75 hover:text-white">
-          {paused ? <Play className="size-3.5 rtl:-scale-x-100" /> : <Pause className="size-3.5" />} {paused ? t.resume : t.pause}
-        </button>
+        <>
+          <div role="tablist" className="flex rounded-full border border-os-line p-0.5">
+            {(["world", "feed"] as const).map((k) => (
+              <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn("rounded-full px-3.5 py-1 text-[12.5px] transition-colors", tab === k ? "bg-os-cyan/15 text-os-cyan" : "text-white/60 hover:text-white")}>
+                {tabs[k]}
+              </button>
+            ))}
+          </div>
+          {tab === "world" && (
+            <button type="button" onClick={() => setPaused((p) => !p)} className="flex items-center gap-1.5 rounded-full border border-os-line px-3.5 py-1.5 text-[12.5px] text-white/75 hover:text-white">
+              {paused ? <Play className="size-3.5 rtl:-scale-x-100" /> : <Pause className="size-3.5" />} {paused ? t.resume : t.pause}
+            </button>
+          )}
+        </>
       }
     >
+      {tab === "feed" ? (
+        <ArchitectureFeed />
+      ) : (
+        <>
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
           [t.stats.perMinute, String(perMinute)],
@@ -245,6 +264,8 @@ export function GlobalPulse() {
           </ol>
         </section>
       </div>
+        </>
+      )}
     </OsPage>
   );
 }

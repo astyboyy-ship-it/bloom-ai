@@ -14,6 +14,7 @@ import { OsPage } from "./os-shell";
 import { useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
 import { useOsTelemetry } from "./telemetry-context";
+import { SAMPLE, SampleTag, useSampleMode } from "@/components/onboarding/sample-data";
 
 const KINDS: (AuditKind | "all")[] = ["all", "run", "approval", "security", "license", "credentials", "calibration", "member", "settings", "system"];
 
@@ -213,6 +214,7 @@ export function AuditBay() {
   const check = useMemo(() => verifyAudit(settings.audit), [settings.audit]);
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
   const rows = useMemo(() => [...settings.audit].reverse().filter((a) => (kind === "all" || a.kind === kind) && (!q || `${a.message} ${a.actor} ${a.env ?? ""} ${a.id}`.toLowerCase().includes(q.toLowerCase()))), [settings.audit, kind, q]);
+  const sampleMode = useSampleMode();
   const counts = useMemo(() => Object.fromEntries(KINDS.slice(1).map((k) => [k, settings.audit.filter((a) => a.kind === k).length])) as Record<AuditKind, number>, [settings.audit]);
 
   const verify = () => {
@@ -270,12 +272,17 @@ ${rows.map((a) => `<tr><td>${a.id}</td><td>${esc(new Date(a.at).toLocaleString(l
           </button>
         </div>
         <dl className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {(["run", "approval", "security", "license", "calibration"] as AuditKind[]).map((k) => (
-            <div key={k} className="os-panel rounded-xl px-3 py-2.5">
-              <dt className="os-label">{t.kinds[k]}</dt>
-              <dd className="mt-1 font-mono text-[20px] tabular-nums text-white">{counts[k]}</dd>
-            </div>
-          ))}
+          {(["run", "approval", "security", "license", "calibration"] as const).map((k) => {
+            // A real count always wins; a sample only stands in for a zero, and says so.
+            const useSample = sampleMode && counts[k] === 0;
+            return (
+              <div key={k} className="os-panel rounded-xl px-3 py-2.5">
+                <dt className="os-label">{t.kinds[k]}</dt>
+                <dd className="mt-1 font-mono text-[20px] tabular-nums text-white">{useSample ? SAMPLE.audit[k] : counts[k]}</dd>
+                {useSample && <SampleTag className="mt-1" />}
+              </div>
+            );
+          })}
         </dl>
       </div>
 
