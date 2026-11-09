@@ -1,14 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { Activity, Brain, KeyRound, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useLicense } from "@/lib/license-context";
 import { useLicensingCopy } from "./copy";
 import { ConsensusTerminal } from "./consensus-terminal";
 import { DatasetMonitor } from "./dataset-monitor";
 import { EngineMatrix } from "./engine-matrix";
 import { VectorTree } from "./vector-tree";
+import { OpsKpis } from "./ops-kpis";
+import { TopologyMap } from "./topology-map";
+import { TraceStream } from "./trace-stream";
+import { RoutingRules } from "./routing-rules";
+import { PromptBench } from "./prompt-bench";
+import { WorkspaceContext } from "./workspace-context";
+import { ClusterNodeManager } from "@/components/experience/views/enterprise-ops";
+
+type Tab = "operations" | "controls" | "intelligence";
+const TAB_KEY = "bloom-control-plane-tab";
+const TAB_ICONS = { operations: Activity, controls: SlidersHorizontal, intelligence: Brain };
 
 /**
  * /desk/control-plane: the Neural Control Plane. The middleware has already verified the key's signature and its
@@ -16,6 +29,24 @@ import { VectorTree } from "./vector-tree";
  */
 export function ControlPlane() {
   const c = useLicensingCopy().cp;
+  const o = useLicensingCopy().ops;
+  const [tab, setTab] = useState<Tab>("operations");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TAB_KEY) as Tab | null;
+      if (saved === "operations" || saved === "controls" || saved === "intelligence") setTab(saved);
+    } catch {
+      // Starts on Operations.
+    }
+  }, []);
+  const choose = (t: Tab) => {
+    setTab(t);
+    try {
+      localStorage.setItem(TAB_KEY, t);
+    } catch {
+      // Not remembered; fine.
+    }
+  };
   const { access, canAccessControlPlane } = useLicense();
   const router = useRouter();
   // Settings hydrate from local storage after the first render; judge access only once they have.
@@ -70,14 +101,57 @@ export function ControlPlane() {
         </dl>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 xl:grid-cols-2" style={{ gap: "var(--bloom-gap)" }}>
-        <EngineMatrix />
-        <ConsensusTerminal />
-        <VectorTree />
-        <div className="xl:col-span-2">
-          <DatasetMonitor />
-        </div>
+      <div role="tablist" aria-label={c.title} className="bloom-glass mt-6 inline-flex rounded-xl p-1">
+        {(["operations", "controls", "intelligence"] as const).map((t) => {
+          const Icon = TAB_ICONS[t];
+          return (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => choose(t)}
+              className={cn("flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-all duration-300", tab === t ? "bloom-edge-glow bg-os-cyan/[0.08] text-os-cyan" : "border border-transparent text-white/50 hover:text-white")}
+            >
+              <Icon className="size-3.5" /> {o.tabs[t]}
+            </button>
+          );
+        })}
       </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="mt-4 grid grid-cols-1 xl:grid-cols-2" style={{ gap: "var(--bloom-gap)" }}>
+          {tab === "operations" && (
+            <>
+              <div className="xl:col-span-2">
+                <OpsKpis />
+              </div>
+              <TopologyMap />
+              <div className="xl:col-span-2">
+                <TraceStream />
+              </div>
+              <EngineMatrix />
+            </>
+          )}
+          {tab === "controls" && (
+            <>
+              <RoutingRules />
+              <PromptBench />
+              <ClusterNodeManager />
+              <WorkspaceContext />
+            </>
+          )}
+          {tab === "intelligence" && (
+            <>
+              <ConsensusTerminal />
+              <VectorTree />
+              <div className="xl:col-span-2">
+                <DatasetMonitor />
+              </div>
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </main>
   );
 }
