@@ -38,5 +38,27 @@ export function markWizardDone(keyId: string) {
   }
 }
 
+/**
+ * UI state that belongs to one key, not to the workspace. When a different key is activated it is cleared so
+ * the new key starts clean: the enterprise domain choice, cluster cordon/drain state, the eval tour position and
+ * the demo's last architecture. Agency client workspaces are tenant data and are kept; per-key setup completion
+ * is tracked by keyId, so a new key always gets its own guided setup.
+ */
+const KEY_SCOPED = ["bloom-enterprise-domain", "bloom-enterprise-clusters", "bloom-eval-tour", "bloom-demo-target"];
+const LAST_KEY = "bloom-last-access-key";
+
+/** Call on every explicit key activation. Returns true when the key differs from the last one activated. */
+export function onKeyActivated(keyId: string | null): boolean {
+  try {
+    const last = localStorage.getItem(LAST_KEY);
+    if (last === (keyId ?? "")) return false;
+    for (const k of KEY_SCOPED) localStorage.removeItem(k);
+    localStorage.setItem(LAST_KEY, keyId ?? "");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Fired by the license context on an explicit activation of an access key (not on silent revalidation). */
 export const UNLOCK_EVENT = "bloom:key-unlock";

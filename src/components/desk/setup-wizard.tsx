@@ -15,6 +15,7 @@ import { useCommandCopy } from "@/components/bloom/command/locale";
 import type { Lang } from "@/components/bloom/i18n";
 import { readLogo } from "./logo";
 import { TierWizard } from "@/components/onboarding/tier-wizard";
+import { useLicensingCopy } from "@/components/control-plane/copy";
 import { wizardFor } from "@/components/onboarding/wizard-state";
 import { audit, keyHeaders, requestHeaders, updateSettings, useDeskSettings, type DeskSettings, type ShiftDefault } from "./settings";
 
@@ -236,7 +237,8 @@ export function SetupWizard() {
           </Link>
         </div>
         <main className="mt-10">
-          <TierWizard />
+          {/* Keyed by key: activating another key here restarts the wizard instead of reusing the old one's steps. */}
+          <TierWizard key={access?.keyId} />
         </main>
       </div>
     );
@@ -308,6 +310,7 @@ export function SetupWizard() {
 
 function LicenseStep({ t, lang }: { t: WT; lang: Lang }) {
   const tiers = tierInfo(lang);
+  const roleLabel = useLicensingCopy().roleLabel;
   const { tier, info, engines, activate, devIssue, devAvailable, checking } = useLicense();
   const [key, setKey] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -318,10 +321,11 @@ function LicenseStep({ t, lang }: { t: WT; lang: Lang }) {
         onSubmit={async (e) => {
           e.preventDefault();
           const r = await activate(key);
-          setMsg(r.ok ? { ok: true, text: t.activated(tiers[r.info.tier].label, r.info.org) } : { ok: false, text: r.message });
+          // Access keys are named by role ("Tier 4 // Super Operator"), tier keys by their tier.
+          setMsg(r.ok ? { ok: true, text: t.activated(r.info.access ? roleLabel[r.info.access.role] : tiers[r.info.tier].label, r.info.org) } : { ok: false, text: r.message });
         }}
       >
-        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="BLOOM-…" dir="ltr" spellCheck={false} autoComplete="off" className={cn(input, "font-mono text-[12.5px]")} aria-label={t.licenseKey} />
+        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="BLOOM-… / BLOOMK-…" dir="ltr" spellCheck={false} autoComplete="off" className={cn(input, "font-mono text-[12.5px]")} aria-label={t.licenseKey} />
         <button type="submit" disabled={!key.trim() || checking} className="flex items-center gap-1.5 rounded-xl border border-[#f0d59a]/45 px-4 text-[13px] text-[#f3e2b8] hover:bg-[#f0d59a]/10 disabled:opacity-40">
           {checking ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />} {t.validate}
         </button>

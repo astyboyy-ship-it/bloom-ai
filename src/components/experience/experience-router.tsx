@@ -124,7 +124,8 @@ export function ExperienceRouter() {
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div key={experience} data-experience={experience} className="flex min-w-0 flex-1 flex-col" {...motionProps}>
+      {/* Keyed by experience and key: a different key of the same role still remounts with clean state. */}
+      <motion.div key={`${experience}:${access?.keyId ?? ""}`} data-experience={experience} className="flex min-w-0 flex-1 flex-col" {...motionProps}>
         {experience !== "standard" && (
           <div className="mx-auto w-full max-w-[1500px] px-4 pt-5 sm:px-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-os-cyan/30 bg-[var(--bloom-glass)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">

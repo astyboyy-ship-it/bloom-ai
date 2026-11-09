@@ -5,6 +5,7 @@ import { ENGINE_ORDER, type EngineKey } from "@/components/bloom/command/engines
 import { audit, updateSettings, useDeskSettings, type LicenseInfo } from "@/components/desk/settings";
 import { TIER_ENGINES, TIER_INFO, type Tier } from "@/lib/license/tiers";
 import { engineScope } from "@/lib/licensing/codec";
+import { onKeyActivated, UNLOCK_EVENT } from "@/components/onboarding/wizard-state";
 import { DEFAULT_THEME, type BloomLicensePayload, type BloomPermissions, type BloomThemeConfig, type KeyRole } from "@/lib/licensing/types";
 
 /**
@@ -82,7 +83,9 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       const what = info.access ? `${info.access.role} access key ${info.access.keyId}` : TIER_INFO[info.tier].label;
       audit("license", `Activated ${what} for ${info.org}${info.dev ? " (development key)" : ""}`);
       // The unlock reveal (components/onboarding/key-unlock-overlay) plays on explicit activations only.
-      if (info.access) window.dispatchEvent(new CustomEvent("bloom:key-unlock", { detail: info.access }));
+      // A different key starts from clean per-key UI state (see onboarding/wizard-state).
+      onKeyActivated(info.access?.keyId ?? null);
+      if (info.access) window.dispatchEvent(new CustomEvent(UNLOCK_EVENT, { detail: info.access }));
       return { ok: true, info };
     },
     [apply],
