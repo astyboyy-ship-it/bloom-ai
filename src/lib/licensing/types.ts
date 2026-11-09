@@ -13,6 +13,8 @@ export const BLOOM_ACCENTS = {
   emerald: "#00FF88",
   pink: "#FF007A",
   amber: "#FFB000",
+  /** Evaluation keys: a softer emerald that reads as "preview", not "live". */
+  softEmerald: "#10B981",
 } as const;
 export type BloomAccent = (typeof BLOOM_ACCENTS)[keyof typeof BLOOM_ACCENTS];
 

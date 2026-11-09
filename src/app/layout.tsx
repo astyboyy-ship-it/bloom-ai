@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif, Outfit } from "next/font/google";
 import { LanguageProvider } from "@/components/bloom/i18n";
 import { LicenseProvider } from "@/lib/license-context";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { TierThemeProvider } from "@/components/theme/tier-theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <LanguageProvider>
           <LicenseProvider>
             {/* The access key decides the obsidian glass theme: accent, glass and density. */}
-            <ThemeProvider>{children}</ThemeProvider>
+            <TierThemeProvider>{children}</TierThemeProvider>
           </LicenseProvider>
         </LanguageProvider>
         <Toaster richColors />

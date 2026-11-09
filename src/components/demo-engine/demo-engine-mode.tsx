@@ -51,7 +51,7 @@ function Sparkline({ values }: { values: number[] }) {
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${30 - ((v - lo) / span) * 28 - 1}`).join(" ");
   return (
     <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-16 w-full" aria-hidden>
-      <polyline points={`0,30 ${pts} 100,30`} fill="rgb(var(--bloom-accent-rgb) / 0.08)" stroke="none" />
+      <polyline points={`0,30 ${pts} 100,30`} fill="color-mix(in srgb, var(--tier-accent) 8%, transparent)" stroke="none" />
       <polyline points={pts} fill="none" stroke="var(--bloom-accent)" strokeWidth={0.8} vectorEffect="non-scaling-stroke" />
     </svg>
   );

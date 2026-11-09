@@ -19,7 +19,7 @@
   --color-os-bg: #07080c;
   --color-os-panel: #0c0e14;
   --color-os-raise: #11141c;
-  /* Morphs to the access key accent (ThemeProvider sets --bloom-accent); cyan when no key sets one. */
+  /* Morphs to the access key accent (TierThemeProvider animates --tier-accent); cyan when no key sets one. */
   --color-os-cyan: var(--bloom-accent, #00f0ff);
   --color-os-emerald: #34f5b5;
   --color-os-violet: #a78bfa;
@@ -1161,10 +1161,10 @@
    Operating Desk surfaces
    --------------------------------------------------------------------------------------------------- */
 
-/* A translucent obsidian panel with a razor-thin cyan edge and a faint inner highlight. */
+/* A translucent obsidian panel with a razor-thin tier-accent edge and a faint inner highlight. */
 @utility os-panel {
   background: linear-gradient(180deg, rgb(17 20 28 / 0.78), rgb(12 14 20 / 0.72));
-  border: 1px solid rgb(0 240 255 / 0.12);
+  border: 1px solid color-mix(in srgb, var(--tier-accent) 12%, transparent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.04),
     0 24px 60px -32px rgb(0 0 0 / 0.9);
@@ -1172,23 +1172,23 @@
   backdrop-filter: blur(20px) saturate(140%);
 }
 
-/* The OS backdrop: deep obsidian, a cyan light cone from the top, an emerald glow low left, gold far right,
-   and a fine telemetry grid that fades toward the edges. */
+/* The OS backdrop: deep obsidian, an ambient light cone in the tier accent from the top, an emerald glow low
+   left, gold far right, and a fine telemetry grid in the tier accent. */
 @utility os-backdrop {
   background-color: #07080c;
   background-image:
-    radial-gradient(60% 45% at 50% -8%, rgb(0 240 255 / 0.1), transparent 70%),
+    radial-gradient(60% 45% at 50% -8%, color-mix(in srgb, var(--tier-accent) 11%, transparent), transparent 70%),
     radial-gradient(40% 35% at 6% 92%, rgb(52 245 181 / 0.07), transparent 70%),
     radial-gradient(35% 30% at 96% 70%, rgb(240 213 154 / 0.06), transparent 70%),
-    linear-gradient(rgb(0 240 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(0 240 255 / 0.035) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--tier-accent) 3.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--tier-accent) 3.5%, transparent) 1px, transparent 1px);
   background-size: auto, auto, auto, 44px 44px, 44px 44px;
 }
 
-/* Glowing cyan telemetry text. */
+/* Glowing telemetry text in the tier accent. */
 @utility os-glow {
-  color: #8ff8ff;
-  text-shadow: 0 0 12px rgb(0 240 255 / 0.45);
+  color: color-mix(in srgb, var(--tier-accent) 55%, white);
+  text-shadow: 0 0 12px var(--tier-glow);
 }
 
 /* Section label: monospace, wide-tracked, quiet. */
@@ -1246,8 +1246,8 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #232b3a;
-  border-color: rgb(0 240 255 / 0.45);
-  box-shadow: 0 0 8px rgb(0 240 255 / 0.55);
+  border-color: color-mix(in srgb, var(--tier-accent) 45%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tier-accent) 55%, transparent);
 }
 
 @keyframes fade-in {
@@ -1262,11 +1262,31 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------
-   BLOOM obsidian glass theme engine. ThemeProvider writes these from the access key's themeConfig on <html>;
-   the defaults below are what a desk with no access key looks like. The base is always obsidian #07080C.
+   BLOOM obsidian glass theme engine. TierThemeProvider writes these from the access key's themeConfig on
+   <html>; the defaults below are what a desk with no access key looks like. The base is always obsidian.
+
+   --tier-accent and --tier-glow are registered as <color>, so the browser can interpolate them: when a key
+   changes, every surface built on them (os-cyan, os-line, glass, glows, badges, the ambient backdrop) fades to
+   the new tier instead of snapping. --bloom-accent follows --tier-accent for the older consumers.
    --------------------------------------------------------------------------------------------------- */
+@property --tier-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #00f0ff;
+}
+@property --tier-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(0 240 255 / 0.45);
+}
 :root {
-  --bloom-accent: #00f0ff;
+  --tier-accent: #00f0ff;
+  --tier-glow: rgb(0 240 255 / 0.45);
+  transition:
+    --tier-accent 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --tier-glow 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  --bloom-accent: var(--tier-accent);
+  /* Kept for inline styles that predate the tier variables; set (not animated) by TierThemeProvider. */
   --bloom-accent-rgb: 0 240 255;
   --bloom-obsidian-bg: #07080c;
   --bloom-glass: rgba(7, 8, 12, 0.85);
@@ -1290,27 +1310,27 @@
 /* A pane of key-tinted obsidian glass. */
 @utility bloom-glass {
   background: var(--bloom-glass);
-  border: 1px solid rgb(var(--bloom-accent-rgb) / 0.16);
+  border: 1px solid color-mix(in srgb, var(--tier-accent) 16%, transparent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.04),
     0 0 0 1px rgb(0 0 0 / 0.4),
     0 24px 60px -32px rgb(0 0 0 / 0.95),
-    0 0 40px -28px rgb(var(--bloom-accent-rgb) / 0.55);
+    0 0 40px -28px var(--tier-glow);
   -webkit-backdrop-filter: blur(var(--bloom-glass-blur)) saturate(140%);
   backdrop-filter: blur(var(--bloom-glass-blur)) saturate(140%);
 }
 
 /* Glowing accent text and edges in the key's color. */
 @utility bloom-glow {
-  color: var(--bloom-accent);
-  text-shadow: 0 0 14px rgb(var(--bloom-accent-rgb) / 0.55);
+  color: var(--tier-accent);
+  text-shadow: 0 0 14px var(--tier-glow);
 }
 @utility bloom-edge-glow {
-  border-color: rgb(var(--bloom-accent-rgb) / 0.55);
+  border-color: color-mix(in srgb, var(--tier-accent) 55%, transparent);
   box-shadow:
-    0 0 0 1px rgb(var(--bloom-accent-rgb) / 0.18),
-    0 0 24px -6px rgb(var(--bloom-accent-rgb) / 0.7),
-    inset 0 0 18px -10px rgb(var(--bloom-accent-rgb) / 0.6);
+    0 0 0 1px color-mix(in srgb, var(--tier-accent) 18%, transparent),
+    0 0 24px -6px var(--tier-glow),
+    inset 0 0 18px -10px color-mix(in srgb, var(--tier-accent) 60%, transparent);
 }
 
 @keyframes bloom-pulse {

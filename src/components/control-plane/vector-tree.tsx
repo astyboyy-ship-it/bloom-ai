@@ -178,7 +178,7 @@ export function VectorTree() {
             <figure className="flex flex-col items-center gap-2 rounded-lg border border-white/[0.06] bg-black/30 p-3">
               <div className="grid grid-cols-16 gap-px" style={{ gridTemplateColumns: "repeat(16, minmax(0, 1fr))" }} title={`${c.dims} · ${sel.hash}`}>
                 {vec.map((v, i) => (
-                  <span key={i} className="size-2.5 rounded-[1px]" style={{ background: v >= 0 ? `rgb(var(--bloom-accent-rgb) / ${Math.abs(v) / max})` : `rgb(255 0 122 / ${Math.abs(v) / max})`, outline: "1px solid rgb(255 255 255 / 0.03)" }} />
+                  <span key={i} className="size-2.5 rounded-[1px]" style={{ background: v >= 0 ? `color-mix(in srgb, var(--tier-accent) ${((Math.abs(v) / max) * 100).toFixed(0)}%, transparent)` : `rgb(255 0 122 / ${Math.abs(v) / max})`, outline: "1px solid rgb(255 255 255 / 0.03)" }} />
                 ))}
               </div>
               <figcaption className="text-center font-mono text-[10px] text-white/45">

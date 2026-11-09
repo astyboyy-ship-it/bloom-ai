@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Building2, Cpu, Factory, Gauge, Layers, Plus, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,56 @@ export function OperatorDeck() {
 
 /* ----------------------------------------------------------------------------------------------- Agency */
 
-type Client = { id: string; name: string; seats: number; nodes: number };
+export type Client = { id: string; name: string; seats: number; nodes: number };
+
+/**
+ * Agency client workspaces, shared by the provisioner and the revenue hub so both stay in step. Kept in
+ * localStorage; subscribers re-render on every change, including changes from another tab.
+ */
+const CLIENTS_KEY = "bloom-agency-clients";
+const NO_CLIENTS: Client[] = [];
+const clientListeners = new Set<() => void>();
+let clientCache: { raw: string | null; list: Client[] } = { raw: null, list: NO_CLIENTS };
+function readClients(): Client[] {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(CLIENTS_KEY);
+  } catch {
+    // Storage blocked: no clients.
+  }
+  if (raw !== clientCache.raw) {
+    let list = NO_CLIENTS;
+    try {
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      if (Array.isArray(parsed)) list = parsed as Client[];
+    } catch {
+      // Corrupt entry: treat as empty.
+    }
+    clientCache = { raw, list };
+  }
+  return clientCache.list;
+}
+function writeClients(list: Client[]) {
+  try {
+    localStorage.setItem(CLIENTS_KEY, JSON.stringify(list));
+  } catch {
+    // Kept for this page view only.
+    clientCache = { raw: JSON.stringify(list), list };
+  }
+  clientListeners.forEach((l) => l());
+}
+function subscribeClients(l: () => void) {
+  clientListeners.add(l);
+  const onStorage = (e: StorageEvent) => e.key === CLIENTS_KEY && l();
+  window.addEventListener("storage", onStorage);
+  return () => {
+    clientListeners.delete(l);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+export function useAgencyClients(): [Client[], (list: Client[]) => void] {
+  return [useSyncExternalStore(subscribeClients, readClients, () => NO_CLIENTS), writeClients];
+}
 
 /** Agency mode: a multi-tenant client switcher and a seat / node allocation deck bounded by the key's limits. */
 export function AgencyDeck() {
@@ -88,7 +137,7 @@ export function AgencyDeck() {
   const { settings } = useDeskSettings();
   const maxClients = permissions?.maxClients ?? 0;
   const maxNodes = permissions?.maxActiveNodes ?? 0;
-  const [clients, setClients] = useStored<Client[]>("bloom-agency-clients", []);
+  const [clients, setClients] = useAgencyClients();
   const [name, setName] = useState("");
   const active = clients.find((x) => x.name === settings.project.client) ?? null;
   const allocated = clients.reduce((s, x) => s + x.nodes, 0);
