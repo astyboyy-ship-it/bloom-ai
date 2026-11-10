@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { ENGINE_ORDER, ENGINES, type EngineKey } from "@/components/bloom/command/engines";
-import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
+import { CORS, fail, preflight, readJson } from "@/lib/demo-http";
+import { decideLive, RUN_LIMITS, withNotice } from "@/lib/guard/live-access";
+import { rateLimit } from "@/lib/guard/rate-limit";
+import { meterRun } from "@/lib/guard/spend";
 import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
 import { readOnlyRefusal, resolveLicense } from "@/lib/licensing/server";
@@ -30,8 +33,6 @@ export const OPTIONS = preflight;
 /** Runs an architecture or a builder pipeline: its engines in order, streamed as server-sent events. */
 export async function POST(req: Request) {
   const keys = ownKeys(req);
-  const own = Boolean(keys.anthropic || keys.openrouter);
-  if (rateLimited(req, own ? "pipeline-own" : "pipeline", own ? 20 : 4)) return fail(429, "Too many runs. Try again in a minute.");
   const json = await readJson(req);
   if (!json.ok) return fail(400, "Request body must be valid JSON.");
   const body = Body.safeParse(json.body);
@@ -43,6 +44,11 @@ export async function POST(req: Request) {
   if (refusal) return fail(403, refusal, { tier, readOnly: true });
   const missing = body.data.engines.filter((k) => !license.engines.includes(k));
   if (missing.length) return fail(403, `${body.data.label} needs ${missing.map((k) => ENGINES[k].name).join(", ")}, which ${missing.length === 1 ? "isn't" : "aren't"} in ${license.label}.`, { tier, missing });
+
+  // Live on the server's model key only for a verified license under its spend caps; otherwise simulation.
+  const decision = await decideLive(req, license, keys, req.headers.get("x-bloom-license"));
+  const limit = await rateLimit("pipeline", decision.identity, RUN_LIMITS.pipeline[decision.tier]);
+  if (!limit.ok) return fail(429, "Too many runs. Try again in a minute.", { limit: limit.limit });
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -57,24 +63,27 @@ export async function POST(req: Request) {
         }
       };
       const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
-      const trace = traceRun({ kind: "pipeline", target: body.data.id, engines: body.data.engines, command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`));
+      const sse = (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
+      const trace = traceRun({ kind: "pipeline", target: body.data.id, engines: body.data.engines, command: body.data.command }, withNotice(decision.notice, sse));
+      const meter = meterRun(decision.identity, decision.serverKey, trace.emit);
       try {
         await runPipeline(
           { id: body.data.id, label: body.data.label, engines: body.data.engines },
           { command: body.data.command },
           {
-            emit: trace.emit,
+            emit: meter.emit,
             signal: req.signal,
             lang: body.data.lang,
             keys,
             calibrations: body.data.calibrations,
             allowed: license.engines,
+            serverKey: decision.serverKey,
           },
         );
       } finally {
         clearInterval(keepAlive);
-        // The trace write must land before the response closes (serverless functions freeze after it).
-        await trace.flush();
+        // Trace and spend writes must land before the response closes (serverless functions freeze after it).
+        await Promise.all([trace.flush(), meter.flush()]);
         open = false;
         try {
           controller.close();

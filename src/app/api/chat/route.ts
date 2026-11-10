@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ENGINE_ORDER } from "@/components/bloom/command/engines";
-import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
+import { CORS, fail, preflight, readJson } from "@/lib/demo-http";
+import { clientIp, rateLimit } from "@/lib/guard/rate-limit";
+import { checkSpend } from "@/lib/guard/spend";
 import { provider, streamReply } from "@/lib/command/chat";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +23,13 @@ export const OPTIONS = preflight;
 
 /** The engines' live Neural Breakdown: streams the engine's pitch back as plain text. */
 export async function POST(req: Request) {
-  if (rateLimited(req, "command-chat", 10)) return fail(429, "Too many requests. Try again in a minute.");
+  // Public by design (landing-page chat), so it is bounded three ways: per caller, across all callers (so rotating
+  // IPs can't multiply the cost), and by the deployment's daily live-spend cap shared with engine runs.
+  const ip = await rateLimit("chat", clientIp(req), 10);
+  if (!ip.ok) return fail(429, "Too many requests. Try again in a minute.");
+  const global = await rateLimit("chat-global", "all", 120);
+  if (!global.ok) return fail(429, "Live chat is busy. Try again in a minute.");
+  if (!(await checkSpend("chat")).ok) return fail(503, "Live chat is paused for today. It resumes at 00:00 UTC.");
   const json = await readJson(req);
   if (!json.ok) return fail(400, "Request body must be valid JSON.");
   const parsed = ChatSchema.safeParse(json.body);

@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 import type { RunEvent } from "@/lib/engines/events";
 import { redactSecrets } from "@/lib/security/injection";
+import { kv, kvConfig, type KvConfig } from "@/lib/kv";
 import { addToSummary, emptySummary, type TraceStoreKind, type TraceSummary } from "./summary";
 
 /**
@@ -160,29 +161,7 @@ const memoryStore: TraceStore = {
 const LIST = "bloom:datasets:trace_log";
 const SEQ = "bloom:datasets:trace_seq";
 
-function kvConfig(): { url: string; token: string } | null {
-  const url = (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL)?.replace(/\/+$/, "");
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : null;
-}
-
-/** Runs Redis commands in one round trip over the Upstash REST pipeline endpoint. */
-async function kv(cfg: { url: string; token: string }, commands: (string | number)[][]): Promise<unknown[]> {
-  const res = await fetch(`${cfg.url}/pipeline`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(commands),
-    cache: "no-store",
-    signal: AbortSignal.timeout(4000),
-  });
-  if (!res.ok) throw new Error(`KV ${res.status}`);
-  const out = (await res.json()) as { result?: unknown; error?: string }[];
-  const failed = out.find((x) => x.error);
-  if (failed) throw new Error(`KV ${failed.error}`);
-  return out.map((x) => x.result);
-}
-
-function kvStore(cfg: { url: string; token: string }): TraceStore {
+function kvStore(cfg: KvConfig): TraceStore {
   return {
     kind: "kv",
     label: "Vercel KV / Redis",

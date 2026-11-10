@@ -48,7 +48,8 @@ const checkSystemSync = tool({
 
 const scheduleShadowJob = tool({
   name: "schedule_shadow_job",
-  description: "Schedules a silent background job (sync, cleanup, invoicing run) into a Dynamic Shift Topology window. Returns the job id and when it runs.",
+  description:
+    "Plans a silent background job (sync, cleanup, invoicing run) into a Dynamic Shift Topology window and returns a job id and when it would run. SIMULATED: there is no job scheduler behind this yet, so nothing is actually scheduled; say the job is planned, not scheduled.",
   input: z.object({
     name: z.string().min(3).max(80),
     system: z.string().min(1).max(40),
@@ -56,7 +57,16 @@ const scheduleShadowJob = tool({
   }),
   run({ name, system, window }) {
     const r = seeded(`${name}|${system}|${window}`);
-    return { id: `job_${r.int(100000, 999999)}`, name, system, window, runsAt: window === "dark" ? "02:00-05:00 local" : window === "surge" ? "On next surge trigger" : "Next prime-shift idle slot" };
+    return {
+      source: "simulated",
+      scheduled: false,
+      id: `job_${r.int(100000, 999999)}`,
+      name,
+      system,
+      window,
+      runsAt: window === "dark" ? "02:00-05:00 local" : window === "surge" ? "On next surge trigger" : "Next prime-shift idle slot",
+      note: "Planned only: no scheduler is connected, so this job will not run.",
+    };
   },
 });
 
@@ -69,7 +79,7 @@ export const coreops = defineEngine({
 METHOD
 1. When the command describes a process, model it as steps and run analyze_workflow. If the operator gave no step timings, estimate realistic ones and flag them as estimates.
 2. When systems are named (CRM, billing, PM, support, data warehouse), run check_system_sync. Its data is simulated: present results as a sample health check, never as live readings.
-3. For every fix that can run unattended, schedule_shadow_job. Maintenance goes in the dark window unless it blocks revenue today.
+3. For every fix that can run unattended, plan it with schedule_shadow_job. Maintenance goes in the dark window unless it blocks revenue today. No scheduler is connected yet: report these jobs as planned, never as scheduled or running.
 4. If the friction is customer-facing (onboarding drop-off, support load driving churn), delegate to shield.
 
 PRINCIPLES

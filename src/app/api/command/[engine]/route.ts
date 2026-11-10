@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { isEngineKey } from "@/components/bloom/command/engines";
-import { CORS, fail, preflight, rateLimited, readJson } from "@/lib/demo-http";
+import { CORS, fail, preflight, readJson } from "@/lib/demo-http";
+import { decideLive, RUN_LIMITS, withNotice } from "@/lib/guard/live-access";
+import { rateLimit } from "@/lib/guard/rate-limit";
+import { meterRun } from "@/lib/guard/spend";
 import { CalibrationsSchema } from "@/lib/engines/calibration";
 import type { RunEvent } from "@/lib/engines/events";
 import { TIER_INFO, upgradeTierFor } from "@/lib/license/tiers";
@@ -38,9 +41,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
     return fail(403, `${engine} isn't included in ${license.label}. Upgrade to ${TIER_INFO[need].label} to run it.`, { tier, requires: need });
   }
   const keys = ownKeys(req);
-  // Runs on the operator's own key cost the server nothing, so they get more room.
-  const own = Boolean(keys.anthropic || keys.openrouter);
-  if (rateLimited(req, own ? "command-run-own" : "command-run", own ? 30 : 6)) return fail(429, "Too many runs. Try again in a minute.");
+  // Live on the server's model key only for a verified license under its spend caps; otherwise simulation.
+  const decision = await decideLive(req, license, keys, req.headers.get("x-bloom-license"));
+  const limit = await rateLimit("command", decision.identity, RUN_LIMITS.command[decision.tier]);
+  if (!limit.ok) return fail(429, "Too many runs. Try again in a minute.", { limit: limit.limit });
   const json = await readJson(req);
   if (!json.ok) return fail(400, "Request body must be valid JSON.");
   const body = Body.safeParse(json.body);
@@ -60,10 +64,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
       };
       // Keeps proxies from closing the connection while a model thinks between events.
       const keepAlive = setInterval(() => send(": keep-alive\n\n"), 15_000);
-      const trace = traceRun({ kind: "engine", target: engine, engines: [engine], command: body.data.command }, (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`));
+      const sse = (e: RunEvent) => send(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
+      const trace = traceRun({ kind: "engine", target: engine, engines: [engine], command: body.data.command }, withNotice(decision.notice, sse));
+      const meter = meterRun(decision.identity, decision.serverKey, trace.emit);
       try {
         await runCommand(engine, { command: body.data.command, params: body.data.params }, {
-          emit: trace.emit,
+          emit: meter.emit,
+          serverKey: decision.serverKey,
           signal: req.signal,
           lang: body.data.lang,
           keys,
@@ -72,8 +79,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ engine:
         });
       } finally {
         clearInterval(keepAlive);
-        // The trace write must land before the response closes (serverless functions freeze after it).
-        await trace.flush();
+        // Trace and spend writes must land before the response closes (serverless functions freeze after it).
+        await Promise.all([trace.flush(), meter.flush()]);
         open = false;
         try {
           controller.close();

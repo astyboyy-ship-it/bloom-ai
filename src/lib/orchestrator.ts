@@ -41,12 +41,18 @@ const openrouterModels = () => (process.env.COMMAND_OPENROUTER_MODELS ?? "anthro
 const openrouterBase = () => (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/$/, "");
 const anthropicModel = () => process.env.COMMAND_MODEL?.trim() || "claude-opus-5-5";
 
-export function runtime(own: OwnKeys = {}): Runtime {
+/**
+ * `serverKey` must be true for a run to spend the SERVER's provider key (LLM_API_KEY / ANTHROPIC_API_KEY /
+ * OPENROUTER_API_KEY). It is off by default: the routes grant it only to verified license keys under their daily
+ * spend cap. Without it a run uses the operator's own key if one was sent, and otherwise deterministic simulation.
+ */
+export function runtime(own: OwnKeys = {}, serverKey = false): Runtime {
   if (own.anthropic) return { mode: "live", provider: "anthropic", model: anthropicModel(), key: own.anthropic };
   if (own.openrouter) {
     const models = openrouterModels();
     return { mode: "live", provider: "openrouter", model: models[0], models, key: own.openrouter, baseUrl: openrouterBase() };
   }
+  if (!serverKey) return { mode: "simulation", provider: "simulation", model: "scripted" };
   const llm = process.env.LLM_API_KEY?.trim();
   const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || (llm?.startsWith("sk-ant-") ? llm : undefined);
   const openrouterKey = process.env.OPENROUTER_API_KEY?.trim() || (llm?.startsWith("sk-or-") ? llm : undefined);
@@ -69,8 +75,8 @@ export function runtime(own: OwnKeys = {}): Runtime {
  */
 const promptOverridesAlways = () => process.env.COMMAND_ALLOW_PROMPT_OVERRIDES === "true";
 
-export function manifest(own: OwnKeys = {}, detail = false): CommandManifest {
-  const rt = runtime(own);
+export function manifest(own: OwnKeys = {}, detail = false, serverKey = false): CommandManifest {
+  const rt = runtime(own, serverKey);
   return {
     mode: rt.mode,
     provider: rt.provider,
@@ -202,10 +208,12 @@ export async function runCommand(
     calibrations?: Partial<Record<EngineKey, Calibration>>;
     /** Engines the license unlocks; defaults to all (the route always passes the caller's). */
     allowed?: EngineKey[];
+    /** May this run spend the server's provider key? See runtime(). Defaults to no. */
+    serverKey?: boolean;
   },
 ) {
   const keys = opts.keys ?? {};
-  const rt = runtime(keys);
+  const rt = runtime(keys, opts.serverKey ?? false);
   const run: Run = {
     rt,
     emit: opts.emit,
@@ -262,10 +270,10 @@ export async function runCommand(
 export async function runPipeline(
   spec: { id: string; label: string; engines: EngineKey[] },
   input: { command: string },
-  opts: { emit: (e: RunEvent) => void; signal: AbortSignal; lang?: Lang; keys?: OwnKeys; calibrations?: Partial<Record<EngineKey, Calibration>>; allowed: EngineKey[] },
+  opts: { emit: (e: RunEvent) => void; signal: AbortSignal; lang?: Lang; keys?: OwnKeys; calibrations?: Partial<Record<EngineKey, Calibration>>; allowed: EngineKey[]; serverKey?: boolean },
 ) {
   const keys = opts.keys ?? {};
-  const rt = runtime(keys);
+  const rt = runtime(keys, opts.serverKey ?? false);
   const calibrations = Object.fromEntries(spec.engines.map((k) => [k, { ...(opts.calibrations?.[k] ?? DEFAULT_CALIBRATION), allowDelegation: false }])) as Partial<Record<EngineKey, Calibration>>;
   const run: Run = { rt, emit: opts.emit, signal: opts.signal, lang: opts.lang ?? "en", ownKey: Boolean(keys.anthropic || keys.openrouter), calibrations, allowed: opts.allowed, usage: { input: 0, output: 0 }, agents: 0, tools: 0 };
   if (rt.provider === "anthropic") run.client = new Anthropic({ apiKey: rt.key });
