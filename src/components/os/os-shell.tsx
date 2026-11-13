@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, ChevronDown, Cpu, Eye, Gauge, KeyRound, Presentation, Server, Sparkles, UserRound } from "lucide-react";
+import { Activity, ChevronDown, Cpu, Eye, Gauge, KeyRound, Layers, Presentation, Server, Sparkles, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
@@ -20,6 +20,7 @@ import { useOsCopy, type NavGroupKey, type PageRoute } from "./os-copy";
 import { TelemetryProvider, useOsTelemetry } from "./telemetry-context";
 import { useLicensingCopy } from "@/components/control-plane/copy";
 import { KeyRoleBadge } from "@/components/control-plane/key-badge";
+import { useOnboardingCopy } from "@/components/onboarding/copy";
 
 export const TIER_PILL: Record<Tier, string> = { evaluation: "EVAL", tier1: "TIER 1", tier2: "TIER 2", tier3: "TIER 3", admin: "MASTER ADMIN" };
 
@@ -97,6 +98,7 @@ function Header() {
   const { settings } = useDeskSettings();
   const { tier, engines, role, canAccessControlPlane } = useLicense();
   const lc = useLicensingCopy();
+  const feedLabel = useOnboardingCopy().pulse.nav;
   const { latency, uptime, sla } = useOsTelemetry();
   const env = activeEnv(settings);
   const t = useOsCopy();
@@ -234,6 +236,20 @@ function Header() {
             }
           />
         ))}
+        {/* The architecture feed has its own tab, for every key and tier. */}
+        <Link
+          href="/desk/feed"
+          aria-current={path.startsWith("/desk/feed") ? "page" : undefined}
+          className={cn(
+            "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-os-cyan",
+            path.startsWith("/desk/feed") ? "bloom-edge-glow bg-os-cyan/[0.1] text-os-cyan" : "border-transparent text-white/50 hover:border-os-line hover:text-white/85",
+          )}
+        >
+          <span className="text-white/25">[</span>
+          <Layers className="size-3" />
+          {feedLabel}
+          <span className="text-white/25">]</span>
+        </Link>
         {/* Rendered only for keys that grant it; the middleware enforces the same rule on the route itself. */}
         {canAccessControlPlane && (
           <Link
