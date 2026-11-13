@@ -25,6 +25,40 @@ export type LiveDecision = {
 
 const serverKeyConfigured = () => Boolean(process.env.LLM_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim()) && process.env.COMMAND_PROVIDER?.trim() !== "simulation";
 
+/** The server's OpenRouter key, picked the same way the orchestrator picks it (Anthropic-direct keys have no balance API). */
+function serverOpenRouterKey(): string | null {
+  const llm = process.env.LLM_API_KEY?.trim();
+  const anthropic = process.env.ANTHROPIC_API_KEY?.trim() || (llm?.startsWith("sk-ant-") ? llm : undefined);
+  const forced = process.env.COMMAND_PROVIDER?.trim();
+  if (anthropic && forced !== "openrouter") return null;
+  return process.env.OPENROUTER_API_KEY?.trim() || (llm?.startsWith("sk-or-") ? llm : null) || null;
+}
+
+/** Below this remaining balance a live run would likely fail mid-way, so it is simulated instead. */
+const MIN_CREDIT_USD = 0.5;
+let creditCache: { at: number; ok: boolean; remainingUsd: number | null } | null = null;
+
+/**
+ * Whether the server's OpenRouter account can afford a live run, cached for 60s per instance. Fails open: if the
+ * balance can't be read (network, endpoint change), the run goes live and any provider error is reported as usual.
+ */
+async function providerHasCredit(): Promise<{ ok: boolean; remainingUsd: number | null }> {
+  const key = serverOpenRouterKey();
+  if (!key) return { ok: true, remainingUsd: null };
+  if (creditCache && Date.now() - creditCache.at < 60_000) return creditCache;
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/credits", { headers: { Authorization: `Bearer ${key}` }, cache: "no-store", signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return { ok: true, remainingUsd: null };
+    const d = ((await res.json()) as { data?: { total_credits?: number; total_usage?: number } }).data;
+    if (typeof d?.total_credits !== "number" || typeof d?.total_usage !== "number") return { ok: true, remainingUsd: null };
+    const remainingUsd = d.total_credits - d.total_usage;
+    creditCache = { at: Date.now(), ok: remainingUsd >= MIN_CREDIT_USD, remainingUsd };
+    return creditCache;
+  } catch {
+    return { ok: true, remainingUsd: null };
+  }
+}
+
 export async function decideLive(req: Request, license: ResolvedLicense, own: OwnKeys, rawKey: string | null): Promise<LiveDecision> {
   if (own.anthropic || own.openrouter) return { serverKey: false, identity: `ip:${clientIp(req)}`, tier: "own", notice: null };
 
@@ -45,6 +79,10 @@ export async function decideLive(req: Request, license: ResolvedLicense, own: Ow
   if (!spend.ok) {
     const which = spend.reason === "key_cap" ? `this key's daily live budget ($${spend.capsUsd.key})` : `the deployment's daily live budget ($${spend.capsUsd.total})`;
     return { serverKey: false, identity, tier: "licensed", notice: `Reached ${which}: this run is a deterministic simulation. Live runs resume at 00:00 UTC.` };
+  }
+  const credit = await providerHasCredit();
+  if (!credit.ok) {
+    return { serverKey: false, identity, tier: "licensed", notice: `The model provider account is nearly out of credits${credit.remainingUsd !== null ? ` ($${Math.max(0, credit.remainingUsd).toFixed(2)} left)` : ""}: this run is a deterministic simulation. Add OpenRouter credits to run live again.` };
   }
   return { serverKey: true, identity, tier: "licensed", notice: null };
 }
