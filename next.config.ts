@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   images: { qualities: [75, 78] },
   // Each engine is a standalone product at one URL. The old shared-sidebar workspaces and the
   // interim /app routes point there; /demo/engine-03/deliver stays so sent prototype links keep opening.
+  // Clients that request /favicon.ico without reading the page's <link rel="icon"> get the same SVG mark.
+  async rewrites() {
+    return [{ source: "/favicon.ico", destination: "/icon.svg" }];
+  },
   async redirects() {
     const to = (dest: string) => ({ destination: dest, permanent: false });
     return [
