@@ -1633,3 +1633,23 @@
     transition: none;
   }
 }
+
+/* Problem-Solver theater: the step timer is this animation; its end advances the step. */
+@keyframes xch-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.xch-step-progress {
+  animation-name: xch-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .xch-step-progress {
+    animation: none;
+  }
+}

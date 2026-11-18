@@ -22,7 +22,7 @@ function Metric({ label, value, sub, tone }: { label: string; value: React.React
  * minutes (numbers only), refreshed every few seconds and whenever this terminal clears something. Never invents
  * activity: with nothing cleared yet it says so.
  */
-export function GlobalPulse({ tick }: { tick: number }) {
+export function GlobalPulse({ tick, mode }: { tick: number; mode: "cloud" | "sovereign" }) {
   const t = useOmniCopy();
   const [s, setS] = useState<PulseStats | null>(null);
   useEffect(() => {
@@ -48,6 +48,7 @@ export function GlobalPulse({ tick }: { tick: number }) {
         <span className="flex shrink-0 items-center gap-2">
           <span className="xch-breathe size-2 rounded-full bg-[var(--xch-emerald)]" aria-hidden />
           <span className="xch-breathe-soft font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--xch-emerald)]">{t.pulse.live}</span>
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{mode === "sovereign" ? t.sovereign.view : t.sovereign.cloud}</span>
         </span>
         <Metric label={t.pulse.adapters} value={s?.adapters ?? "—"} sub={`${s?.domains ?? 6} ${t.pulse.domains}`} />
         <div className="flex shrink-0 items-end gap-[3px] border-s border-[var(--xch-line)] ps-3.5" aria-hidden>
@@ -60,7 +61,7 @@ export function GlobalPulse({ tick }: { tick: number }) {
             <Metric label={t.pulse.enclaves} value={s.enclaves} sub={`${s.perMinute}${t.pulse.perMin}`} />
             <Metric label={t.pulse.protocols} value={s.protocolsActive} />
             <Metric label={t.pulse.swarms} value={s.swarms} />
-            <Metric label={t.pulse.throughput} value={`${compact(s.throughput.computeUnits)} CU`} sub={`${compact(s.throughput.energyKwh)} kWh · ${compact(s.throughput.bandwidthGbps)} Gbps`} />
+            <Metric label={t.pulse.throughput} value={`${compact(s.throughput.computeUnits)} CU`} sub={`${compact(s.throughput.energyKwh)} kWh · $${compact(s.throughput.capitalUsd)}`} />
             <Metric label={t.pulse.latency} value={`${s.medianLatencyMs?.toFixed(1)} ms`} sub={`${t.pulse.p95} ${s.p95LatencyMs?.toFixed(1)}`} tone="text-[var(--xch-emerald)]" />
             <Metric label={t.pulse.clearRate} value={s.healthPct === null ? "—" : `${s.healthPct}%`} sub={s.quarantined ? `${s.quarantined} ⊘` : undefined} />
           </>

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, LayoutDashboard, Network, RotateCcw, ScanSearch, Swords, Target, Zap } from "lucide-react";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, LayoutDashboard, Network, RotateCcw, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
@@ -12,9 +12,11 @@ import { CommandPalette, type PaletteItem } from "./command-palette";
 import { useExchangeCopy, type ExchangeView } from "./copy";
 import type { MacroDomain } from "@/lib/exchange/omni-adapter";
 import { AgentGoalInspector } from "./AgentGoalInspector";
-import { DemoDeck } from "./DemoDeck";
+import { BOOT_KEY, CinematicIntro } from "./CinematicIntro";
+import { ProblemSolverDemo } from "./ProblemSolverDemo";
+import { SovereignConsole, SovereignToggle, type ConsoleMode } from "./SovereignToggle";
 import { GlobalPulse } from "./GlobalPulse";
-import { BOOT_KEY, IntroBoot, IntroHero } from "./IntroHero";
+import { IntroHero } from "./IntroHero";
 import { useOmniCopy } from "./omni-copy";
 import { InspectorView } from "./inspector-view";
 import { Kpis } from "./kpis";
@@ -35,6 +37,8 @@ const VIEWS: { id: ExchangeView; icon: typeof Activity; key: string }[] = [
   { id: "inspector", icon: ScanSearch, key: "5" },
   { id: "sdk", icon: Code2, key: "6" },
 ];
+const SOVEREIGN_VIEW = { id: "sovereign" as ExchangeView, icon: Server, key: "7" };
+const MODE_KEY = "bloom-exchange-mode";
 const VIEW_KEY = "bloom-exchange-view";
 const SCENARIO_ICONS: Record<ScenarioId, typeof Target> = { standard: Target, adversarial: Swords, swarm: Boxes, breach: Crosshair };
 
@@ -50,6 +54,8 @@ export function ExchangeApp() {
   const x = useExchange();
   const [injectOpen, setInjectOpen] = useState(false);
   const [domain, setDomain] = useState<MacroDomain | "all">("all");
+  const [mode, setModeState] = useState<ConsoleMode>("cloud");
+  const terminal = useAnimationControls();
 
   // The boot overlay is server-rendered; the layout's inline script hides it before paint when this session has seen it.
   const [boot, setBoot] = useState<number | null>(0);
@@ -75,12 +81,26 @@ export function ExchangeApp() {
   const [view, setViewState] = useState<ExchangeView>("overview");
   useEffect(() => {
     try {
+      const m = localStorage.getItem(MODE_KEY);
+      if (m === "sovereign") setModeState("sovereign");
       const saved = localStorage.getItem(VIEW_KEY) as ExchangeView | null;
-      if (saved && VIEWS.some((v) => v.id === saved)) setViewState(saved);
+      if (saved && (VIEWS.some((v) => v.id === saved) || (saved === "sovereign" && m === "sovereign"))) setViewState(saved);
     } catch {
-      // Starts on the ledger.
+      // Starts on the overview.
     }
   }, []);
+
+  // The terminal waits just behind the intro, then springs into place (150ms) as the overlay starts to dissolve.
+  useEffect(() => {
+    if (boot === null) return;
+    terminal.set({ scale: 0.985, opacity: 0.6 });
+    const id = setTimeout(() => void terminal.start({ scale: 1, opacity: 1, transition: SPRING }), 750);
+    // A skipped boot (repeat visit) cancels the spring: land on the final state instead of staying scaled down.
+    return () => {
+      clearTimeout(id);
+      terminal.set({ scale: 1, opacity: 1 });
+    };
+  }, [boot, terminal]);
   const setView = useCallback((v: ExchangeView) => {
     setViewState(v);
     try {
@@ -89,6 +109,20 @@ export function ExchangeApp() {
       // Not remembered; fine.
     }
   }, []);
+
+  const setMode = useCallback(
+    (m: ConsoleMode) => {
+      setModeState(m);
+      try {
+        localStorage.setItem(MODE_KEY, m);
+      } catch {
+        // Not remembered; fine.
+      }
+      setView(m === "sovereign" ? "sovereign" : "overview");
+    },
+    [setView],
+  );
+  const views = useMemo(() => (mode === "sovereign" ? [...VIEWS, SOVEREIGN_VIEW] : VIEWS), [mode]);
 
   const [selected, setSelected] = useState<string | null>(null);
   const inspect = useCallback(
@@ -108,16 +142,17 @@ export function ExchangeApp() {
         return;
       }
       if (palette || typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
-      const v = VIEWS.find((x) => x.key === e.key);
+      const v = views.find((x) => x.key === e.key);
       if (v) setView(v.id);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [palette, setView]);
+  }, [palette, setView, views]);
 
   const items = useMemo<PaletteItem[]>(
     () => [
-      ...VIEWS.map((v) => ({ id: `view-${v.id}`, group: "views" as const, label: t.views[v.id], hint: v.key, icon: v.icon, run: () => setView(v.id) })),
+      ...views.map((v) => ({ id: `view-${v.id}`, group: "views" as const, label: t.views[v.id], hint: v.key, icon: v.icon, run: () => setView(v.id) })),
+      { id: "mode-toggle", group: "actions" as const, label: mode === "sovereign" ? o.sovereign.cloud : o.sovereign.node, hint: "sovereign", icon: mode === "sovereign" ? ExternalLink : Server, run: () => setMode(mode === "sovereign" ? "cloud" : "sovereign") },
       ...(["standard", "adversarial", "swarm", "breach"] as ScenarioId[]).map((s) => ({
         id: `fire-${s}`,
         group: "actions" as const,
@@ -143,7 +178,7 @@ export function ExchangeApp() {
       { id: "copy", group: "actions", label: t.palette.copy, icon: Copy, run: () => void navigator.clipboard?.writeText(quickstart(window.location.origin)).then(() => toast.success(t.sdk.copied)) },
       { id: "replay", group: "actions", label: t.palette.replay, icon: RotateCcw, run: replay },
     ],
-    [t, o, x, setView, replay],
+    [t, o, x, setView, replay, views, mode, setMode],
   );
 
   const s = x.status;
@@ -165,6 +200,7 @@ export function ExchangeApp() {
               <Kbd>⌘K</Kbd>
             </button>
             <div className="ms-auto flex flex-wrap items-center gap-2">
+              <SovereignToggle mode={mode} onChange={setMode} />
               {s && (
                 <>
                   <Badge tone={s.source === "live" ? "emerald" : "solid"}>{s.source === "live" ? t.header.live : t.header.simulated}</Badge>
@@ -184,7 +220,7 @@ export function ExchangeApp() {
             </div>
           </div>
           <nav className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Views">
-            {VIEWS.map((v) => {
+            {views.map((v) => {
               const Icon = v.icon;
               const active = view === v.id;
               return (
@@ -197,10 +233,10 @@ export function ExchangeApp() {
               );
             })}
           </nav>
-          <GlobalPulse tick={x.pulseTick} />
+          <GlobalPulse tick={x.pulseTick} mode={mode} />
         </header>
 
-        <main className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
+        <motion.main animate={terminal} className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
           {s && !s.licensed && (
             <p className="mb-4 flex items-start gap-2 rounded-[10px] border border-[var(--xch-line)] bg-white/[0.02] px-3.5 py-2.5 text-[12px] leading-relaxed text-white/55">
               <Info className="mt-0.5 size-3.5 shrink-0 text-white/40" /> {t.notice.sandbox}
@@ -221,7 +257,7 @@ export function ExchangeApp() {
                       setView("intents");
                     }}
                   />
-                  <DemoDeck />
+                  <ProblemSolverDemo />
                 </div>
               )}
               {view === "intents" && <AgentGoalInspector x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
@@ -238,13 +274,14 @@ export function ExchangeApp() {
               {view === "mandate" && <MandateView x={x} />}
               {view === "inspector" && <InspectorView x={x} selected={selected} onSelect={setSelected} />}
               {view === "sdk" && <SdkView x={x} />}
+              {view === "sovereign" && <SovereignConsole headers={x.headers} />}
             </motion.div>
           </AnimatePresence>
-        </main>
+        </motion.main>
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={items} />
-      {boot !== null && <IntroBoot key={boot} onDone={() => setBoot(null)} />}
+      {boot !== null && <CinematicIntro key={boot} kid={x.status?.kid ?? null} onDone={() => setBoot(null)} />}
     </div>
   );
 }

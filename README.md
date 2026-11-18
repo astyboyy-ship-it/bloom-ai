@@ -167,12 +167,14 @@ curl -N https://your-bloom.app/api/exchange/a2a \
 
 `/exchange` is the provider's console: obsidian, keyboard-first, with color reserved for meaning (emerald verified, amber clamped, rose threat). A global telemetry pulse runs across the top. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>6</kbd>:
 
-1. **Overview.** The thesis, the omni-protocol registry, and a side-by-side "fragmented chaos vs. universal clearing" demo deck (an illustration).
+1. **Overview.** The thesis, the omni-protocol registry, and a three-part Problem-Solver theater (an illustration). Part 1 is the 2026 agent connectivity nightmare, Part 2 is Bloom Exchange's clearing path, and Part 3 is sovereign nodes with federated trust, where each item is marked as available today or roadmap.
 2. **Live Clearing Ledger.** KPIs, the traffic topology, settlements and the exception queue, and a stress-test bay that fires real A2A requests (standard, injection and lowball, swarm resource hoarding, bounds breach).
 3. **Omni-Protocol Intents.** Every injected intent's core goal, source protocol, resource vector and Sovereign clamp. The "Inject any agent or protocol" drawer fires real-shaped payloads from all six domains, or any custom source, through the live pipeline.
 4. **Macro Mandate & Invariant Matrix.** The standing price mandate, per-dimension capacity and unit floors, and the invariants Sovereign enforces.
 5. **Double-Blind Enclave Inspector.** Split pane: rounds and clamps, resource proofs, Shield audit, Aether margin proof, AP2 payloads, and the certificate, verified offline in the browser.
 6. **Developer SDK Quickstart.** The live signed Agent Card and copy-ready snippets.
+
+A **Cloud Sandbox / Sovereign Private Node** switch in the header opens the node console. It shows the root key fingerprint and the egress posture, plus host hardware and the Shield audit ledger with its hash chain re-verified on every refresh (Operator key only).
 
 It ships in English, Spanish and Hebrew (right-to-left), and as a standalone desktop app: `npm run tauri:exchange`.
 
@@ -205,11 +207,23 @@ npm run dev                   # http://localhost:3000/exchange
 | `BLOOM_EXCHANGE_PUBLIC_URL` | no | Canonical origin printed in certificates, if it differs from the request host. |
 | `EXCHANGE_MODEL`, `EXCHANGE_OPENROUTER_MODELS` | no | Models for Apex (Anthropic direct, or an OpenRouter fallback chain). |
 
+## Sovereign Private Nodes
+
+Any institution can run the entire clearing engine inside its own perimeter, with its own root of trust:
+
+```bash
+npm run sovereign:init -- --org "Northwind Capital"   # secrets, Ed25519 root key + fingerprint, the node's own Operator key
+npm run sovereign:up                                   # Docker Compose: exchange + Redis (+ REST gateway) + PostgreSQL
+kubectl apply -k deploy/sovereign-node/k8s             # or Kubernetes: hardened deployment, default-deny egress
+```
+
+The data plane runs on an internal network with no route out. With no model key and no settlement webhook configured, the node makes no outbound connections, so images can be built on a connected machine and carried into an air-gapped site. Every node signs with its own key. Counterparties verify each other's certificates **offline** from a shared `root-key.public.json`, with no cloud in the trust path. Direct node-to-node federation is on the roadmap. See [`deploy/sovereign-node`](deploy/sovereign-node/README.md).
+
 ## Verification
 
 ```bash
 npm run typecheck
-npm test          # Vitest: leakage, firewall, mathematical safety, resources, omni-protocol ingestion, end-to-end settlement
+npm test          # Vitest: leakage, firewall, mathematical safety, resources, omni-protocol ingestion, sovereign node, end-to-end settlement
 npm run build
 ```
 
@@ -224,6 +238,7 @@ src/app/.well-known/         signed A2A Agent Card
 src/components/exchange/     the clearing terminal
 packages/bloom-exchange-sdk/ zero-dependency TypeScript SDK
 src-tauri/                   desktop shells (Bloom Desktop, Bloom Exchange)
+deploy/sovereign-node/       Sovereign Private Node: Dockerfile, Compose, Kubernetes, `npm run sovereign:init`
 ```
 
 Bloom Exchange lives inside the Bloom AI monorepo alongside the Operating Desk and its engines. The original Workflow Architect documentation is in [`docs/WORKFLOW-ARCHITECT.md`](docs/WORKFLOW-ARCHITECT.md).

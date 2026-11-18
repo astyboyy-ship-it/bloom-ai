@@ -1,0 +1,4 @@
+# Generated per node by `npm run sovereign:init`: secrets, the node's operator key and its public key record.
+.env
+keys/
+root-key.public.json

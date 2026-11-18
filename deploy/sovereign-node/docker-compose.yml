@@ -1,0 +1,108 @@
+# Bloom Exchange · Sovereign Private Node (Docker Compose)
+#
+#   npm run sovereign:init     generates deploy/sovereign-node/.env (secrets), the root key record and an operator key
+#   npm run sovereign:up       builds the image and starts the stack
+#
+# Data plane (Redis, its REST gateway, PostgreSQL) sits on an internal network with no route out. Only the exchange
+# joins the edge network, and it publishes on ${BLOOM_BIND}:${BLOOM_PORT} (127.0.0.1 by default: put your own TLS
+# reverse proxy in front). With no model keys and no settlement webhook configured, the node makes no outbound calls.
+
+name: bloom-sovereign
+
+services:
+  exchange:
+    build:
+      context: ../..
+      dockerfile: deploy/sovereign-node/Dockerfile
+      target: runtime
+    image: bloom-exchange-sovereign:1.0.0
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BLOOM_SOVEREIGN_NODE: "1"
+      # The exchange store speaks the Upstash REST protocol; serverless-redis-http provides it over local Redis.
+      KV_REST_API_URL: http://srh:80
+      KV_REST_API_TOKEN: ${SRH_TOKEN:?run npm run sovereign:init first}
+      DATABASE_URL: postgresql://bloom:${POSTGRES_PASSWORD:?run npm run sovereign:init first}@postgres:5432/bloom?schema=public
+      COMMAND_PROVIDER: ${COMMAND_PROVIDER:-simulation}
+    ports:
+      - "${BLOOM_BIND:-127.0.0.1}:${BLOOM_PORT:-3000}:3000"
+    depends_on:
+      srh:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    networks: [edge, data]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+  # One-shot schema migration, run from the build stage (it has the Prisma CLI); the runtime image stays minimal.
+  migrate:
+    build:
+      context: ../..
+      dockerfile: deploy/sovereign-node/Dockerfile
+      target: build
+    image: bloom-exchange-sovereign-migrate:1.0.0
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://bloom:${POSTGRES_PASSWORD}@postgres:5432/bloom?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [data]
+    restart: "no"
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+    networks: [data]
+
+  # Upstash-compatible REST gateway over the local Redis (https://github.com/hiett/serverless-redis-http).
+  # Pin this tag to a reviewed version for production.
+  srh:
+    image: hiett/serverless-redis-http:latest
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${SRH_TOKEN}
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [data]
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bloom
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: bloom
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloom -d bloom"]
+      interval: 5s
+      retries: 10
+    networks: [data]
+
+networks:
+  edge: {}
+  data:
+    internal: true
+
+volumes:
+  redis-data:
+  pg-data:

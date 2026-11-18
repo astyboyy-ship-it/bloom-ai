@@ -1,0 +1,20 @@
+# Bloom Exchange · Sovereign Private Node on Kubernetes
+#   1. npm run sovereign:init   (then copy the values from deploy/sovereign-node/.env into secret.yaml, or use your secret manager)
+#   2. push the image to your private registry and set `images` below
+#   3. kubectl apply -k deploy/sovereign-node/k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bloom-sovereign
+resources:
+  - namespace.yaml
+  - secret.yaml
+  - data-plane.yaml
+  - exchange.yaml
+  - network-policy.yaml
+images:
+  - name: bloom-exchange-sovereign
+    newName: registry.internal.example/bloom/exchange-sovereign
+    newTag: "1.0.0"
+  - name: bloom-exchange-sovereign-migrate
+    newName: registry.internal.example/bloom/exchange-sovereign-migrate
+    newTag: "1.0.0"

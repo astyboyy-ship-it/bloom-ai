@@ -334,7 +334,7 @@ export function useExchange() {
     [headers, pushTraffic],
   );
 
-  return { status, card, mandate, saveMandate, rows, traffic, audit, run, fire, decide, loadView, views, intents, inject, pulseTick };
+  return { status, card, mandate, saveMandate, rows, traffic, audit, run, fire, decide, loadView, views, intents, inject, pulseTick, headers };
 }
 
 export type Exchange = ReturnType<typeof useExchange>;

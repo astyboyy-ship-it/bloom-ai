@@ -1,6 +1,7 @@
 import "server-only";
-import { createHash, createHmac, createPrivateKey, createPublicKey, randomBytes, sign, timingSafeEqual, type KeyObject } from "node:crypto";
+import { createHash, createHmac, randomBytes, sign, timingSafeEqual, type KeyObject } from "node:crypto";
 import { signingInput } from "./canonical";
+import { deriveExchangeKeys } from "./key-derivation";
 
 /**
  * Exchange key material. One secret (BLOOM_EXCHANGE_SECRET, else the deployment's LICENSE_SIGNING_SECRET) derives
@@ -13,9 +14,8 @@ export type KeyOrigin = "configured" | "development" | "ephemeral";
 export type PublicJwk = { kty: "OKP"; crv: "Ed25519"; x: string; kid: string; alg: "EdDSA"; use: "sig" };
 
 const DEV_SECRET = "bloom-exchange-development-secret-not-for-production";
-const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 
-type Keys = { origin: KeyOrigin; privateKey: KeyObject; jwk: PublicJwk; hmacKey: Buffer };
+type Keys = { origin: KeyOrigin; privateKey: KeyObject; jwk: PublicJwk; hmacKey: Buffer; fingerprint: string };
 let cached: { secret: string | undefined; keys: Keys } | null = null;
 
 function secret(): { value: string; origin: KeyOrigin } {
@@ -29,12 +29,8 @@ export function exchangeKeys(): Keys {
   const raw = process.env.BLOOM_EXCHANGE_SECRET?.trim() || process.env.LICENSE_SIGNING_SECRET?.trim();
   if (cached && cached.secret === raw) return cached.keys;
   const s = secret();
-  const seed = createHmac("sha256", s.value).update("bloom-exchange/ed25519/v1").digest();
-  const privateKey = createPrivateKey({ key: Buffer.concat([PKCS8_ED25519_PREFIX, seed]), format: "der", type: "pkcs8" });
-  const pub = createPublicKey(privateKey).export({ format: "jwk" }) as { x: string };
-  const kid = `bxk-${sha256Hex(pub.x).slice(0, 16)}`;
-  const hmacKey = createHmac("sha256", s.value).update("bloom-exchange/hmac-seal/v1").digest();
-  const keys: Keys = { origin: s.origin, privateKey, jwk: { kty: "OKP", crv: "Ed25519", x: pub.x, kid, alg: "EdDSA", use: "sig" }, hmacKey };
+  const d = deriveExchangeKeys(s.value);
+  const keys: Keys = { origin: s.origin, privateKey: d.privateKey, jwk: { kty: "OKP", crv: "Ed25519", x: d.publicX, kid: d.kid, alg: "EdDSA", use: "sig" }, hmacKey: d.hmacKey, fingerprint: d.fingerprint };
   cached = { secret: raw, keys };
   return keys;
 }

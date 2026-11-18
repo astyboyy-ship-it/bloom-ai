@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The Sovereign Private Node image builds a self-contained server (deploy/sovereign-node/Dockerfile); Vercel doesn't need it.
+  ...(process.env.BLOOM_STANDALONE === "1" && { output: "standalone" as const }),
   // Keep Prisma's engine out of the server bundle.
   serverExternalPackages: ["@prisma/client", "prisma"],
   // PaintingCanvas serves the fine-art canvases at quality 78.
