@@ -17,7 +17,7 @@ export const ENGINE_TONE: Record<string, string> = {
   shield: "text-rose-300/90",
   cortex: "text-white/70",
   aether: "text-white/70",
-  sovereign: "text-[var(--xch-emerald)]",
+  sovereign: "text-[var(--xch-verified)]",
   apex: "text-white/70",
 };
 
@@ -36,8 +36,8 @@ export function PanelHeader({ icon: Icon, title, sub, right }: { icon: LucideIco
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[13.5px] font-medium tracking-[-0.01em] text-white">
-          <Icon className="size-[15px] shrink-0 text-white/45" strokeWidth={1.75} /> {title}
+        <h2 className="xch-display flex items-center gap-2 text-[19px] leading-tight text-[var(--xch-cream)]">
+          <Icon className="size-[15px] shrink-0 text-[var(--xch-gold)]/60" strokeWidth={1.75} /> {title}
         </h2>
         {sub && <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-white/45">{sub}</p>}
       </div>
@@ -48,9 +48,9 @@ export function PanelHeader({ icon: Icon, title, sub, right }: { icon: LucideIco
 
 export type Tone = "emerald" | "amber" | "rose" | "muted" | "solid";
 const TONES: Record<Tone, string> = {
-  emerald: "border-[color-mix(in_srgb,var(--xch-emerald)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_7%,transparent)] text-[var(--xch-emerald)]",
-  amber: "border-[color-mix(in_srgb,var(--xch-amber)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-amber)_7%,transparent)] text-[var(--xch-amber)]",
-  rose: "border-[color-mix(in_srgb,var(--xch-rose)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-rose)_7%,transparent)] text-[var(--xch-rose)]",
+  emerald: "border-[color-mix(in_srgb,var(--xch-verified)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_7%,transparent)] text-[var(--xch-verified)]",
+  amber: "border-[color-mix(in_srgb,var(--xch-clamp)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-clamp)_7%,transparent)] text-[var(--xch-clamp)]",
+  rose: "border-[color-mix(in_srgb,var(--xch-threat)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-threat)_7%,transparent)] text-[var(--xch-threat)]",
   muted: "border-[var(--xch-line)] text-white/55",
   solid: "border-[var(--xch-line-strong)] bg-white/[0.04] text-white/80",
 };

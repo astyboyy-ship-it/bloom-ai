@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import "@/styles/bloom-theme.css";
 
 export const metadata: Metadata = {
   title: "Bloom Exchange — Autonomous Clearinghouse",
   description: "Bloom Exchange: an autonomous inter-agent clearinghouse. A2A v1.0 negotiation in double-blind enclaves, deterministic mandate enforcement, and signed BLOOM-XCH settlement certificates mapped to AP2.",
 };
 
-export const viewport: Viewport = { themeColor: "#07080c" };
+export const viewport: Viewport = { themeColor: "#0c0709" };
 
 export default function ExchangeLayout({ children }: { children: React.ReactNode }) {
   return (

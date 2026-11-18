@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Cloud, Cpu, Fingerprint, Lock, ScrollText, Server, ShieldCheck, ShieldX, Terminal, Wifi, WifiOff } from "lucide-react";
+import { REFRESH_EVENT } from "@/components/desktop/DesktopFrame";
 import type { NodeStatus } from "@/lib/exchange/node-status";
 import { cn } from "@/lib/utils";
 import { useOmniCopy } from "./omni-copy";
@@ -18,7 +19,7 @@ export function SovereignToggle({ mode, onChange }: { mode: ConsoleMode; onChang
       {(["cloud", "sovereign"] as const).map((m) => {
         const Icon = m === "cloud" ? Cloud : Server;
         return (
-          <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => onChange(m)} className={cn("relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] transition-colors duration-150", mode === m ? (m === "sovereign" ? "text-[var(--xch-emerald)]" : "text-white") : "text-white/45 hover:text-white/80")}>
+          <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => onChange(m)} className={cn("relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] transition-colors duration-150", mode === m ? (m === "sovereign" ? "text-[var(--xch-verified)]" : "text-white") : "text-white/45 hover:text-white/80")}>
             {mode === m && <motion.span layoutId="xch-mode" className="absolute inset-0 rounded-md bg-white/[0.07]" transition={SPRING} />}
             <Icon className="relative size-3.5" strokeWidth={1.75} />
             <span className="relative hidden whitespace-nowrap md:inline">{m === "cloud" ? t.cloud : t.node}</span>
@@ -52,28 +53,30 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
         .catch(() => undefined);
     void load();
     const id = setInterval(load, 5000);
+    window.addEventListener(REFRESH_EVENT, load);
     return () => {
       alive = false;
       clearInterval(id);
+      window.removeEventListener(REFRESH_EVENT, load);
     };
   }, [headers]);
 
   if (!s) return <Panel className="min-h-[300px]">{null}</Panel>;
   const sovereign = s.mode === "sovereign";
-  const yesNo = (b: boolean, good: boolean) => <span className={b === good ? "text-[var(--xch-emerald)]" : "text-[var(--xch-amber)]"}>{b ? t.yes : t.no}</span>;
+  const yesNo = (b: boolean, good: boolean) => <span className={b === good ? "text-[var(--xch-verified)]" : "text-[var(--xch-clamp)]"}>{b ? t.yes : t.no}</span>;
   const hw = s.hardware;
   const usedMem = hw ? Math.max(0, hw.memTotalGb - hw.memFreeGb) : 0;
 
   return (
     <div className="space-y-4">
-      <section className={cn("xch-card relative overflow-hidden p-4 sm:p-5", sovereign ? "border-[color-mix(in_srgb,var(--xch-emerald)_35%,transparent)]" : "")}>
+      <section className={cn("xch-card relative overflow-hidden p-4 sm:p-5", sovereign ? "border-[color-mix(in_srgb,var(--xch-verified)_35%,transparent)]" : "")}>
         <div className="flex flex-wrap items-start gap-3">
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg border", sovereign ? "border-[color-mix(in_srgb,var(--xch-emerald)_45%,transparent)] text-[var(--xch-emerald)]" : "border-[var(--xch-line-strong)] text-white/60")}>
+          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg border", sovereign ? "border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] text-[var(--xch-verified)]" : "border-[var(--xch-line-strong)] text-white/60")}>
             {sovereign ? <Server className="size-4" /> : <Cloud className="size-4" />}
           </span>
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2 text-[14px] font-medium text-white">
-              {sovereign && <span className="xch-breathe size-2 rounded-full bg-[var(--xch-emerald)]" aria-hidden />}
+              {sovereign && <span className="xch-breathe size-2 rounded-full bg-[var(--xch-verified)]" aria-hidden />}
               {sovereign ? t.connected : t.notConnected}
             </p>
             <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-white/50">{sovereign ? t.connectedSub : t.notConnectedSub}</p>
@@ -81,7 +84,7 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
               <ol className="mt-3 space-y-1.5">
                 {t.steps.map((cmd, i) => (
                   <li key={cmd} className="flex items-center gap-2.5">
-                    <span className="tnum font-mono text-[10px] text-[var(--xch-emerald)]">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="tnum font-mono text-[10px] text-[var(--xch-verified)]">{String(i + 1).padStart(2, "0")}</span>
                     <code className="min-w-0 truncate rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1 font-mono text-[11.5px] text-white/80" dir="ltr">
                       {cmd}
                     </code>
@@ -101,8 +104,8 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
           <PanelHeader icon={Fingerprint} title={t.root} />
           <div className="mt-3">
             <Row label="alg" value="Ed25519" />
-            <Row label={t.kid} value={<HashDecode text={s.root.kid} />} tone="text-[var(--xch-emerald)]" />
-            <Row label={t.origin} value={s.root.origin} tone={s.root.origin === "configured" ? "text-[var(--xch-emerald)]" : "text-[var(--xch-amber)]"} />
+            <Row label={t.kid} value={<HashDecode text={s.root.kid} />} tone="text-[var(--xch-verified)]" />
+            <Row label={t.origin} value={s.root.origin} tone={s.root.origin === "configured" ? "text-[var(--xch-verified)]" : "text-[var(--xch-clamp)]"} />
           </div>
           <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/40">{t.fingerprint}</p>
           <p className="tnum mt-1.5 break-all font-mono text-[11.5px] leading-relaxed text-white/80" dir="ltr">
@@ -140,7 +143,7 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
                   </span>
                 </div>
                 <div className="relative mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div className="xch-fill absolute inset-0 rounded-full bg-[var(--xch-emerald)]" style={{ transform: `scaleX(${hw.memTotalGb ? usedMem / hw.memTotalGb : 0})` }} />
+                  <div className="xch-fill absolute inset-0 rounded-full bg-[var(--xch-verified)]" style={{ transform: `scaleX(${hw.memTotalGb ? usedMem / hw.memTotalGb : 0})` }} />
                 </div>
               </div>
               <Row label={t.load} value={hw.loadAvg.join(" · ")} />

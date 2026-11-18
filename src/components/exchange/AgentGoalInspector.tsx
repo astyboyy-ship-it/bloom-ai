@@ -38,7 +38,7 @@ function Pipeline({ node, step }: { node: AgentIntentNode; step: number }) {
   const shown = Math.min(step, reached);
   const final = step >= STAGES.length || shown >= reached;
   const progress = final ? 1 : shown / STAGES.length;
-  const endTone = node.invariantStatus === "settled" ? "var(--xch-emerald)" : node.invariantStatus === "quarantined" ? "var(--xch-rose)" : "var(--xch-amber)";
+  const endTone = node.invariantStatus === "settled" ? "var(--xch-verified)" : node.invariantStatus === "quarantined" ? "var(--xch-threat)" : "var(--xch-clamp)";
   return (
     <div>
       <div className="relative h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
@@ -49,7 +49,7 @@ function Pipeline({ node, step }: { node: AgentIntentNode; step: number }) {
           const on = i < shown;
           const blocked = node.invariantStatus === "quarantined" && s === "vaulted";
           return (
-            <li key={s} className={cn("rounded-md border px-1.5 py-1.5 text-center transition-colors duration-200", on ? "border-[var(--xch-line-strong)] bg-white/[0.04] text-white/85" : blocked && final ? "border-[color-mix(in_srgb,var(--xch-rose)_40%,transparent)] text-[var(--xch-rose)]" : "border-[var(--xch-line)] text-white/30", on && s === "shielded" && node.shield.threats > 0 && "xch-intercept border-[color-mix(in_srgb,var(--xch-rose)_45%,transparent)] text-[var(--xch-rose)]")}>
+            <li key={s} className={cn("rounded-md border px-1.5 py-1.5 text-center transition-colors duration-200", on ? "border-[var(--xch-line-strong)] bg-white/[0.04] text-white/85" : blocked && final ? "border-[color-mix(in_srgb,var(--xch-threat)_40%,transparent)] text-[var(--xch-threat)]" : "border-[var(--xch-line)] text-white/30", on && s === "shielded" && node.shield.threats > 0 && "xch-intercept border-[color-mix(in_srgb,var(--xch-threat)_45%,transparent)] text-[var(--xch-threat)]")}>
               <span className="block truncate font-mono text-[9.5px] uppercase tracking-[0.1em]">{t.stages[s]}</span>
             </li>
           );
@@ -93,7 +93,7 @@ function VectorClamp({ node }: { node: AgentIntentNode }) {
                     {r.granted !== null && (
                       <>
                         {" · "}
-                        <span className={clamped ? "text-[var(--xch-amber)]" : "text-[var(--xch-emerald)]"}>
+                        <span className={clamped ? "text-[var(--xch-clamp)]" : "text-[var(--xch-verified)]"}>
                           {num(r.granted)} {t.granted}
                         </span>
                       </>
@@ -101,7 +101,7 @@ function VectorClamp({ node }: { node: AgentIntentNode }) {
                   </span>
                 </div>
                 <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div className="xch-fill absolute inset-y-0 start-0 w-full rounded-full" style={{ transform: `scaleX(${ratio})`, background: clamped ? "var(--xch-amber)" : "var(--xch-emerald)" }} />
+                  <div className="xch-fill absolute inset-y-0 start-0 w-full rounded-full" style={{ transform: `scaleX(${ratio})`, background: clamped ? "var(--xch-clamp)" : "var(--xch-verified)" }} />
                 </div>
               </li>
             );
@@ -134,10 +134,10 @@ function Detail({ node, onOpenEnclave }: { node: AgentIntentNode; onOpenEnclave:
       </div>
       <div>
         <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{t.intents.coreGoal}</p>
-        <p className={cn("mt-1.5 text-[16px] leading-snug tracking-[-0.01em]", node.invariantStatus === "quarantined" ? "text-[var(--xch-rose)]" : "text-white")}>{node.invariantStatus === "quarantined" ? t.intents.quarantinedGoal : node.coreGoal}</p>
+        <p className={cn("mt-1.5 text-[16px] leading-snug tracking-[-0.01em]", node.invariantStatus === "quarantined" ? "text-[var(--xch-threat)]" : "text-white")}>{node.invariantStatus === "quarantined" ? t.intents.quarantinedGoal : node.coreGoal}</p>
         <p className="mt-1 text-[12px] text-white/45">{node.agentName}</p>
         {node.shield.threats > 0 && (
-          <p className="mt-2 font-mono text-[10.5px] text-[var(--xch-rose)]" dir="ltr">
+          <p className="mt-2 font-mono text-[10.5px] text-[var(--xch-threat)]" dir="ltr">
             {t.intents.shield}: {node.shield.verdict} · {node.shield.vectors.join(", ")}
           </p>
         )}
@@ -151,9 +151,9 @@ function Detail({ node, onOpenEnclave }: { node: AgentIntentNode; onOpenEnclave:
         <VectorClamp node={node} />
       </div>
       {(node.certificateId || node.taskId) && step >= STAGES.length && (
-        <div className={cn("flex flex-wrap items-center gap-3 rounded-[10px] border p-3", node.certificateId ? "xch-flash border-[color-mix(in_srgb,var(--xch-emerald)_30%,transparent)]" : "border-[var(--xch-line)]")}>
+        <div className={cn("flex flex-wrap items-center gap-3 rounded-[10px] border p-3", node.certificateId ? "xch-flash border-[color-mix(in_srgb,var(--xch-verified)_30%,transparent)]" : "border-[var(--xch-line)]")}>
           {node.certificateId ? (
-            <span className="text-[13px] text-[var(--xch-emerald)]">
+            <span className="text-[13px] text-[var(--xch-verified)]">
               <HashDecode text={node.certificateId} />
             </span>
           ) : (
@@ -235,17 +235,17 @@ function InjectDrawer({ open, onClose, x, initialDomain, onInjected }: { open: b
     }
   };
 
-  const field = "w-full rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1.5 text-[12.5px] text-white outline-none transition-colors duration-150 placeholder:text-white/25 focus:border-[color-mix(in_srgb,var(--xch-emerald)_55%,transparent)]";
+  const field = "w-full rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1.5 text-[12.5px] text-white outline-none transition-colors duration-150 placeholder:text-white/25 focus:border-[color-mix(in_srgb,var(--xch-verified)_55%,transparent)]";
   return (
     <AnimatePresence>
       {open && (
         <>
           <motion.div key="bd" className="fixed inset-0 z-[80] bg-black/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }} onClick={onClose} />
-          <motion.aside key="drawer" role="dialog" aria-modal="true" aria-label={t.inject.title} className="fixed inset-y-0 end-0 z-[90] flex w-full max-w-[520px] flex-col border-s border-[var(--xch-line-strong)] bg-[#111114] shadow-[-24px_0_80px_-24px_rgba(0,0,0,0.9)]" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={SPRING}>
+          <motion.aside key="drawer" role="dialog" aria-modal="true" aria-label={t.inject.title} className="fixed inset-y-0 end-0 z-[90] flex w-full max-w-[520px] flex-col border-s border-[var(--xch-line-strong)] bg-[#170b0f] shadow-[-24px_0_80px_-24px_rgba(0,0,0,0.9)]" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={SPRING}>
             <header className="flex items-start gap-3 border-b border-[var(--xch-line)] px-5 py-4">
               <div className="min-w-0">
                 <h2 className="flex items-center gap-2 text-[14px] font-medium text-white">
-                  <Zap className="size-4 text-[var(--xch-emerald)]" /> {t.inject.title}
+                  <Zap className="size-4 text-[var(--xch-verified)]" /> {t.inject.title}
                 </h2>
                 <p className="mt-1 text-[11.5px] leading-relaxed text-white/45">{t.inject.sub}</p>
               </div>
@@ -277,7 +277,7 @@ function InjectDrawer({ open, onClose, x, initialDomain, onInjected }: { open: b
               {domain !== "custom" ? (
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                   {PROTOCOL_REGISTRY.filter((p) => p.domain === domain).map((p) => (
-                    <button key={p.id} type="button" onClick={() => pick(p.id)} className={cn("rounded-lg border px-2.5 py-2 text-start transition-colors duration-150", preset === p.id ? "border-[color-mix(in_srgb,var(--xch-emerald)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_6%,transparent)]" : "border-[var(--xch-line)] hover:border-[var(--xch-line-strong)]")}>
+                    <button key={p.id} type="button" onClick={() => pick(p.id)} className={cn("rounded-lg border px-2.5 py-2 text-start transition-colors duration-150", preset === p.id ? "border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_6%,transparent)]" : "border-[var(--xch-line)] hover:border-[var(--xch-line-strong)]")}>
                       <span className="block truncate text-[12px] text-white/90">{p.label}</span>
                       <span className="block truncate font-mono text-[9.5px] text-white/35" dir="ltr">
                         {p.transport}
@@ -322,7 +322,7 @@ function InjectDrawer({ open, onClose, x, initialDomain, onInjected }: { open: b
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={STATUS_TONE[result.invariantStatus]}>{t.intents.status[result.invariantStatus]}</Badge>
                       {result.certificateId && (
-                        <span className="text-[12px] text-[var(--xch-emerald)]">
+                        <span className="text-[12px] text-[var(--xch-verified)]">
                           <HashDecode text={result.certificateId} />
                         </span>
                       )}
@@ -330,10 +330,10 @@ function InjectDrawer({ open, onClose, x, initialDomain, onInjected }: { open: b
                   )}
                 </div>
               )}
-              {error && <p className="text-[12px] text-[var(--xch-rose)]">{error}</p>}
+              {error && <p className="text-[12px] text-[var(--xch-threat)]">{error}</p>}
             </div>
             <footer className="flex gap-2 border-t border-[var(--xch-line)] px-5 py-3">
-              <button type="button" disabled={!canFire || busy} onClick={() => void fire()} className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--xch-emerald)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_10%,transparent)] px-3 py-2 text-[13px] text-[var(--xch-emerald)] transition-opacity duration-150 disabled:opacity-40">
+              <button type="button" disabled={!canFire || busy} onClick={() => void fire()} className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_10%,transparent)] px-3 py-2 text-[13px] text-[var(--xch-verified)] transition-opacity duration-150 disabled:opacity-40">
                 {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />} {busy ? t.inject.firing : result ? t.inject.again : t.inject.fire}
               </button>
             </footer>
@@ -360,7 +360,7 @@ export function AgentGoalInspector({ x, onOpenEnclave, injectOpen, setInjectOpen
             <p className="text-[13.5px] font-medium text-white">{t.intents.title}</p>
             <p className="mt-0.5 text-[11px] leading-snug text-white/40">{t.intents.sub}</p>
           </div>
-          <button type="button" onClick={() => setInjectOpen(true)} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--xch-emerald)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_10%,transparent)] px-2.5 py-1.5 text-[11.5px] text-[var(--xch-emerald)]">
+          <button type="button" onClick={() => setInjectOpen(true)} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_10%,transparent)] px-2.5 py-1.5 text-[11.5px] text-[var(--xch-verified)]">
             <Zap className="size-3.5" /> {t.inject.short}
           </button>
         </div>
@@ -387,11 +387,11 @@ export function AgentGoalInspector({ x, onOpenEnclave, injectOpen, setInjectOpen
                     {t.intents.status[i.invariantStatus]}
                   </Badge>
                 </div>
-                <p className={cn("mt-1 line-clamp-2 text-[12px] leading-snug", i.invariantStatus === "quarantined" ? "text-[var(--xch-rose)]/80" : "text-white/85")}>{i.invariantStatus === "quarantined" ? t.intents.quarantinedGoal : i.coreGoal}</p>
+                <p className={cn("mt-1 line-clamp-2 text-[12px] leading-snug", i.invariantStatus === "quarantined" ? "text-[var(--xch-threat)]/80" : "text-white/85")}>{i.invariantStatus === "quarantined" ? t.intents.quarantinedGoal : i.coreGoal}</p>
                 <div className="mt-1.5 flex items-center gap-2">
                   <span className="truncate text-[10.5px] text-white/40">{i.agentName}</span>
                   <span className="relative ms-auto h-[2px] w-16 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
-                    <span className="xch-fill absolute inset-0 rounded-full" style={{ transform: `scaleX(${i.progress / 100})`, background: i.invariantStatus === "settled" ? "var(--xch-emerald)" : i.invariantStatus === "quarantined" ? "var(--xch-rose)" : "var(--xch-amber)" }} />
+                    <span className="xch-fill absolute inset-0 rounded-full" style={{ transform: `scaleX(${i.progress / 100})`, background: i.invariantStatus === "settled" ? "var(--xch-verified)" : i.invariantStatus === "quarantined" ? "var(--xch-threat)" : "var(--xch-clamp)" }} />
                   </span>
                 </div>
               </button>

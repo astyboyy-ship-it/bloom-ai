@@ -5,7 +5,7 @@ import type { MacroDomain, IntentStage, InvariantStatus } from "@/lib/exchange/o
 
 const en = {
   pulse: { live: "Live", adapters: "Adapters", domains: "domains", enclaves: "Enclaves", window: "15m", protocols: "Protocols active", swarms: "Agent swarms", throughput: "Throughput", latency: "Median clearing", p95: "p95", clearRate: "Clear rate", perMin: "/min", awaiting: "awaiting first intent" },
-  boot: { grid: "Initializing clearing grid", keys: "Ed25519 · HMAC keys online", ready: "Terminal ready" },
+  boot: { lab: "Nº 002 — The Bloom AI Laboratory", product: "Exchange", tagline: "Universal Autonomous Infrastructure Network", enclave: "Initializing Sovereign Enclave", key: "Securing Ed25519 Clearing Key", noise: "Bypassing Public Web Noise", online: "Clearing network online", skip: "Skip" },
   hero: {
     kicker: "The clearinghouse for the agentic economy",
     title: "Every agent, every protocol, one neutral clearing layer.",
@@ -49,23 +49,18 @@ const en = {
     stages: { received: "Received", normalized: "Normalized", shielded: "Shielded", vaulted: "Vaulted", cleared: "Cleared" } as Record<IntentStage, string>,
   },
   theater: {
-    title: "The problem, the clearing layer, the sovereign future",
+    title: "How Bloom ends agent chaos",
     play: "Play",
     pause: "Pause",
     illustrative: "Illustration",
-    today: "Available today",
-    roadmap: "Roadmap",
-    parts: [
-      { kicker: "Part 1 · 2026", title: "The agent connectivity nightmare", sub: "Every framework speaks its own dialect. Agents built on LangGraph, MCP, CrewAI and bespoke APIs can't clear a deal with each other safely.", bullets: ["No shared format: payloads collide and get dropped", "Prompt injection rides in on counterparty messages", "Proprietary limits leak into another firm's context", "Nothing neutral to settle on, and no verifiable receipt"] },
-      { kicker: "Part 2 · Bloom Exchange", title: "One neutral clearing layer", sub: "Intents from any surface normalize through the Omni-Bridge and clear through the same deterministic path, every time.", bullets: ["Omni-Bridge: 40 adapters, 6 macro-domains, one AgentIntentNode", "Shield neutralizes hostile payloads before any engine reads them", "Both sides' limits sealed in a double-blind vault", "Sovereign clamps every offer; Ed25519 receipt verifiable offline"] },
-      { kicker: "Part 3 · Sovereign future", title: "Private nodes, federated trust", sub: "Each institution runs its own node with its own root key. Trust between firms rests on signatures, not on a shared cloud.", bullets: ["Self-hosted Sovereign Private Node (Docker or Kubernetes)", "Each node's own Ed25519 root key and fingerprint", "Counterparties verify each other's certificates offline", "Direct node-to-node discovery and clearing"] },
+    scenes: [
+      { kicker: "Step 1", title: "Your AI stack, under one sovereign", sub: "A company's scattered agents (sales, ops, finance, support) work from the same ground-truth figures and inside the same deterministic guardrails, so no answer leaves the mandate.", bullets: ["Figures come from ground truth, not from the model's memory", "Sovereign clamps every number to the standing mandate, in code", "Out-of-bounds moves escalate to one owner instead of a babysitter"] },
+      { kicker: "Step 2", title: "A Bloom link, anywhere", sub: "An agent meets a Bloom link in an email, a DM or an API response, and steps out of the slow human thread into a double-blind sandbox.", bullets: ["Email, social DMs, chat and APIs normalize through the Omni-Bridge", "The link resolves to a signed Agent Card", "Both sides' limits are sealed before a single offer is made"] },
+      { kicker: "Step 3", title: "Intent matched in milliseconds", sub: "The sandbox tests budget, capability and intent against both sealed mandates at machine speed: buyers with no fit are held at the bound, real ones clear.", bullets: ["Budget, SLA and resource fit checked deterministically", "No-fit buyers stop at the mandate bound, not in a sales call", "Measured clearing time is milliseconds, not weeks"] },
+      { kicker: "Step 4", title: "One click for each owner", sub: "Each business owner gets a deal-ready card: terms, margin proof and the BLOOM-XCH receipt, signed Ed25519 and verifiable offline.", bullets: ["Provider sign-off: one-click executive decision", "Client sign-off: the AP2 payment mandate", "Ed25519 receipt anyone can verify offline"] },
     ],
-    todayCount: [4, 4, 3],
-    orgs: ["Fund", "Bank", "Grid", "Lab"],
-    noCloud: "zero cloud trust",
-    handshake: "signed certificate ⇄ offline verify",
-  },
-  sovereign: {
+    labels: { core: "Bloom sovereign", truth: "ground truth", clamped: "clamped", agents: ["Sales", "Ops", "Finance", "Support", "Procurement", "Research"], channels: ["Email", "Instagram DM", "Reddit DM", "API"], link: "bloom link", human: "human thread · days", sandbox: "double-blind sandbox", budget: "budget", capability: "capability", intent: "intent", held: "held at bound", matched: "matched", provider: "Provider owner", client: "Client owner", approve: "Approve", approved: "Approved", receipt: "receipt signed" },
+  },  sovereign: {
     cloud: "Cloud Sandbox",
     node: "Sovereign Private Node",
     view: "Sovereign Node",
@@ -121,7 +116,7 @@ type Dict = typeof en;
 
 const es: Dict = {
   pulse: { live: "En vivo", adapters: "Adaptadores", domains: "dominios", enclaves: "Enclaves", window: "15m", protocols: "Protocolos activos", swarms: "Enjambres de agentes", throughput: "Rendimiento", latency: "Compensación mediana", p95: "p95", clearRate: "Tasa de liquidación", perMin: "/min", awaiting: "esperando la primera intención" },
-  boot: { grid: "Inicializando la red de compensación", keys: "Claves Ed25519 · HMAC en línea", ready: "Terminal lista" },
+  boot: { lab: "Nº 002 — El Laboratorio Bloom AI", product: "Exchange", tagline: "Red Universal de Infraestructura Autónoma", enclave: "Inicializando el Enclave Soberano", key: "Asegurando la clave de compensación Ed25519", noise: "Esquivando el ruido de la web pública", online: "Red de compensación en línea", skip: "Omitir" },
   hero: {
     kicker: "La cámara de compensación de la economía agéntica",
     title: "Cada agente, cada protocolo, una capa de compensación neutral.",
@@ -165,23 +160,18 @@ const es: Dict = {
     stages: { received: "Recibido", normalized: "Normalizado", shielded: "Filtrado", vaulted: "Sellado", cleared: "Compensado" },
   },
   theater: {
-    title: "El problema, la capa de compensación, el futuro soberano",
+    title: "Cómo Bloom acaba con el caos de agentes",
     play: "Reproducir",
     pause: "Pausa",
     illustrative: "Ilustración",
-    today: "Disponible hoy",
-    roadmap: "Hoja de ruta",
-    parts: [
-      { kicker: "Parte 1 · 2026", title: "La pesadilla de la conectividad entre agentes", sub: "Cada framework habla su propio dialecto. Los agentes construidos sobre LangGraph, MCP, CrewAI y APIs propias no pueden cerrar un acuerdo entre sí de forma segura.", bullets: ["Sin formato común: las cargas chocan y se pierden", "La inyección de prompts llega en los mensajes de la contraparte", "Los límites propietarios se filtran al contexto de otra firma", "Nada neutral sobre lo que liquidar, ni recibo verificable"] },
-      { kicker: "Parte 2 · Bloom Exchange", title: "Una capa de compensación neutral", sub: "Las intenciones de cualquier superficie se normalizan por el Omni-Bridge y se compensan por el mismo camino determinista, siempre.", bullets: ["Omni-Bridge: 40 adaptadores, 6 macrodominios, un AgentIntentNode", "Shield neutraliza cargas hostiles antes de que las lea un motor", "Los límites de ambas partes sellados en una bóveda doble ciego", "Sovereign limita cada oferta; recibo Ed25519 verificable sin conexión"] },
-      { kicker: "Parte 3 · Futuro soberano", title: "Nodos privados, confianza federada", sub: "Cada institución opera su propio nodo con su propia clave raíz. La confianza entre firmas descansa en firmas, no en una nube compartida.", bullets: ["Nodo Privado Soberano autoalojado (Docker o Kubernetes)", "Clave raíz Ed25519 y huella propias de cada nodo", "Las contrapartes verifican sus certificados sin conexión", "Descubrimiento y compensación directa entre nodos"] },
+    scenes: [
+      { kicker: "Paso 1", title: "Tu stack de IA, bajo un solo soberano", sub: "Los agentes dispersos de una empresa (ventas, operaciones, finanzas, soporte) trabajan con las mismas cifras reales y dentro de las mismas barreras deterministas, así que ninguna respuesta sale del mandato.", bullets: ["Las cifras vienen de la fuente real, no de la memoria del modelo", "Sovereign limita cada número al mandato permanente, en código", "Lo que sale de los límites escala a un responsable, no a una niñera"] },
+      { kicker: "Paso 2", title: "Un enlace Bloom, en cualquier lugar", sub: "Un agente encuentra un enlace Bloom en un correo, un DM o una respuesta de API, y sale del lento hilo humano hacia un sandbox doble ciego.", bullets: ["Correo, DMs, chat y APIs se normalizan por el Omni-Bridge", "El enlace resuelve a una Agent Card firmada", "Los límites de ambas partes se sellan antes de la primera oferta"] },
+      { kicker: "Paso 3", title: "Intención emparejada en milisegundos", sub: "El sandbox prueba presupuesto, capacidad e intención contra ambos mandatos sellados a velocidad de máquina: los compradores sin encaje se detienen en el límite, los reales se compensan.", bullets: ["Encaje de presupuesto, SLA y recursos verificado de forma determinista", "Los compradores sin encaje se detienen en el límite, no en una llamada", "El tiempo de compensación medido es de milisegundos, no semanas"] },
+      { kicker: "Paso 4", title: "Un clic para cada dueño", sub: "Cada dueño recibe una tarjeta lista para cerrar: términos, prueba de margen y el recibo BLOOM-XCH, firmado Ed25519 y verificable sin conexión.", bullets: ["Aprobación del proveedor: decisión ejecutiva de un clic", "Aprobación del cliente: el mandato de pago AP2", "Recibo Ed25519 que cualquiera verifica sin conexión"] },
     ],
-    todayCount: [4, 4, 3],
-    orgs: ["Fondo", "Banco", "Red", "Lab"],
-    noCloud: "cero confianza en la nube",
-    handshake: "certificado firmado ⇄ verificación sin conexión",
-  },
-  sovereign: {
+    labels: { core: "Bloom soberano", truth: "fuente real", clamped: "limitado", agents: ["Ventas", "Operaciones", "Finanzas", "Soporte", "Compras", "Investigación"], channels: ["Correo", "DM de Instagram", "DM de Reddit", "API"], link: "enlace bloom", human: "hilo humano · días", sandbox: "sandbox doble ciego", budget: "presupuesto", capability: "capacidad", intent: "intención", held: "detenido en el límite", matched: "emparejado", provider: "Dueño proveedor", client: "Dueño cliente", approve: "Aprobar", approved: "Aprobado", receipt: "recibo firmado" },
+  },  sovereign: {
     cloud: "Sandbox en la nube",
     node: "Nodo Privado Soberano",
     view: "Nodo soberano",
@@ -235,7 +225,7 @@ const es: Dict = {
 
 const he: Dict = {
   pulse: { live: "חי", adapters: "מתאמים", domains: "תחומים", enclaves: "מובלעות", window: "15ד׳", protocols: "פרוטוקולים פעילים", swarms: "נחילי סוכנים", throughput: "תפוקה", latency: "סליקה חציונית", p95: "p95", clearRate: "שיעור סליקה", perMin: "/דקה", awaiting: "ממתין לכוונה הראשונה" },
-  boot: { grid: "מאתחל את רשת הסליקה", keys: "מפתחות Ed25519 · HMAC פעילים", ready: "המסוף מוכן" },
+  boot: { lab: "Nº 002 — מעבדת Bloom AI", product: "Exchange", tagline: "רשת תשתית אוטונומית אוניברסלית", enclave: "מאתחל את המובלעת הריבונית", key: "מאבטח את מפתח הסליקה Ed25519", noise: "עוקף את רעש הרשת הציבורית", online: "רשת הסליקה מקוונת", skip: "דילוג" },
   hero: {
     kicker: "המסלקה של כלכלת הסוכנים",
     title: "כל סוכן, כל פרוטוקול, שכבת סליקה ניטרלית אחת.",
@@ -279,23 +269,18 @@ const he: Dict = {
     stages: { received: "התקבל", normalized: "נורמל", shielded: "נסרק", vaulted: "נחתם", cleared: "נסלק" },
   },
   theater: {
-    title: "הבעיה, שכבת הסליקה, העתיד הריבוני",
+    title: "איך Bloom עוצרת את כאוס הסוכנים",
     play: "הפעלה",
     pause: "השהיה",
     illustrative: "המחשה",
-    today: "זמין היום",
-    roadmap: "מפת דרכים",
-    parts: [
-      { kicker: "חלק 1 · 2026", title: "סיוט הקישוריות בין סוכנים", sub: "כל framework מדבר בניב משלו. סוכנים שנבנו על LangGraph,‏ MCP,‏ CrewAI וממשקי API ייעודיים לא יכולים לסגור עסקה זה עם זה בבטחה.", bullets: ["אין פורמט משותף: מטענים מתנגשים ונזרקים", "הזרקת פרומפט מגיעה בהודעות הצד שכנגד", "מגבלות קנייניות דולפות להקשר של חברה אחרת", "אין על מה לסלוק באופן ניטרלי, ואין קבלה שניתן לאמת"] },
-      { kicker: "חלק 2 · Bloom Exchange", title: "שכבת סליקה ניטרלית אחת", sub: "כוונות מכל משטח מנורמלות דרך ה-Omni-Bridge ונסלקות באותו מסלול דטרמיניסטי, בכל פעם.", bullets: ["Omni-Bridge: ‏40 מתאמים, 6 תחומי מאקרו, AgentIntentNode אחד", "Shield מנטרל מטענים עוינים לפני שמנוע קורא אותם", "המגבלות של שני הצדדים חתומות בכספת סמויה-כפולה", "Sovereign מגביל כל הצעה; קבלת Ed25519 שניתן לאמת במצב לא מקוון"] },
-      { kicker: "חלק 3 · העתיד הריבוני", title: "צמתים פרטיים, אמון מאוחד", sub: "כל מוסד מפעיל צומת משלו עם מפתח שורש משלו. האמון בין חברות נשען על חתימות, לא על ענן משותף.", bullets: ["צומת פרטי ריבוני באירוח עצמי (Docker או Kubernetes)", "מפתח שורש Ed25519 וטביעת אצבע לכל צומת", "צדדים שכנגד מאמתים זה את תעודות זה במצב לא מקוון", "גילוי וסליקה ישירים בין צמתים"] },
+    scenes: [
+      { kicker: "שלב 1", title: "שכבת ה-AI שלכם, תחת ריבון אחד", sub: "הסוכנים המפוזרים של החברה (מכירות, תפעול, כספים, תמיכה) עובדים מאותם נתוני אמת ובתוך אותם מעקות דטרמיניסטיים, כך ששום תשובה לא יוצאת מהמנדט.", bullets: ["המספרים מגיעים ממקור האמת, לא מזיכרון המודל", "Sovereign מגביל כל מספר למנדט הקבוע, בקוד", "חריגה מהגבולות מוסלמת לבעלים אחד במקום לשמרטף"] },
+      { kicker: "שלב 2", title: "קישור Bloom, בכל מקום", sub: "סוכן נתקל בקישור Bloom במייל, בהודעה פרטית או בתשובת API, ויוצא מהשרשור האנושי האיטי אל ארגז חול סמוי-כפול.", bullets: ["מייל, הודעות פרטיות, צ׳אט ו-API מנורמלים דרך ה-Omni-Bridge", "הקישור מוביל ל-Agent Card חתום", "המגבלות של שני הצדדים נחתמות לפני ההצעה הראשונה"] },
+      { kicker: "שלב 3", title: "התאמת כוונה באלפיות שנייה", sub: "ארגז החול בודק תקציב, יכולת וכוונה מול שני המנדטים החתומים במהירות מכונה: קונים ללא התאמה נעצרים בגבול, האמיתיים נסלקים.", bullets: ["התאמת תקציב, SLA ומשאבים נבדקת באופן דטרמיניסטי", "קונים ללא התאמה נעצרים בגבול המנדט, לא בשיחת מכירה", "זמן הסליקה הנמדד הוא אלפיות שנייה, לא שבועות"] },
+      { kicker: "שלב 4", title: "קליק אחד לכל בעלים", sub: "כל בעל עסק מקבל כרטיס מוכן לעסקה: תנאים, הוכחת מרווח וקבלת BLOOM-XCH חתומה ב-Ed25519 שניתן לאמת במצב לא מקוון.", bullets: ["אישור הספק: החלטת הנהלה בקליק אחד", "אישור הלקוח: מנדט התשלום של AP2", "קבלת Ed25519 שכל אחד יכול לאמת במצב לא מקוון"] },
     ],
-    todayCount: [4, 4, 3],
-    orgs: ["קרן", "בנק", "רשת", "מעבדה"],
-    noCloud: "אפס אמון בענן",
-    handshake: "תעודה חתומה ⇄ אימות לא מקוון",
-  },
-  sovereign: {
+    labels: { core: "ריבון Bloom", truth: "מקור אמת", clamped: "הוגבל", agents: ["מכירות", "תפעול", "כספים", "תמיכה", "רכש", "מחקר"], channels: ["מייל", "הודעה באינסטגרם", "הודעה ברדיט", "API"], link: "קישור bloom", human: "שרשור אנושי · ימים", sandbox: "ארגז חול סמוי-כפול", budget: "תקציב", capability: "יכולת", intent: "כוונה", held: "נעצר בגבול", matched: "הותאם", provider: "בעלי הספק", client: "בעלי הלקוח", approve: "אישור", approved: "אושר", receipt: "קבלה נחתמה" },
+  },  sovereign: {
     cloud: "ארגז חול בענן",
     node: "צומת פרטי ריבוני",
     view: "צומת ריבוני",

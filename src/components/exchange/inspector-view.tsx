@@ -45,7 +45,7 @@ export function InspectorView({ x, selected, onSelect }: { x: Exchange; selected
             <li key={r.taskId}>
               <button type="button" onClick={() => onSelect(r.taskId)} className={cn("w-full rounded-lg px-2.5 py-2 text-start transition-colors duration-150", selected === r.taskId ? "bg-white/[0.06]" : "hover:bg-white/[0.03]")}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className={cn("tnum truncate font-mono text-[10.5px]", r.certificateId ? "text-[var(--xch-emerald)]" : "text-white/60")} dir="ltr">
+                  <span className={cn("tnum truncate font-mono text-[10.5px]", r.certificateId ? "text-[var(--xch-verified)]" : "text-white/60")} dir="ltr">
                     {r.certificateId ?? r.taskId}
                   </span>
                   <span className="tnum shrink-0 font-mono text-[11px] text-white/85" dir="ltr">
@@ -108,7 +108,7 @@ function Detail({ view, keys }: { view: OperatorView; keys: Jwk[] }) {
     <Panel className="p-0 sm:p-0">
       <header className="flex flex-wrap items-center gap-3 border-b border-[var(--xch-line)] px-5 py-4">
         <div className="min-w-0">
-          <p className={cn("truncate text-[15px] tracking-[0.03em]", cert ? "text-[var(--xch-emerald)]" : "font-mono text-[var(--xch-amber)]")}>{cert ? <HashDecode text={cert.certificateId} /> : view.taskId}</p>
+          <p className={cn("truncate text-[15px] tracking-[0.03em]", cert ? "text-[var(--xch-verified)]" : "font-mono text-[var(--xch-clamp)]")}>{cert ? <HashDecode text={cert.certificateId} /> : view.taskId}</p>
           <p className="mt-0.5 truncate text-[11.5px] text-white/45">
             {view.peer.name} · {view.item.description}
           </p>
@@ -201,7 +201,7 @@ function Rounds({ view }: { view: OperatorView }) {
                 <td className="py-1.5 pe-3 capitalize text-white/55">{r.terms.slaTier}</td>
                 <td className="py-1.5 pe-3">
                   {d?.clamps.length ? (
-                    <span className="text-[var(--xch-amber)]" dir="ltr">
+                    <span className="text-[var(--xch-clamp)]" dir="ltr">
                       {d.clamps.map((c) => `${c.rule} ${typeof c.from === "number" ? usd(c.from) : c.from}→${typeof c.to === "number" ? usd(c.to) : c.to}`).join(", ")}
                     </span>
                   ) : d ? (
@@ -279,9 +279,9 @@ function ShieldAudit({ view }: { view: OperatorView }) {
   return (
     <div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <Stat label={t.trust} value={`${s.trust}/100`} tone={s.trust < 40 ? "text-[var(--xch-rose)]" : "text-[var(--xch-emerald)]"} />
+        <Stat label={t.trust} value={`${s.trust}/100`} tone={s.trust < 40 ? "text-[var(--xch-threat)]" : "text-[var(--xch-verified)]"} />
         <Stat label={t.posture} value={s.posture} />
-        <Stat label={t.verdict} value={s.verdict} tone={s.verdict === "clean" ? "text-[var(--xch-emerald)]" : "text-[var(--xch-rose)]"} />
+        <Stat label={t.verdict} value={s.verdict} tone={s.verdict === "clean" ? "text-[var(--xch-verified)]" : "text-[var(--xch-threat)]"} />
       </div>
       {s.threats.length === 0 ? (
         <p className="mt-5 text-[12px] text-white/45">{t.noThreats}</p>
@@ -307,7 +307,7 @@ function ShieldAudit({ view }: { view: OperatorView }) {
                   <td className="py-1.5 pe-3 font-mono text-white/45" dir="ltr">
                     {x.field}
                   </td>
-                  <td className="py-1.5 font-mono text-white/40 line-through decoration-[color-mix(in_srgb,var(--xch-rose)_60%,transparent)]" dir="ltr">
+                  <td className="py-1.5 font-mono text-white/40 line-through decoration-[color-mix(in_srgb,var(--xch-threat)_60%,transparent)]" dir="ltr">
                     {x.excerpt || x.rule}
                   </td>
                 </tr>
@@ -328,14 +328,14 @@ function AetherProof({ view }: { view: OperatorView }) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label={t.realized} value={`${a.realizedMarginPct}%`} tone="text-[var(--xch-emerald)]" />
+        <Stat label={t.realized} value={`${a.realizedMarginPct}%`} tone="text-[var(--xch-verified)]" />
         <Stat label={t.floor} value={`${a.minMarginPct}%`} />
-        <Stat label={t.headroom} value={`${a.marginHeadroomPct > 0 ? "+" : ""}${a.marginHeadroomPct} pts`} tone={a.marginHeadroomPct < 0 ? "text-[var(--xch-amber)]" : undefined} />
+        <Stat label={t.headroom} value={`${a.marginHeadroomPct > 0 ? "+" : ""}${a.marginHeadroomPct} pts`} tone={a.marginHeadroomPct < 0 ? "text-[var(--xch-clamp)]" : undefined} />
         <Stat label={t.pv} value={`${a.pvAdjustedMarginPct}%`} />
         <Stat label={t.timeValue} value={usd(a.timeValueCostUsd)} />
         <Stat label={t.capital} value={`${a.costOfCapitalPct}% / yr`} />
         <Stat label={t.resourceFloor} value={a.resourceFloorUsd ? usd(a.resourceFloorUsd) : "—"} />
-        <Stat label={t.resourceHeadroom} value={a.resourceFloorUsd ? usd(a.resourceHeadroomUsd) : "—"} tone={a.resourceFloorUsd ? "text-[var(--xch-emerald)]" : undefined} />
+        <Stat label={t.resourceHeadroom} value={a.resourceFloorUsd ? usd(a.resourceHeadroomUsd) : "—"} tone={a.resourceFloorUsd ? "text-[var(--xch-verified)]" : undefined} />
       </div>
       <p className="mt-5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{t.restructures}</p>
       {a.restructures.length === 0 ? (

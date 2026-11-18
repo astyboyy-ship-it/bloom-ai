@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "exchange-window-chrome",
+  "description": "Bloom Exchange draws its own title bar (frameless window): the remote app may drag, minimize, maximize and close its own window. Nothing else.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://workflow-architect-two.vercel.app/*", "http://localhost:3000/*"]
+  },
+  "permissions": [
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-close",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
+  ]
+}

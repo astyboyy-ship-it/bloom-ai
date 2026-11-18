@@ -374,7 +374,7 @@ function Flower({ kind, uid, open, still, flare }: { kind: FlowerKind; uid: stri
 
 export type Bloom = { kind: FlowerKind; x: string; y: string; size: number; delay?: number; rotate?: number };
 
-function Blossom({ bloom: b, index: i, uid, flare }: { bloom: Bloom; index: number; uid: string; flare: number }) {
+function Blossom({ bloom: b, index: i, uid, flare, still }: { bloom: Bloom; index: number; uid: string; flare: number; still: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
   const reduce = useReducedMotion() ?? false;
@@ -406,10 +406,10 @@ function Blossom({ bloom: b, index: i, uid, flare }: { bloom: Bloom; index: numb
         viewBox="-70 -70 140 140"
         className="size-full overflow-visible drop-shadow-[0_10px_24px_rgb(0_0_0/0.55)]"
         style={{ originX: 0.5, originY: b.kind === "rose" ? 0.85 : 0.5 }}
-        animate={reduce ? undefined : { rotate: [-3, 3, -3], scale: [1, 1.04, 1] }}
+        animate={reduce || still ? undefined : { rotate: [-3, 3, -3], scale: [1, 1.04, 1] }}
         transition={{ duration: 7 + (i % 3), repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
       >
-        <Flower kind={b.kind} uid={`${uid}-${i}`} open={inView} still={reduce} flare={flare} />
+        <Flower kind={b.kind} uid={`${uid}-${i}`} open={inView} still={reduce || still} flare={flare} />
       </motion.svg>
     </motion.div>
   );
@@ -417,15 +417,17 @@ function Blossom({ bloom: b, index: i, uid, flare }: { bloom: Bloom; index: numb
 
 /**
  * Flowers that open when scrolled into view, then sway gently, placed over a painting.
- * Incrementing `flare` makes the dahlias bloom again with golden light.
+ * Incrementing `flare` makes the dahlias bloom again with golden light. `still` renders them fully open and
+ * motionless: the endless sway and petal breathing re-rasterize every petal each frame, too costly behind a dense,
+ * always-on interface.
  */
-export function FloraField({ blooms, className, flare = 0 }: { blooms: Bloom[]; className?: string; flare?: number }) {
+export function FloraField({ blooms, className, flare = 0, still = false }: { blooms: Bloom[]; className?: string; flare?: number; still?: boolean }) {
   const uid = useId().replace(/:/g, "");
 
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0", className)}>
       {blooms.map((b, i) => (
-        <Blossom key={i} bloom={b} index={i} uid={uid} flare={flare} />
+        <Blossom key={i} bloom={b} index={i} uid={uid} flare={flare} still={still} />
       ))}
     </div>
   );

@@ -5,15 +5,17 @@ import Link from "next/link";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, LayoutDashboard, Network, RotateCcw, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { BloomWordmark } from "@/components/bloom/logo";
+
+
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type PaletteItem } from "./command-palette";
 import { useExchangeCopy, type ExchangeView } from "./copy";
 import type { MacroDomain } from "@/lib/exchange/omni-adapter";
 import { AgentGoalInspector } from "./AgentGoalInspector";
-import { BOOT_KEY, CinematicIntro } from "./CinematicIntro";
-import { ProblemSolverDemo } from "./ProblemSolverDemo";
+import { DesktopFrame } from "@/components/desktop/DesktopFrame";
+import { BloomInfrastructureTheater } from "./BloomInfrastructureTheater";
+import { BOOT_KEY, CinematicBootIntro } from "./CinematicBootIntro";
 import { SovereignConsole, SovereignToggle, type ConsoleMode } from "./SovereignToggle";
 import { GlobalPulse } from "./GlobalPulse";
 import { IntroHero } from "./IntroHero";
@@ -90,17 +92,14 @@ export function ExchangeApp() {
     }
   }, []);
 
-  // The terminal waits just behind the intro, then springs into place (150ms) as the overlay starts to dissolve.
+  // The terminal waits behind the boot and springs into place (150ms) the moment the boot starts its exit.
+  // A skipped boot (repeat visit) lands on the final state at once instead of staying hidden.
   useEffect(() => {
     if (boot === null) return;
-    terminal.set({ scale: 0.985, opacity: 0.6 });
-    const id = setTimeout(() => void terminal.start({ scale: 1, opacity: 1, transition: SPRING }), 750);
-    // A skipped boot (repeat visit) cancels the spring: land on the final state instead of staying scaled down.
-    return () => {
-      clearTimeout(id);
-      terminal.set({ scale: 1, opacity: 1 });
-    };
+    terminal.set({ scale: 0.97, opacity: 0 });
+    return () => terminal.set({ scale: 1, opacity: 1 });
   }, [boot, terminal]);
+  const springIn = useCallback(() => void terminal.start({ scale: 1, opacity: 1, transition: SPRING }), [terminal]);
   const setView = useCallback((v: ExchangeView) => {
     setViewState(v);
     try {
@@ -183,19 +182,15 @@ export function ExchangeApp() {
 
   const s = x.status;
   return (
-    <div className="xch relative min-h-dvh overflow-x-hidden">
+    <DesktopFrame title={t.header.product}>
       <div className="pointer-events-none fixed inset-0 opacity-60" aria-hidden>
         <div className="bloom-noise h-full w-full" />
       </div>
 
       <div className="relative">
-        <header className="sticky top-0 z-40 border-b border-[var(--xch-line)] bg-[#09090b]/85 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-[var(--xch-line)] bg-[#0c0709]/75 backdrop-blur-xl">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
-            <Link href="/exchange" className="flex items-baseline gap-2.5">
-              <BloomWordmark className="text-[21px]" />
-              <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--xch-emerald)]">{t.header.product}</span>
-            </Link>
-            <button type="button" onClick={() => setPalette(true)} className="order-last flex h-8 w-full items-center gap-2 rounded-lg border border-[var(--xch-line)] bg-white/[0.02] px-2.5 text-[12px] text-white/40 transition-colors duration-150 hover:border-[var(--xch-line-strong)] hover:text-white/70 md:order-none md:ms-4 md:w-64">
+            <button type="button" onClick={() => setPalette(true)} className="order-last flex h-8 w-full items-center gap-2 rounded-full border border-[var(--xch-line-strong)] bg-white/[0.02] px-3 text-[12px] text-white/40 transition-colors duration-150 hover:text-white/70 md:order-none md:w-72">
               <Command className="size-3.5" /> <span className="flex-1 truncate text-start">{t.header.search}</span>
               <Kbd>⌘K</Kbd>
             </button>
@@ -257,7 +252,7 @@ export function ExchangeApp() {
                       setView("intents");
                     }}
                   />
-                  <ProblemSolverDemo />
+                  <BloomInfrastructureTheater />
                 </div>
               )}
               {view === "intents" && <AgentGoalInspector x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
@@ -281,7 +276,7 @@ export function ExchangeApp() {
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={items} />
-      {boot !== null && <CinematicIntro key={boot} kid={x.status?.kid ?? null} onDone={() => setBoot(null)} />}
-    </div>
+      {boot !== null && <CinematicBootIntro key={boot} kid={x.status?.kid ?? null} onLeave={springIn} onDone={() => setBoot(null)} />}
+    </DesktopFrame>
   );
 }

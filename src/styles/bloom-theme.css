@@ -1,0 +1,145 @@
+/* ---------------------------------------------------------------------------------------------------
+   Bloom Exchange · Bloom identity
+   The Operating Desk's own language carried into the clearing terminal: an obsidian-rose canvas, velvety
+   crimson light, warm gold ambience, plum glass framed by fine rose-gold hairlines, the Cormorant display
+   serif with gold italics, and the painterly depth of the site's paintings. Colour stays semantic:
+     gold    verified, settled, signed
+     ember   clamped by an invariant, escalated
+     crimson threat neutralized, quarantined
+   --------------------------------------------------------------------------------------------------- */
+
+.xch {
+  --xch-bg: #0c0709;
+  --xch-card: rgb(24 12 16 / 0.72);
+  --xch-card-solid: #170b0f;
+  --xch-raise: #1f1015;
+  --xch-line: rgba(255, 255, 255, 0.06);
+  --xch-line-strong: rgba(240, 213, 154, 0.16);
+  --xch-cream: #f1ede8;
+  --xch-gold: #f0d59a;
+  --xch-crimson: #e11d48;
+  --xch-verified: #e9c77b;
+  --xch-clamp: #f4a261;
+  --xch-threat: #ff4d6d;
+  --xch-glow-crimson: rgba(225, 29, 72, 0.14);
+  --xch-glow-gold: rgba(240, 190, 110, 0.07);
+  --xch-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  background: var(--xch-bg);
+  color: var(--xch-cream);
+}
+.xch .tnum,
+.xch .font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Plum glass framed by a rose-gold hairline: a cool white edge, a warm gold catch-light along the top. */
+.xch-card {
+  background: var(--xch-card);
+  border: 1px solid var(--xch-line);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(240, 213, 154, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 30px 60px -40px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+.xch-hair {
+  border-color: var(--xch-line);
+}
+
+/* Display headings in Bloom's Cormorant with the gold-italic accent the homepage uses. */
+.xch-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.xch-gold-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  background: linear-gradient(100deg, #f6e3b4 0%, #e9c77b 45%, #c9954a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The canvas: obsidian-rose with two slow velvety crimson glows and warm gold ambient light. */
+.xch-atmosphere {
+  background:
+    radial-gradient(60% 45% at 12% 0%, var(--xch-glow-crimson), transparent 70%),
+    radial-gradient(50% 40% at 92% 18%, rgba(225, 29, 72, 0.09), transparent 70%),
+    radial-gradient(70% 50% at 50% 110%, var(--xch-glow-gold), transparent 70%),
+    var(--xch-bg);
+}
+@keyframes xch-velvet {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+.xch-velvet {
+  animation: xch-velvet 7s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  will-change: opacity, transform;
+}
+
+/* Native-feeling title bar: draggable, no text selection. */
+.xch-titlebar {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+.xch-titlebar button,
+.xch-titlebar a,
+.xch-titlebar [data-no-drag] {
+  -webkit-app-region: no-drag;
+}
+
+/* Organic particle bloom: petals burst out from a minted receipt and drift down. */
+@keyframes xch-petal {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(0.4);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1);
+    opacity: 0;
+  }
+}
+.xch-petal {
+  animation: xch-petal 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* Boot: hairlines drawn across the canvas. */
+@keyframes xch-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.xch-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: xch-draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xch-velvet,
+  .xch-petal {
+    animation: none;
+  }
+  .xch-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

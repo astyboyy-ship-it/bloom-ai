@@ -63,7 +63,7 @@ export function StressTest({ x, onInspect, className }: { x: Exchange; onInspect
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-white">
-                  <Icon className={cn("size-3.5", id === "adversarial" ? "text-[var(--xch-rose)]" : id === "breach" ? "text-[var(--xch-amber)]" : "text-white/55")} strokeWidth={1.75} /> {t.scenarios[id].name}
+                  <Icon className={cn("size-3.5", id === "adversarial" ? "text-[var(--xch-threat)]" : id === "breach" ? "text-[var(--xch-clamp)]" : "text-white/55")} strokeWidth={1.75} /> {t.scenarios[id].name}
                 </span>
                 <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/40 group-hover:text-white/80">{busy && active ? <Loader2 className="size-3 animate-spin" /> : t.fire}</span>
               </div>
@@ -101,7 +101,7 @@ export function StressTest({ x, onInspect, className }: { x: Exchange; onInspect
               </div>
             </div>
             {run.certificateId && (
-              <p className="xch-flash mt-2 text-[13px] text-[var(--xch-emerald)]">
+              <p className="xch-flash mt-2 text-[13px] text-[var(--xch-verified)]">
                 <HashDecode text={run.certificateId} />
               </p>
             )}
@@ -136,7 +136,7 @@ export function StressTest({ x, onInspect, className }: { x: Exchange; onInspect
           <div className="min-w-0 rounded-[10px] border border-[var(--xch-line)] bg-black/25 p-3">
             <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{t.log}</p>
             <ol className="mt-2 max-h-[340px] space-y-1 overflow-y-auto font-mono text-[10.5px] leading-snug">
-              {run.error && <li className="text-[var(--xch-rose)]">{run.error}</li>}
+              {run.error && <li className="text-[var(--xch-threat)]">{run.error}</li>}
               {run.log.map((l) => (
                 <li
                   key={l.id}
@@ -150,7 +150,7 @@ export function StressTest({ x, onInspect, className }: { x: Exchange; onInspect
                   <span className={cn("uppercase tracking-[0.1em]", ENGINE_TONE[l.source] ?? "text-white/50")}>{l.source}</span>
                   <span
                     className={cn(
-                      l.tone === "good" ? "text-[var(--xch-emerald)]" : l.tone === "threat" || l.tone === "bad" ? "text-[var(--xch-rose)]" : l.tone === "clamp" ? "text-[var(--xch-amber)]" : "text-white/60",
+                      l.tone === "good" ? "text-[var(--xch-verified)]" : l.tone === "threat" || l.tone === "bad" ? "text-[var(--xch-threat)]" : l.tone === "clamp" ? "text-[var(--xch-clamp)]" : "text-white/60",
                     )}
                     dir="ltr"
                   >
@@ -161,7 +161,7 @@ export function StressTest({ x, onInspect, className }: { x: Exchange; onInspect
             </ol>
             {run.scenario === "adversarial" && (
               <details className="mt-3 border-t border-[var(--xch-line)] pt-2">
-                <summary className="cursor-pointer font-mono text-[9.5px] uppercase tracking-[0.16em] text-[var(--xch-rose)]/80">{t.payload}</summary>
+                <summary className="cursor-pointer font-mono text-[9.5px] uppercase tracking-[0.16em] text-[var(--xch-threat)]/80">{t.payload}</summary>
                 <pre className="mt-1.5 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-black/40 p-2 text-[10px] text-white/45" dir="ltr">
                   {SCENARIOS.adversarial.message.replace(/[\u{E0000}-\u{E007F}]+/gu, "⟨invisible tag payload⟩")}
                 </pre>

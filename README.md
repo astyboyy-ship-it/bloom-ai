@@ -165,9 +165,9 @@ curl -N https://your-bloom.app/api/exchange/a2a \
 
 ## The clearing terminal
 
-`/exchange` is the provider's console: obsidian, keyboard-first, with color reserved for meaning (emerald verified, amber clamped, rose threat). A global telemetry pulse runs across the top. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>6</kbd>:
+`/exchange` is the provider's operating desk, in Bloom's own identity: obsidian-rose, velvety crimson glows, warm gold light, rose-gold hairlines and the Cormorant display serif, with color reserved for meaning (gold verified, ember clamped, crimson threat). It opens with a 4.5-second boot sequence (hairline grid, the Bloom emblem blooming in, live diagnostics that decode this deployment's real root key); <kbd>Esc</kbd> skips it, and it plays once per session. The whole desk sits in a desktop frame with its own title bar: <kbd>⌘R</kbd> or <kbd>Ctrl R</kbd> refreshes telemetry without reloading, and a global telemetry pulse runs across the top. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>6</kbd>:
 
-1. **Overview.** The thesis, the omni-protocol registry, and a three-part Problem-Solver theater (an illustration). Part 1 is the 2026 agent connectivity nightmare, Part 2 is Bloom Exchange's clearing path, and Part 3 is sovereign nodes with federated trust, where each item is marked as available today or roadmap.
+1. **Overview.** The thesis, the omni-protocol registry, and a four-step theater (an illustration) of how Bloom ends agent chaos: (1) a company's agents orchestrated under one sovereign, fed by ground truth and clamped in code; (2) a Bloom link met in email, DMs or an API, moving the conversation into a double-blind sandbox (the link itself is a concept; the sandbox ships today); (3) intents tested against both sealed mandates, with no-fit buyers held at the bound; (4) one-click sign-off for each owner and a BLOOM-XCH Ed25519 receipt.
 2. **Live Clearing Ledger.** KPIs, the traffic topology, settlements and the exception queue, and a stress-test bay that fires real A2A requests (standard, injection and lowball, swarm resource hoarding, bounds breach).
 3. **Omni-Protocol Intents.** Every injected intent's core goal, source protocol, resource vector and Sovereign clamp. The "Inject any agent or protocol" drawer fires real-shaped payloads from all six domains, or any custom source, through the live pipeline.
 4. **Macro Mandate & Invariant Matrix.** The standing price mandate, per-dimension capacity and unit floors, and the invariants Sovereign enforces.
@@ -176,7 +176,7 @@ curl -N https://your-bloom.app/api/exchange/a2a \
 
 A **Cloud Sandbox / Sovereign Private Node** switch in the header opens the node console. It shows the root key fingerprint and the egress posture, plus host hardware and the Shield audit ledger with its hash chain re-verified on every refresh (Operator key only).
 
-It ships in English, Spanish and Hebrew (right-to-left), and as a standalone desktop app: `npm run tauri:exchange`.
+It ships in English, Spanish and Hebrew (right-to-left), and as a standalone desktop app: `npm run tauri:exchange` opens a frameless native window whose title bar (drag region, petal-toned window controls) is drawn by the desk itself.
 
 ## Self-hosting
 

@@ -51,7 +51,7 @@ function Code({ title, code }: { title: string; code: string }) {
           }
           className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-white/45 hover:text-white"
         >
-          {copied ? <Check className="size-3 text-[var(--xch-emerald)]" /> : <Copy className="size-3" />} {copied ? t.copied : t.copy}
+          {copied ? <Check className="size-3 text-[var(--xch-verified)]" /> : <Copy className="size-3" />} {copied ? t.copied : t.copy}
         </button>
       </div>
       <pre className="tnum mt-1.5 overflow-auto rounded-[10px] border border-[var(--xch-line)] bg-black/50 p-3.5 font-mono text-[11px] leading-relaxed text-white/75" dir="ltr">
@@ -112,7 +112,7 @@ export function SdkView({ x }: { x: Exchange }) {
           <ol className="space-y-3">
             {t.steps.map((s, i) => (
               <li key={i} className="grid grid-cols-[22px_1fr] gap-2">
-                <span className="tnum font-mono text-[10px] text-[var(--xch-emerald)]">{String(i + 1).padStart(2, "0")}</span>
+                <span className="tnum font-mono text-[10px] text-[var(--xch-verified)]">{String(i + 1).padStart(2, "0")}</span>
                 <span className="text-[12px] leading-relaxed text-white/70">{s}</span>
               </li>
             ))}

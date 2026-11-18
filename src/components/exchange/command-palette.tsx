@@ -68,7 +68,7 @@ export function CommandPalette({ open, onClose, items }: { open: boolean; onClos
             role="dialog"
             aria-modal="true"
             aria-label={t.placeholder}
-            className="fixed inset-x-3 top-[14vh] z-[90] mx-auto max-w-[560px] overflow-hidden rounded-[14px] border border-[var(--xch-line-strong)] bg-[#111114] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.9)]"
+            className="fixed inset-x-3 top-[14vh] z-[90] mx-auto max-w-[560px] overflow-hidden rounded-[14px] border border-[var(--xch-line-strong)] bg-[#170b0f] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.9)]"
             initial={{ opacity: 0, scale: 0.97, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -4 }}

@@ -1420,34 +1420,7 @@
   }
 }
 
-/* Exchange "Calm Precision" tokens: obsidian canvas, elevated cards, hairlines, semantic-only color. */
-.xch {
-  --xch-bg: #09090b;
-  --xch-card: #111114;
-  --xch-raise: #17171b;
-  --xch-line: rgba(255, 255, 255, 0.08);
-  --xch-line-strong: rgba(255, 255, 255, 0.14);
-  --xch-emerald: #34f5b5;
-  --xch-amber: #f5b544;
-  --xch-rose: #fb7185;
-  --xch-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  background: var(--xch-bg);
-  color: #fafafa;
-}
-.xch .tnum,
-.xch .font-mono {
-  font-variant-numeric: tabular-nums;
-}
-.xch-card {
-  background: var(--xch-card);
-  border: 1px solid var(--xch-line);
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-.xch-hair {
-  border-color: var(--xch-line);
-}
-
+/* Exchange tokens, surfaces and identity live in src/styles/bloom-theme.css. */
 /* Live ledger rows: a matrix fade-in, then a 1px emerald trace sweeps along the row's base and fades. */
 @keyframes xch-matrix-in {
   from {
@@ -1487,7 +1460,7 @@
   inset-inline: 0;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--xch-emerald), transparent);
+  background: linear-gradient(90deg, transparent, var(--xch-verified), transparent);
   transform-origin: left center;
   animation: xch-trace 1.1s var(--xch-spring, ease-out) both;
   pointer-events: none;
@@ -1518,21 +1491,21 @@
 }
 @keyframes xch-pulse-rose {
   0% {
-    box-shadow: 0 0 0 0 rgba(251, 113, 133, 0.55);
-    background-color: rgba(251, 113, 133, 0.12);
+    box-shadow: 0 0 0 0 rgba(255, 77, 109, 0.55);
+    background-color: rgba(255, 77, 109, 0.12);
   }
   100% {
-    box-shadow: 0 0 0 6px rgba(251, 113, 133, 0);
+    box-shadow: 0 0 0 6px rgba(255, 77, 109, 0);
     background-color: transparent;
   }
 }
 @keyframes xch-pulse-amber {
   0% {
-    box-shadow: 0 0 0 0 rgba(245, 181, 68, 0.5);
-    background-color: rgba(245, 181, 68, 0.1);
+    box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.5);
+    background-color: rgba(244, 162, 97, 0.1);
   }
   100% {
-    box-shadow: 0 0 0 6px rgba(245, 181, 68, 0);
+    box-shadow: 0 0 0 6px rgba(244, 162, 97, 0);
     background-color: transparent;
   }
 }
@@ -1559,12 +1532,12 @@
   100% {
     opacity: 0.45;
     transform: scale(0.82);
-    box-shadow: 0 0 0 0 rgba(52, 245, 181, 0);
+    box-shadow: 0 0 0 0 rgba(233, 199, 123, 0);
   }
   50% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 10px 2px rgba(52, 245, 181, 0.45);
+    box-shadow: 0 0 10px 2px rgba(233, 199, 123, 0.45);
   }
 }
 .xch-breathe {

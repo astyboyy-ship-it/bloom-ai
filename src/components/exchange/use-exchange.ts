@@ -5,6 +5,7 @@ import { cardKeys, sseJson, verifyAgentCard, type AgentCard, type Jwk } from "@b
 import { requestHeaders, useDeskSettings } from "@/components/desk/settings";
 import { DEFAULT_STANDING_MANDATE, InitiatorMandateSchema, type ExchangeEvent, type InitiatorMandate, type OperatorView, type PublicRound, type TaskState } from "@/lib/exchange/types";
 import type { AgentIntentNode } from "@/lib/exchange/omni-adapter";
+import { REFRESH_EVENT } from "@/components/desktop/DesktopFrame";
 import { SCENARIOS, type ScenarioId } from "./scenarios";
 
 export type Status = { source: "live" | "simulated"; provider: string; environment: "operator" | "production" | "sandbox"; licensed: boolean; operator: boolean; notice: string | null; kid: string; keyOrigin: string };
@@ -84,6 +85,13 @@ export function useExchange() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [intents, setIntents] = useState<AgentIntentNode[]>([]);
   const [pulseTick, setPulseTick] = useState(0);
+  // ⌘/Ctrl+R in the desktop frame: re-read status, intents and (for the operator) the ledger.
+  const [refreshTick, setRefreshTick] = useState(0);
+  useEffect(() => {
+    const on = () => setRefreshTick((n) => n + 1);
+    window.addEventListener(REFRESH_EVENT, on);
+    return () => window.removeEventListener(REFRESH_EVENT, on);
+  }, []);
   const [run, setRun] = useState<LiveRun | null>(null);
   const logId = useRef(0);
   const operator = status?.operator === true;
@@ -97,7 +105,7 @@ export function useExchange() {
     return () => {
       alive = false;
     };
-  }, [headers]);
+  }, [headers, refreshTick]);
 
   useEffect(() => {
     fetch("/.well-known/agent-card.json", { cache: "no-store" })
@@ -149,7 +157,7 @@ export function useExchange() {
     void refreshLedger();
     const t = setInterval(refreshLedger, 8000);
     return () => clearInterval(t);
-  }, [operator, refreshLedger]);
+  }, [operator, refreshLedger, refreshTick]);
 
   const storeView = useCallback(
     (v: OperatorView) => {
@@ -309,7 +317,7 @@ export function useExchange() {
       .then((r) => (r.ok ? (r.json() as Promise<{ intents: AgentIntentNode[] }>) : null))
       .then((d) => d && setIntents(d.intents))
       .catch(() => undefined);
-  }, [headers]);
+  }, [headers, refreshTick]);
 
   /** Sends any protocol's payload (or a source name and goal) through the live clearing pipeline. */
   const inject = useCallback(

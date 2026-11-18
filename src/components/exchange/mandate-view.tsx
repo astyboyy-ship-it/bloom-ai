@@ -18,7 +18,7 @@ const DEFAULT_OFFER: Record<ResourceDimension, { capacity: number; floorUnitPric
   bandwidthGbps: { capacity: 40, floorUnitPriceUsd: 95 },
 };
 
-const input = "tnum w-full rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1.5 font-mono text-[12.5px] text-white outline-none transition-colors duration-150 focus:border-[color-mix(in_srgb,var(--xch-emerald)_55%,transparent)]";
+const input = "tnum w-full rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1.5 font-mono text-[12.5px] text-white outline-none transition-colors duration-150 focus:border-[color-mix(in_srgb,var(--xch-verified)_55%,transparent)]";
 const label = "block truncate font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/40";
 
 export function MandateView({ x }: { x: Exchange }) {
@@ -63,7 +63,7 @@ export function MandateView({ x }: { x: Exchange }) {
               <span className={label}>{t.mandate.fields.maxSlaTier}</span>
               <select value={draft.maxSlaTier} onChange={(e) => setDraft((d) => ({ ...d, maxSlaTier: e.target.value as InitiatorMandate["maxSlaTier"] }))} className={cn(input, "mt-1 capitalize")}>
                 {SLA_TIERS.map((s) => (
-                  <option key={s} value={s} className="bg-[#111114]">
+                  <option key={s} value={s} className="bg-[#170b0f]">
                     {s}
                   </option>
                 ))}
@@ -71,7 +71,7 @@ export function MandateView({ x }: { x: Exchange }) {
             </label>
             <div className="flex min-w-0 flex-col justify-end">
               <span className={label}>{t.mandate.effectiveFloor}</span>
-              <span className={cn("tnum mt-1 rounded-md border border-dashed px-2.5 py-1.5 font-mono text-[12.5px]", valid ? "border-[color-mix(in_srgb,var(--xch-emerald)_35%,transparent)] text-[var(--xch-emerald)]" : "border-[color-mix(in_srgb,var(--xch-amber)_45%,transparent)] text-[var(--xch-amber)]")} dir="ltr">
+              <span className={cn("tnum mt-1 rounded-md border border-dashed px-2.5 py-1.5 font-mono text-[12.5px]", valid ? "border-[color-mix(in_srgb,var(--xch-verified)_35%,transparent)] text-[var(--xch-verified)]" : "border-[color-mix(in_srgb,var(--xch-clamp)_45%,transparent)] text-[var(--xch-clamp)]")} dir="ltr">
                 {Number.isFinite(floor) ? usd(floor) : "—"}
               </span>
             </div>
@@ -103,7 +103,7 @@ export function MandateView({ x }: { x: Exchange }) {
                         </span>
                       </td>
                       <td className="py-2 pe-3">
-                        <button type="button" role="switch" aria-checked={Boolean(r)} aria-label={t.matrix.dims[d]} onClick={() => setRes(d, r ? null : {})} className={cn("relative h-4 w-7 rounded-full border transition-colors duration-150", r ? "border-[color-mix(in_srgb,var(--xch-emerald)_50%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_25%,transparent)]" : "border-[var(--xch-line-strong)] bg-white/[0.03]")}>
+                        <button type="button" role="switch" aria-checked={Boolean(r)} aria-label={t.matrix.dims[d]} onClick={() => setRes(d, r ? null : {})} className={cn("relative h-4 w-7 rounded-full border transition-colors duration-150", r ? "border-[color-mix(in_srgb,var(--xch-verified)_50%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_25%,transparent)]" : "border-[var(--xch-line-strong)] bg-white/[0.03]")}>
                           <span className={cn("absolute top-[1px] size-3 rounded-full bg-white transition-[inset-inline-start] duration-150", r ? "start-[13px]" : "start-[1px]")} />
                         </button>
                       </td>
@@ -122,8 +122,8 @@ export function MandateView({ x }: { x: Exchange }) {
               </tbody>
             </table>
           </div>
-          {!valid && <p className="mt-3 text-[11.5px] text-[var(--xch-amber)]">{t.mandate.invalid}</p>}
-          <button type="button" onClick={() => void save()} disabled={!valid || !dirty || saving} className="mt-4 w-full rounded-lg border border-[color-mix(in_srgb,var(--xch-emerald)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-emerald)_8%,transparent)] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--xch-emerald)] transition-opacity duration-150 disabled:opacity-35">
+          {!valid && <p className="mt-3 text-[11.5px] text-[var(--xch-clamp)]">{t.mandate.invalid}</p>}
+          <button type="button" onClick={() => void save()} disabled={!valid || !dirty || saving} className="mt-4 w-full rounded-lg border border-[color-mix(in_srgb,var(--xch-verified)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_8%,transparent)] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--xch-verified)] transition-opacity duration-150 disabled:opacity-35">
             {t.mandate.save}
           </button>
         </Panel>
