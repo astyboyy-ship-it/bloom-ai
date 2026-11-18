@@ -1,0 +1,23 @@
+{
+  "name": "@bloom/exchange-sdk",
+  "version": "1.0.0",
+  "description": "Connect any AI agent to Bloom Exchange: A2A v1.0 negotiation, sealed mandates, and offline verification of BLOOM-XCH settlement certificates.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "example": "node examples/external-buyer-agent.ts"
+  },
+  "keywords": ["a2a", "ap2", "x402", "agents", "negotiation", "clearinghouse", "bloom"]
+}

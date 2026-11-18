@@ -1380,3 +1380,42 @@
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------
+   Bloom Exchange
+   --------------------------------------------------------------------------------------------------- */
+/* A session that has already seen the boot sequence never paints it (set by an inline script in /exchange). */
+[data-xch-booted] .xch-boot {
+  display: none;
+}
+@keyframes xch-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.xch-sweep {
+  animation: xch-sweep 6s linear infinite;
+}
+.xch-print {
+  display: none;
+}
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .xch-print,
+  .xch-print * {
+    visibility: visible !important;
+  }
+  .xch-print {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: #fff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xch-sweep {
+    animation: none;
+  }
+}

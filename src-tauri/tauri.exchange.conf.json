@@ -1,0 +1,27 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Bloom Exchange",
+  "mainBinaryName": "bloom-exchange",
+  "identifier": "ai.bloom.exchange",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Bloom Exchange — Autonomous Clearinghouse",
+        "url": "exchange?app=desktop",
+        "width": 1480,
+        "height": 920,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#07080c"
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "Bloom Exchange: the autonomous inter-agent clearinghouse.",
+    "longDescription": "Negotiate, clamp and settle agent-to-agent deals over A2A v1.0 in double-blind enclaves, and inspect signed BLOOM-XCH settlement certificates mapped to AP2, from a native desktop app."
+  }
+}

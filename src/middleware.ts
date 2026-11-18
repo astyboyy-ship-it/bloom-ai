@@ -12,7 +12,7 @@ import { ACCESS_COOKIE, verifyAccessKey } from "@/lib/licensing/codec";
  * accessNeuralControlPlane: the key's HMAC is verified here, on every request, from the httpOnly cookie that
  * /api/license sets on activation. Anything else is sent back to /desk (pages) or refused (API).
  */
-const PUBLIC_DEMO_APIS = ["/api/intent-pulse", "/api/aware-marketing", "/api/aware-infrastructure", "/api/shadow-workforce", "/api/foundry", "/api/chat", "/api/command", "/api/desktop", "/api/license", "/api/settings", "/api/pipeline"];
+const PUBLIC_DEMO_APIS = ["/api/intent-pulse", "/api/aware-marketing", "/api/aware-infrastructure", "/api/shadow-workforce", "/api/foundry", "/api/chat", "/api/command", "/api/desktop", "/api/license", "/api/settings", "/api/pipeline", "/api/exchange"];
 const CONTROL_PLANE = "/desk/control-plane";
 const CONTROL_PLANE_API = "/api/control-plane";
 
