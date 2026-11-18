@@ -3,16 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { FloraField, type Bloom } from "@/components/bloom/art/flora";
 import { BloomWordmark } from "@/components/bloom/logo";
 
 /**
  * The native window around Bloom Exchange. In the desktop app (Tauri, frameless window) it draws the title bar:
- * a drag region (double-click maximizes), the Bloom wordmark, and petal-toned window controls wired to the native
+ * a drag region (double-click maximizes), the Bloom wordmark, and quiet ink window controls wired to the native
  * window. In a browser it keeps the same chrome without controls, so the terminal never feels like a web tab.
  * Shortcuts: ⌘/Ctrl+R refreshes telemetry instead of reloading the page (⌘/Ctrl+K stays with the command palette).
- * The atmosphere is the white gallery: paper white, warm daylight, a whisper of a garden painting behind the glass
- * and two roses at the frame.
+ * The atmosphere is a painting under glass: alabaster parchment with grain, a garden painting held faintly behind
+ * it, twilight olive in the corners and a varnish-deep vignette. Everything here is static except two slow glows.
  */
 
 export const REFRESH_EVENT = "xch:refresh";
@@ -29,15 +28,11 @@ function nativeWindow(): TauriWindow | null {
   }
 }
 
-const FRAME_ROSES: Bloom[] = [
-  { kind: "rose", x: "1.5%", y: "97%", size: 86, delay: 1.2, rotate: 14 },
-  { kind: "rose", x: "98.5%", y: "4%", size: 72, delay: 1.5, rotate: -18 },
-];
-
-function Control({ label, tone, onClick, glyph }: { label: string; tone: string; onClick: () => void; glyph: React.ReactNode }) {
+/** Quiet ink controls; colour only where it means something (close turns crimson under the pointer). */
+function Control({ label, danger, onClick, glyph }: { label: string; danger?: boolean; onClick: () => void; glyph: React.ReactNode }) {
   return (
-    <button type="button" aria-label={label} title={label} onClick={onClick} className="group grid size-[13px] place-items-center rounded-full transition-transform duration-150 hover:scale-110" style={{ background: tone, boxShadow: `0 0 0 1px rgba(0,0,0,0.35), 0 0 10px -2px ${tone}` }}>
-      <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">{glyph}</span>
+    <button type="button" aria-label={label} title={label} onClick={onClick} className={`group grid size-[13px] place-items-center rounded-full bg-x-ink/[0.13] shadow-[inset_0_0_0_1px_rgba(21,19,15,0.18)] transition-colors duration-200 hover:bg-x-ink/30 ${danger ? "hover:bg-[var(--xch-threat)]" : ""}`}>
+      <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100">{glyph}</span>
     </button>
   );
 }
@@ -76,27 +71,27 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
 
   const glyph = (d: string) => (
     <svg viewBox="0 0 10 10" className="size-[7px]" aria-hidden>
-      <path d={d} stroke="#2a0a10" strokeWidth={1.5} strokeLinecap="round" fill="none" />
+      <path d={d} stroke="#fdfbf5" strokeWidth={1.4} strokeLinecap="round" fill="none" />
     </svg>
   );
 
   return (
     <div className="xch xch-atmosphere relative flex h-dvh flex-col overflow-hidden" dir="ltr">
-      {/* Atmosphere: painting whisper, velvety crimson glows, roses at the frame */}
+      {/* Atmosphere: the painting behind the glass, two slow glows, a varnish-deep vignette */}
       <div className="pointer-events-none fixed inset-0" aria-hidden>
-        <Image src="/paintings/golden-landscape.jpg" alt="" fill sizes="100vw" quality={75} className="object-cover opacity-[0.07] saturate-[0.8]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,252,250,0.55),rgba(253,252,250,0.9)_40%,rgba(253,252,250,0.96))]" />
-        <div className="xch-velvet absolute -left-[12%] -top-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(122,160,104,0.10),transparent)]" />
-        <div className="xch-velvet absolute -bottom-[22%] -right-[8%] h-[65vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(214,170,92,0.12),transparent)] [animation-delay:-3.5s]" />
-        <FloraField blooms={FRAME_ROSES} className="opacity-80" still />
+        <Image src="/paintings/golden-landscape.jpg" alt="" fill sizes="100vw" quality={75} className="object-cover opacity-[0.1] saturate-[0.55] sepia-[0.25]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(247,243,234,0.5),rgba(247,243,234,0.88)_38%,rgba(247,243,234,0.95))]" />
+        <div className="xch-velvet absolute -left-[12%] -bottom-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(74,88,52,0.12),transparent)]" />
+        <div className="xch-velvet absolute -right-[8%] -top-[22%] h-[65vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(196,160,92,0.12),transparent)] [animation-delay:-5s]" />
+        <div className="xch-vignette absolute inset-0" />
       </div>
 
-      <header className="xch-titlebar relative z-50 flex h-9 shrink-0 items-center gap-3 border-b border-[var(--xch-line)] bg-white/70 px-3 backdrop-blur-xl" data-tauri-drag-region>
+      <header className="xch-titlebar relative z-50 flex h-9 shrink-0 items-center gap-3 border-b border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)]/75 px-3 backdrop-blur-xl" data-tauri-drag-region>
         {win && (
           <div className="flex items-center gap-2" data-no-drag>
-            <Control label="Close" tone="#e11d48" onClick={() => void win.close()} glyph={glyph("M2.5 2.5l5 5M7.5 2.5l-5 5")} />
-            <Control label="Minimize" tone="#f0d59a" onClick={() => void win.minimize()} glyph={glyph("M2 5h6")} />
-            <Control label={maximized ? "Restore" : "Maximize"} tone="#f5a9b0" onClick={() => void win.toggleMaximize()} glyph={glyph(maximized ? "M3 6.5h4M3 3.5h4" : "M5 2v6M2 5h6")} />
+            <Control label="Close" danger onClick={() => void win.close()} glyph={glyph("M2.5 2.5l5 5M7.5 2.5l-5 5")} />
+            <Control label="Minimize" onClick={() => void win.minimize()} glyph={glyph("M2 5h6")} />
+            <Control label={maximized ? "Restore" : "Maximize"} onClick={() => void win.toggleMaximize()} glyph={glyph(maximized ? "M3 6.5h4M3 3.5h4" : "M5 2v6M2 5h6")} />
           </div>
         )}
         <div className="pointer-events-none flex min-w-0 items-baseline gap-2" data-tauri-drag-region>
@@ -111,7 +106,7 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
           <span>⌘R</span>
         </div>
         {/* A gold hairline sweeps the title bar on every telemetry refresh */}
-        {pulse > 0 && <motion.span key={pulse} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-transparent via-[var(--xch-gold)] to-transparent" initial={{ scaleX: 0, opacity: 1 }} animate={{ scaleX: 1, opacity: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />}
+        {pulse > 0 && <motion.span key={pulse} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-transparent via-[var(--xch-verified)] to-transparent" initial={{ scaleX: 0, opacity: 1 }} animate={{ scaleX: 1, opacity: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />}
       </header>
 
       <div className="xch-scroll relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>

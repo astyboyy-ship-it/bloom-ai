@@ -73,24 +73,24 @@ export function TrafficRadar({ traffic, className }: { traffic: TrafficItem[]; c
         <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={t.title}>
           <defs>
             <radialGradient id="xch-sweep" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0" stopColor="#8f6a1c" stopOpacity="0.1" />
-              <stop offset="1" stopColor="#8f6a1c" stopOpacity="0" />
+              <stop offset="0" stopColor="#7a5c1e" stopOpacity="0.1" />
+              <stop offset="1" stopColor="#7a5c1e" stopOpacity="0" />
             </radialGradient>
           </defs>
           {[46, 92, 132].map((r) => (
-            <circle key={r} cx={ENCLAVE.x} cy={ENCLAVE.y} r={r} fill="none" stroke="rgba(163,122,40,0.18)" strokeDasharray="2 5" />
+            <circle key={r} cx={ENCLAVE.x} cy={ENCLAVE.y} r={r} fill="none" stroke="rgba(120,88,30,0.18)" strokeDasharray="2 5" />
           ))}
           <g className="xch-sweep" style={{ transformOrigin: `${ENCLAVE.x}px ${ENCLAVE.y}px` }}>
             <path d={`M${ENCLAVE.x} ${ENCLAVE.y} L${ENCLAVE.x + 132} ${ENCLAVE.y} A132 132 0 0 0 ${ENCLAVE.x + 132 * Math.cos(-0.6)} ${ENCLAVE.y + 132 * Math.sin(-0.6)} Z`} fill="url(#xch-sweep)" />
           </g>
           {peers.map((p) => (
-            <line key={p} x1={PEER_X} y1={peerY(p)} x2={ENCLAVE.x - 30} y2={ENCLAVE.y} stroke="rgba(163,122,40,0.22)" />
+            <line key={p} x1={PEER_X} y1={peerY(p)} x2={ENCLAVE.x - 30} y2={ENCLAVE.y} stroke="rgba(120,88,30,0.22)" />
           ))}
           {PARLIAMENT_NODES.map((e, i) => (
-            <line key={e.engine} x1={ENCLAVE.x + 30} y1={ENCLAVE.y} x2={ENGINE_X} y2={engineY(i)} stroke="rgba(163,122,40,0.22)" />
+            <line key={e.engine} x1={ENCLAVE.x + 30} y1={ENCLAVE.y} x2={ENGINE_X} y2={engineY(i)} stroke="rgba(120,88,30,0.22)" />
           ))}
           <motion.path d={hexPath(ENCLAVE.x, ENCLAVE.y, 30)} fill="#faf8f4" stroke={enclaveStroke} strokeWidth={1} animate={{ strokeOpacity: hot ? 1 : 0.6 }} transition={{ duration: 0.3 }} />
-          <text x={ENCLAVE.x} y={ENCLAVE.y + 3} textAnchor="middle" className="font-mono" fill="#8f6a1c" fontSize={8} letterSpacing="0.12em">
+          <text x={ENCLAVE.x} y={ENCLAVE.y + 3} textAnchor="middle" className="font-mono" fill="#7a5c1e" fontSize={8} letterSpacing="0.12em">
             ENCLAVE
           </text>
           <text x={ENCLAVE.x} y={ENCLAVE.y + 48} textAnchor="middle" className="font-mono uppercase" fill="rgba(22,17,15,0.45)" fontSize={8} letterSpacing="0.18em">
@@ -112,7 +112,7 @@ export function TrafficRadar({ traffic, className }: { traffic: TrafficItem[]; c
           </text>
           {PARLIAMENT_NODES.map((e, i) => (
             <g key={e.engine}>
-              <rect x={ENGINE_X - 34} y={engineY(i) - 9} width={68} height={18} rx={4} fill="#faf8f4" stroke={(hot === "blocked" && e.engine === "shield") || (hot === "settled" && e.engine === "sovereign") ? COLOR[hot as TrafficKind] : "rgba(163,122,40,0.3)"} />
+              <rect x={ENGINE_X - 34} y={engineY(i) - 9} width={68} height={18} rx={4} fill="#faf8f4" stroke={(hot === "blocked" && e.engine === "shield") || (hot === "settled" && e.engine === "sovereign") ? COLOR[hot as TrafficKind] : "rgba(120,88,30,0.3)"} />
               <text x={ENGINE_X} y={engineY(i) + 3} textAnchor="middle" className="font-mono uppercase" fill="rgba(22,17,15,0.72)" fontSize={8} letterSpacing="0.14em">
                 {e.label}
               </text>

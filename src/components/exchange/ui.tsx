@@ -12,12 +12,12 @@ export const PARLIAMENT_NODES = [
   { engine: "apex", label: "Apex" },
 ] as const;
 
-/** Engine names stay neutral; color is reserved for meaning (verified, clamped, threat). */
+/** Engine names stay neutral ink; colour belongs to the line's meaning (verified, clamped, threat), never to the engine. */
 export const ENGINE_TONE: Record<string, string> = {
-  shield: "text-[var(--xch-threat)]",
+  shield: "text-x-ink/70",
   cortex: "text-x-ink/70",
   aether: "text-x-ink/70",
-  sovereign: "text-[var(--xch-verified)]",
+  sovereign: "text-x-ink/70",
   apex: "text-x-ink/70",
 };
 
@@ -37,7 +37,7 @@ export function PanelHeader({ icon: Icon, title, sub, right }: { icon: LucideIco
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <h2 className="xch-display flex items-center gap-2 text-[19px] leading-tight text-[var(--xch-ink)]">
-          <Icon className="size-[15px] shrink-0 text-[var(--xch-gold)]/60" strokeWidth={1.75} /> {title}
+          <Icon className="size-[15px] shrink-0 text-x-ink/45" strokeWidth={1.75} /> {title}
         </h2>
         {sub && <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-x-ink/45">{sub}</p>}
       </div>
@@ -56,11 +56,11 @@ const TONES: Record<Tone, string> = {
 };
 
 export function Badge({ tone = "muted", className, children }: { tone?: Tone; className?: string; children: React.ReactNode }) {
-  return <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em]", TONES[tone], className)}>{children}</span>;
+  return <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-[4px] border px-1.5 py-[3px] font-mono text-[9px] uppercase leading-none tracking-[0.14em]", TONES[tone], className)}>{children}</span>;
 }
 
 export function Kbd({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <kbd className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded border border-[var(--xch-line-strong)] bg-x-ink/[0.03] px-1 font-mono text-[10px] text-x-ink/55", className)}>{children}</kbd>;
+  return <kbd className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)] px-1 font-mono text-[10px] text-x-ink/55 shadow-[inset_0_-1px_0_rgba(120,88,30,0.12)]", className)}>{children}</kbd>;
 }
 
 export function Stat({ label, value, tone, sub }: { label: string; value: React.ReactNode; tone?: string; sub?: React.ReactNode }) {

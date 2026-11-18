@@ -26,7 +26,7 @@ function Tile({ icon: Icon, label, value, sub, tone, className }: { icon: Lucide
   return (
     <div className={cn("xch-card min-w-0 p-4", className)}>
       <p className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-x-ink/45">
-        <Icon className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} /> {label}
+        <Icon className="size-3.5 text-x-ink/45" strokeWidth={1.5} /> {label}
       </p>
       <p className={cn("xch-display tnum mt-2 truncate text-[30px] leading-none text-x-ink", tone)}>{value}</p>
       {sub && <p className="tnum mt-1.5 truncate font-mono text-[10.5px] text-x-ink/45">{sub}</p>}
@@ -81,7 +81,7 @@ export function OverviewDashboard({
     <div className="space-y-4">
       <section className="flex flex-wrap items-end justify-between gap-6 px-1 pb-2 pt-2">
         <div className="min-w-0 max-w-3xl">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--xch-gold)]">{t.kicker}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-x-ink/45">{t.kicker}</p>
           <h1 className="xch-display mt-3 text-[34px] leading-[1.05] text-x-ink sm:text-[48px]">
             {t.title} <span className="xch-gold-italic">{t.accent}</span>
           </h1>
@@ -94,8 +94,8 @@ export function OverviewDashboard({
               type="button"
               onClick={a.run}
               className={cn(
-                "flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] transition-[transform,background-color] duration-150 hover:-translate-y-px",
-                a.primary ? "bg-x-ink text-x-paper shadow-[0_10px_24px_-14px_rgba(22,17,15,0.6)]" : "border border-[var(--xch-line)] bg-white text-x-ink/80 hover:bg-[var(--xch-raise)]",
+                "flex items-center gap-2 px-4 py-2 text-[12.5px]",
+                a.primary ? "xch-btn-ink" : "xch-btn text-x-ink/80",
               )}
             >
               <a.icon className="size-3.5" strokeWidth={1.6} /> {a.label}
@@ -144,7 +144,7 @@ export function OverviewDashboard({
             {settled.length === 0 && <li className="py-10 text-center text-[12px] text-x-ink/40">{t.receipts.empty}</li>}
             {settled.slice(0, 5).map((r) => (
               <li key={r.taskId}>
-                <button type="button" onClick={() => onInspect(r.taskId)} className="group flex w-full items-center gap-3 rounded-[12px] border border-[var(--xch-line)] bg-white px-3 py-2.5 text-start transition-colors duration-150 hover:border-[var(--xch-line-strong)]">
+                <button type="button" onClick={() => onInspect(r.taskId)} className="group flex w-full items-center gap-3 rounded-[12px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)] px-3 py-2.5 text-start transition-colors duration-150 hover:border-[var(--xch-line-strong)]">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12px] text-[var(--xch-verified)]">
                       <HashDecode text={r.certificateId!} ms={480} />
@@ -166,10 +166,10 @@ export function OverviewDashboard({
         <PanelHeader icon={Cpu} title={o.hero.registry} sub={o.hero.registrySub} />
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {MACRO_DOMAINS.map((d) => (
-            <button key={d} type="button" onClick={() => onDomain(d)} className="group min-w-0 rounded-[12px] border border-[var(--xch-line)] bg-white px-3.5 py-3 text-start transition-colors duration-150 hover:border-[var(--xch-line-strong)]">
+            <button key={d} type="button" onClick={() => onDomain(d)} className="group min-w-0 rounded-[12px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)] px-3.5 py-3 text-start transition-colors duration-150 hover:border-[var(--xch-line-strong)]">
               <span className="flex items-baseline justify-between gap-2">
                 <span className="text-[13px] text-x-ink">{o.domains[d]}</span>
-                <span className="tnum font-mono text-[11px] text-[var(--xch-gold)]">{perDomain[d].length}</span>
+                <span className="tnum font-mono text-[11px] text-x-ink/45">{perDomain[d].length}</span>
               </span>
               <span className="mt-1 block truncate font-mono text-[10.5px] text-x-ink/40">{perDomain[d].map((p) => p.label).join(" · ")}</span>
             </button>

@@ -3,51 +3,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { FloraField, type Bloom } from "@/components/bloom/art/flora";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { useDeskCopy } from "./desk-copy";
 
 export const INTRO_KEY = "bloom-exchange-intro";
 
 /**
- * The garden at twilight, then dawn. A painterly Garden of Eden (deep greens over a graded garden painting),
- * fireflies drifting on a canvas, vines drawing themselves up from the corners, roses unfurling, and the Bloom
- * wordmark with the line "Intent, not noise." At ~3.9s a dawn of white light opens from the centre and becomes
- * the luminous desk underneath. Esc, Enter, a click or Skip go straight to dawn. Once per session; reduced
- * motion skips it entirely.
+ * The garden at twilight, then dawn. A real oil painting of a garden, graded to twilight olive and settling slowly
+ * into place (one compositor transform), fine gold filigree drawing itself up from the corners, a few points of
+ * luminescence drifting on a canvas, a varnish-deep vignette, and the Bloom wordmark with "Intent, not noise."
+ * At ~3.9s a dawn of parchment light opens from the centre and becomes the desk underneath. Esc, Enter, a click or
+ * Skip go straight to dawn. Once per session; reduced motion skips it entirely (see exchange-app).
  */
 const DAWN_AT = 3900;
-const DAWN_MS = 750;
+const DAWN_MS = 850;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const ROSES: Bloom[] = [
-  { kind: "rose", x: "9%", y: "82%", size: 120, delay: 0.7, rotate: -14 },
-  { kind: "rose", x: "91%", y: "18%", size: 104, delay: 1.0, rotate: 12 },
-  { kind: "rose", x: "84%", y: "88%", size: 76, delay: 1.3, rotate: -24 },
+// Filigree: hairline gold tendrils rising from the lower corners, each with a curl.
+const FILIGREE = [
+  { d: "M-20 1010 C 120 860 60 720 190 600 S 320 380 250 220 C 232 180 270 160 284 190", delay: 0.2 },
+  { d: "M60 1030 C 220 900 300 820 360 690 S 420 520 520 470 C 552 456 560 488 538 494", delay: 0.55 },
+  { d: "M1460 1030 C 1300 880 1380 740 1250 620 S 1120 420 1190 260 C 1206 222 1170 206 1158 234", delay: 0.35 },
+  { d: "M1380 1040 C 1240 930 1160 840 1100 720 S 1020 560 930 520 C 900 508 892 538 914 546", delay: 0.7 },
 ];
 
-// Vines rise from the lower corners; leaves open along them once the stroke has passed.
-const VINES = [
-  { d: "M-20 1010 C 120 860 60 720 190 600 S 320 380 250 220", delay: 0.15 },
-  { d: "M60 1030 C 220 900 300 820 360 690 S 420 520 520 470", delay: 0.45 },
-  { d: "M1460 1030 C 1300 880 1380 740 1250 620 S 1120 420 1190 260", delay: 0.3 },
-  { d: "M1380 1040 C 1240 930 1160 840 1100 720 S 1020 560 930 520", delay: 0.6 },
-];
-const LEAVES = [
-  { x: 150, y: 690, r: -40, d: 1.1 },
-  { x: 205, y: 560, r: 30, d: 1.35 },
-  { x: 268, y: 330, r: -20, d: 1.6 },
-  { x: 345, y: 720, r: 40, d: 1.3 },
-  { x: 450, y: 495, r: -10, d: 1.7 },
-  { x: 1300, y: 700, r: 35, d: 1.2 },
-  { x: 1235, y: 520, r: -30, d: 1.45 },
-  { x: 1180, y: 330, r: 20, d: 1.7 },
-  { x: 1110, y: 740, r: -40, d: 1.4 },
-  { x: 990, y: 545, r: 15, d: 1.8 },
-];
-
-/** Gold fireflies on a canvas: a few dozen soft points drifting and twinkling, capped DPR, paused when hidden. */
-function Fireflies() {
+/** Luminescence on a canvas: a few soft points drifting upward and breathing; one pre-rendered glow, capped DPR. */
+function Luminescence() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -64,33 +45,34 @@ function Fireflies() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const n = w < 640 ? 22 : 42;
-    const flies = Array.from({ length: n }, (_, i) => ({ x: Math.random() * w, y: h * (0.25 + Math.random() * 0.75), vx: (Math.random() - 0.5) * 0.25, vy: -0.08 - Math.random() * 0.22, r: 1 + Math.random() * 1.8, ph: (i / n) * Math.PI * 2, sp: 0.6 + Math.random() * 1.4 }));
-    // One soft glow, rendered once; every firefly is a scaled, faded copy of it.
+    const n = w < 640 ? 14 : 26;
+    const motes = Array.from({ length: n }, (_, i) => ({ x: Math.random() * w, y: h * (0.3 + Math.random() * 0.7), vx: (Math.random() - 0.5) * 0.12, vy: -0.04 - Math.random() * 0.12, r: 0.8 + Math.random() * 1.3, ph: (i / n) * Math.PI * 2, sp: 0.35 + Math.random() * 0.7 }));
     const sprite = document.createElement("canvas");
     sprite.width = sprite.height = 64;
     const s = sprite.getContext("2d")!;
     const g = s.createRadialGradient(32, 32, 0, 32, 32, 32);
-    g.addColorStop(0, "rgba(255, 226, 150, 0.95)");
-    g.addColorStop(0.35, "rgba(240, 200, 110, 0.38)");
-    g.addColorStop(1, "rgba(240, 200, 110, 0)");
+    g.addColorStop(0, "rgba(246, 224, 170, 0.85)");
+    g.addColorStop(0.3, "rgba(214, 180, 112, 0.3)");
+    g.addColorStop(1, "rgba(214, 180, 112, 0)");
     s.fillStyle = g;
     s.fillRect(0, 0, 64, 64);
     let raf = 0;
     const t0 = performance.now();
     const frame = (now: number) => {
       const t = (now - t0) / 1000;
+      // Fade the whole field in over the first second and a half.
+      const fade = Math.min(1, t / 1.5);
       ctx.clearRect(0, 0, w, h);
-      for (const f of flies) {
-        f.x += f.vx + Math.sin(t * 0.7 + f.ph) * 0.15;
-        f.y += f.vy;
-        if (f.y < -10) {
-          f.y = h + 10;
-          f.x = Math.random() * w;
+      for (const m of motes) {
+        m.x += m.vx + Math.sin(t * 0.45 + m.ph) * 0.08;
+        m.y += m.vy;
+        if (m.y < -10) {
+          m.y = h + 10;
+          m.x = Math.random() * w;
         }
-        ctx.globalAlpha = 0.25 + 0.75 * Math.max(0, Math.sin(t * f.sp + f.ph));
-        const size = f.r * 12;
-        ctx.drawImage(sprite, f.x - size / 2, f.y - size / 2, size, size);
+        ctx.globalAlpha = fade * (0.15 + 0.6 * (0.5 + 0.5 * Math.sin(t * m.sp + m.ph)));
+        const size = m.r * 12;
+        ctx.drawImage(sprite, m.x - size / 2, m.y - size / 2, size, size);
       }
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
@@ -108,10 +90,7 @@ function Fireflies() {
 export function GardenIntro({ onDone }: { onDone: () => void }) {
   const t = useDeskCopy().intro;
   const [dawn, setDawn] = useState(false);
-  const [wide, setWide] = useState(false);
   const done = useRef(false);
-
-  useEffect(() => setWide(window.matchMedia("(min-width: 768px)").matches), []);
 
   const finish = useCallback(() => {
     if (done.current) return;
@@ -141,42 +120,40 @@ export function GardenIntro({ onDone }: { onDone: () => void }) {
   }, [dawn, finish]);
 
   return (
-    <div className="xch-intro fixed inset-0 z-[130] cursor-pointer overflow-hidden bg-[#0b1a12]" onClick={toDawn} role="presentation" dir="ltr">
-      {/* Twilight over the garden painting */}
-      <motion.div className="absolute inset-0 will-change-[opacity]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.8, ease: EASE }}>
-        <Image src="/paintings/villa-deste.jpg" alt="" fill priority sizes="100vw" quality={75} className="object-cover opacity-[0.42] saturate-[0.35]" />
-        <div className="absolute inset-0 bg-[radial-gradient(85%_70%_at_50%_45%,rgba(37,72,48,0.35),rgba(11,26,18,0.88)_70%,#07120c)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(45%_35%_at_50%_42%,rgba(226,191,120,0.16),transparent_70%)]" />
+    <div className="xch-intro fixed inset-0 z-[130] cursor-pointer overflow-hidden bg-[#12150c]" onClick={toDawn} role="presentation" dir="ltr">
+      {/* The painting, graded to twilight olive, settling into place */}
+      <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2, ease: EASE }}>
+        <div className="xch-settle absolute inset-0">
+          <Image src="/paintings/villa-deste.jpg" alt="" fill priority sizes="100vw" quality={75} className="object-cover opacity-[0.55] saturate-[0.45] sepia-[0.35]" />
+        </div>
+        <div className="absolute inset-0 bg-[radial-gradient(80%_65%_at_50%_42%,rgba(58,66,41,0.25),rgba(24,28,16,0.78)_68%,#0d0f08)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(40%_32%_at_50%_44%,rgba(214,180,112,0.14),transparent_72%)]" />
       </motion.div>
 
-      <Fireflies />
+      <Luminescence />
 
-      {/* Vines and leaves */}
+      {/* Filigree */}
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice" aria-hidden>
-        {VINES.map((v) => (
-          <path key={v.d} d={v.d} pathLength={1} className="xch-draw" fill="none" stroke="rgba(150,184,128,0.55)" strokeWidth={2.2} strokeLinecap="round" style={{ animationDelay: `${v.delay}s`, animationDuration: "2.2s" }} />
-        ))}
-        {LEAVES.map((l) => (
-          <motion.ellipse key={`${l.x}-${l.y}`} cx={l.x} cy={l.y} rx={15} ry={6} fill="rgba(122,160,104,0.6)" transform={`rotate(${l.r} ${l.x} ${l.y})`} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.8, delay: l.d, ease: EASE }} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+        {FILIGREE.map((v) => (
+          <path key={v.d} d={v.d} pathLength={1} className="xch-draw" fill="none" stroke="rgba(214,180,112,0.38)" strokeWidth={0.9} strokeLinecap="round" style={{ animationDelay: `${v.delay}s` }} />
         ))}
       </svg>
 
-      {/* Roses arrive fully open: the petal-by-petal unfurl costs too many frames at full screen. */}
-      <motion.div className="pointer-events-none absolute inset-0" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.6, delay: 0.6, ease: EASE }}>
-        <FloraField blooms={wide ? ROSES : ROSES.slice(0, 2)} className="opacity-95" still />
-      </motion.div>
+      {/* Varnish */}
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_rgba(0,0,0,0.55)]" aria-hidden />
 
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-        <motion.div className="text-6xl sm:text-8xl" initial={{ opacity: 0, scale: 0.92, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.4, delay: 0.7, ease: EASE }}>
+        <motion.span className="block h-px w-40 origin-center bg-[linear-gradient(90deg,transparent,rgba(214,180,112,0.7),transparent)]" initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: 1 }} transition={{ duration: 1.6, delay: 0.4, ease: EASE }} aria-hidden />
+        <motion.div className="mt-7 text-6xl sm:text-8xl" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.6, delay: 0.7, ease: EASE }}>
           <BloomWordmark />
         </motion.div>
-        <motion.p className="xch-gold-italic mt-1 text-[44px] leading-none sm:text-[60px] [background:linear-gradient(100deg,#f6e3b4,#e2bf78_45%,#c9954a)] [-webkit-background-clip:text] [background-clip:text]" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, delay: 1.15, ease: EASE }}>
+        <motion.p className="xch-display mt-1 text-[44px] font-normal italic leading-none text-[#d9c08a] sm:text-[60px]" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.3, delay: 1.15, ease: EASE }}>
           Exchange
         </motion.p>
-        <motion.p className="xch-display mt-6 text-[26px] text-[#f0ece0] sm:text-[34px]" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 1.9, ease: EASE }}>
+        <motion.p className="xch-display mt-8 text-[28px] text-[#efe8d6] sm:text-[38px]" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.3, delay: 1.9, ease: EASE }}>
           {t.line}
         </motion.p>
-        <motion.p className="mt-3 font-mono text-[10.5px] uppercase tracking-[0.3em] text-[rgba(240,236,224,0.6)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 2.4 }}>
+        <motion.p className="mt-3 font-mono text-[10px] uppercase tracking-[0.32em] text-[rgba(239,232,214,0.5)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2, delay: 2.4 }}>
           {t.sub}
         </motion.p>
       </div>
@@ -187,13 +164,13 @@ export function GardenIntro({ onDone }: { onDone: () => void }) {
           e.stopPropagation();
           toDawn();
         }}
-        className="absolute bottom-5 end-5 rounded-full border border-[rgba(226,191,120,0.3)] bg-black/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[rgba(240,236,224,0.75)] transition-colors hover:text-white"
+        className="absolute bottom-5 end-5 rounded-[7px] border border-[rgba(214,180,112,0.28)] bg-black/25 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[rgba(239,232,214,0.7)] backdrop-blur-sm transition-colors hover:text-white"
       >
         {t.skip} · Esc
       </button>
 
-      {/* Dawn: white light opens from the centre and becomes the desk */}
-      {dawn && <motion.div className="pointer-events-none absolute left-1/2 top-1/2 size-[260vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#fdfcfa_62%,rgba(253,252,250,0.6)_80%,rgba(253,252,250,0))]" initial={{ scale: 0, opacity: 0.6 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: DAWN_MS / 1000, ease: [0.65, 0, 0.35, 1] }} aria-hidden />}
+      {/* Dawn: parchment light opens from the centre and becomes the desk */}
+      {dawn && <motion.div className="pointer-events-none absolute left-1/2 top-1/2 size-[260vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#f7f3ea_60%,rgba(247,243,234,0.6)_80%,rgba(247,243,234,0))]" initial={{ scale: 0, opacity: 0.5 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: DAWN_MS / 1000, ease: [0.65, 0, 0.35, 1] }} aria-hidden />}
     </div>
   );
 }

@@ -48,7 +48,7 @@ export function GlobalPulse({ stats: s, mode }: { stats: PulseStats | null; mode
   const t = useOmniCopy();  const active = s && s.enclaves > 0;
   const maxDomain = s ? Math.max(1, ...Object.values(s.domainsActive)) : 1;
   return (
-    <div className="border-b border-[var(--xch-line)] bg-white/50">
+    <div className="border-b border-[var(--xch-line)] bg-[var(--xch-card-solid)]/50">
       <div className="mx-auto flex max-w-[1600px] items-center gap-3.5 xch-noscroll overflow-x-auto px-4 py-2 sm:px-6" aria-live="off">
         <span className="flex shrink-0 items-center gap-2">
           <span className="xch-breathe size-2 rounded-full bg-[var(--xch-verified)]" aria-hidden />

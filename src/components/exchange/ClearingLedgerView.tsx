@@ -83,7 +83,7 @@ function ThroughputChart({ rows, className }: { rows: Row[]; className?: string 
               </rect>
             );
           })}
-          <path d={line} fill="none" stroke="#8f6a1c" strokeWidth={1.4} />
+          <path d={line} fill="none" stroke="#7a5c1e" strokeWidth={1.4} />
           <text x={12} y={H - 4} fontSize={9} fill="rgba(22,17,15,0.4)" className="font-mono">
             {time(points[0].updatedAt)}
           </text>
@@ -129,7 +129,7 @@ function LedgerTable({ x, onInspect, className }: { x: Exchange; onInspect: (tas
         icon={BookCheck}
         title={d.title}
         right={
-          <button type="button" onClick={exportAll} disabled={!x.rows.length} className="flex items-center gap-1.5 rounded-full border border-[var(--xch-line)] bg-white px-3 py-1.5 text-[11.5px] text-x-ink/70 transition-colors hover:bg-[var(--xch-raise)] hover:text-x-ink disabled:opacity-40">
+          <button type="button" onClick={exportAll} disabled={!x.rows.length} className="xch-btn flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] text-x-ink/70 hover:text-x-ink disabled:opacity-40">
             <FileDown className="size-3.5" strokeWidth={1.5} /> {d.exportAll}
           </button>
         }
@@ -181,16 +181,16 @@ function LedgerTable({ x, onInspect, className }: { x: Exchange; onInspect: (tas
                   <td className="px-2 py-2.5">
                     <span className="flex justify-end gap-1.5">
                       {held && !REJECT_ONLY.has(r.exception!) && (
-                        <button type="button" disabled={pending === r.taskId} onClick={() => void decide(r, "override")} className="flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--xch-verified)_40%,transparent)] px-2.5 py-1 text-[11px] text-[var(--xch-verified)] hover:bg-[color-mix(in_srgb,var(--xch-verified)_7%,transparent)] disabled:opacity-40">
+                        <button type="button" disabled={pending === r.taskId} onClick={() => void decide(r, "override")} className="flex items-center gap-1 rounded-[7px] border border-[color-mix(in_srgb,var(--xch-verified)_40%,transparent)] px-2.5 py-1 text-[11px] text-[var(--xch-verified)] hover:bg-[color-mix(in_srgb,var(--xch-verified)_7%,transparent)] disabled:opacity-40">
                           <Check className="size-3" /> {t.override}
                         </button>
                       )}
                       {held && (
-                        <button type="button" disabled={pending === r.taskId} onClick={() => void decide(r, "reject")} className="flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--xch-threat)_35%,transparent)] px-2.5 py-1 text-[11px] text-[var(--xch-threat)] hover:bg-[color-mix(in_srgb,var(--xch-threat)_6%,transparent)] disabled:opacity-40">
+                        <button type="button" disabled={pending === r.taskId} onClick={() => void decide(r, "reject")} className="flex items-center gap-1 rounded-[7px] border border-[color-mix(in_srgb,var(--xch-threat)_35%,transparent)] px-2.5 py-1 text-[11px] text-[var(--xch-threat)] hover:bg-[color-mix(in_srgb,var(--xch-threat)_6%,transparent)] disabled:opacity-40">
                           <X className="size-3" /> {t.reject}
                         </button>
                       )}
-                      <button type="button" disabled={pending === r.taskId} onClick={() => void exportOne(r)} aria-label={d.exportOne} title={d.exportOne} className="grid size-7 place-items-center rounded-full border border-[var(--xch-line)] text-x-ink/55 transition-colors hover:bg-[var(--xch-raise)] hover:text-x-ink disabled:opacity-40">
+                      <button type="button" disabled={pending === r.taskId} onClick={() => void exportOne(r)} aria-label={d.exportOne} title={d.exportOne} className="xch-btn grid size-7 place-items-center text-x-ink/60 hover:text-x-ink disabled:opacity-40">
                         {pending === r.taskId ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" strokeWidth={1.5} />}
                       </button>
                     </span>

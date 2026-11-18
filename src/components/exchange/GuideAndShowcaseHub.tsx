@@ -32,7 +32,7 @@ export function GuideAndShowcaseHub({ onAction }: { onAction: (id: GuideModuleId
   return (
     <div className="space-y-5">
       <section className="px-1 pt-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--xch-gold)]">{t.kicker}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-x-ink/45">{t.kicker}</p>
         <h1 className="xch-display mt-3 text-[34px] leading-[1.05] text-x-ink sm:text-[48px]">
           {t.title} <span className="xch-gold-italic">{t.accent}</span>
         </h1>
@@ -51,8 +51,8 @@ export function GuideAndShowcaseHub({ onAction }: { onAction: (id: GuideModuleId
           return (
             <article key={m.id} className="xch-card flex min-w-0 flex-col p-5">
               <header className="flex items-start gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[var(--xch-line-strong)] bg-white">
-                  <Icon className="size-[18px] text-[var(--xch-gold)]" strokeWidth={1.4} />
+                <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)]">
+                  <Icon className="size-[18px] text-x-ink/45" strokeWidth={1.4} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-x-ink/40">
@@ -67,17 +67,17 @@ export function GuideAndShowcaseHub({ onAction }: { onAction: (id: GuideModuleId
               <ol className="mt-2 space-y-1.5">
                 {m.steps.map((s, k) => (
                   <li key={s} className="grid grid-cols-[20px_1fr] gap-2 text-[12.5px] leading-snug text-x-ink/80">
-                    <span className="tnum font-mono text-[10.5px] text-[var(--xch-gold)]">{k + 1}</span>
+                    <span className="tnum font-mono text-[10.5px] text-x-ink/45">{k + 1}</span>
                     <span>{s}</span>
                   </li>
                 ))}
               </ol>
               <div className="mt-auto flex flex-wrap gap-2 pt-5">
-                <button type="button" onClick={() => watch(m.id)} className="flex items-center gap-1.5 rounded-full border border-[var(--xch-line)] bg-white px-3.5 py-1.5 text-[12px] text-x-ink/75 transition-colors duration-150 hover:bg-[var(--xch-raise)] hover:text-x-ink">
+                <button type="button" onClick={() => watch(m.id)} className="xch-btn flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] text-x-ink/75 hover:text-x-ink">
                   <PlayCircle className="size-3.5" strokeWidth={1.5} /> {t.watch}
                 </button>
                 {live && (
-                  <button type="button" onClick={() => onAction(m.id)} className={cn("flex items-center gap-1.5 rounded-full bg-x-ink px-3.5 py-1.5 text-[12px] text-x-paper transition-transform duration-150 hover:-translate-y-px")}>
+                  <button type="button" onClick={() => onAction(m.id)} className={cn("xch-btn-ink flex items-center gap-1.5 px-3.5 py-1.5 text-[12px]")}>
                     {m.cta} <ArrowRight className="size-3.5" strokeWidth={1.6} />
                   </button>
                 )}

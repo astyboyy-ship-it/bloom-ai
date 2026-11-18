@@ -456,16 +456,16 @@ function RoutingPipeline({ counts, domain, setDomain }: { counts: Record<MacroDo
             const path = `M178 ${y} C250 ${y} 270 ${bridge.y} ${bridge.x - 40} ${bridge.y}`;
             return (
               <g key={m} role="button" tabIndex={0} aria-pressed={domain === m} className="cursor-pointer outline-none" opacity={on ? 1 : 0.35} onClick={() => setDomain(domain === m ? "all" : m)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setDomain(domain === m ? "all" : m))}>
-                <rect x={8} y={y - 12} width={170} height={24} rx={12} fill="#ffffff" stroke={domain === m ? "#8f6a1c" : "rgba(22,17,15,0.1)"} />
+                <rect x={8} y={y - 12} width={170} height={24} rx={12} fill="#fdfbf5" stroke={domain === m ? "#7a5c1e" : "rgba(22,17,15,0.1)"} />
                 <text x={22} y={y + 4} fontSize={11} fill="rgba(22,17,15,0.82)">
                   {t.domains[m]}
                 </text>
-                <text x={166} y={y + 4} fontSize={10} textAnchor="end" fill="#8f6a1c" className="font-mono">
+                <text x={166} y={y + 4} fontSize={10} textAnchor="end" fill="#7a5c1e" className="font-mono">
                   {counts[m]}
                 </text>
-                <path d={path} fill="none" stroke="rgba(163,122,40,0.3)" strokeWidth={1.1} />
+                <path d={path} fill="none" stroke="rgba(120,88,30,0.3)" strokeWidth={1.1} />
                 {counts[m] > 0 && on && (
-                  <circle r={2.6} fill="#8f6a1c">
+                  <circle r={2.6} fill="#7a5c1e">
                     <animateMotion dur="2.2s" begin={`${i * 0.3}s`} repeatCount="indefinite" path={path} />
                   </circle>
                 )}
@@ -473,21 +473,21 @@ function RoutingPipeline({ counts, domain, setDomain }: { counts: Record<MacroDo
             );
           })}
           <circle cx={bridge.x} cy={bridge.y} r={64} fill="url(#xch-route-glow)" />
-          <rect x={bridge.x - 40} y={bridge.y - 18} width={80} height={36} rx={18} fill="#ffffff" stroke="#8f6a1c" />
-          <text x={bridge.x} y={bridge.y + 4} fontSize={10.5} textAnchor="middle" fill="#8f6a1c" className="font-mono">
+          <rect x={bridge.x - 40} y={bridge.y - 18} width={80} height={36} rx={18} fill="#fdfbf5" stroke="#7a5c1e" />
+          <text x={bridge.x} y={bridge.y + 4} fontSize={10.5} textAnchor="middle" fill="#7a5c1e" className="font-mono">
             {d.bridge}
           </text>
-          <path d={trunk} fill="none" stroke="rgba(163,122,40,0.4)" strokeWidth={1.2} />
+          <path d={trunk} fill="none" stroke="rgba(120,88,30,0.4)" strokeWidth={1.2} />
           {flowing &&
             [0, 1, 2].map((k) => (
-              <rect key={k} x={-4} y={-3} width={8} height={6} rx={1.5} fill="#8f6a1c">
+              <rect key={k} x={-4} y={-3} width={8} height={6} rx={1.5} fill="#7a5c1e">
                 <animateMotion dur="2.4s" begin={`${k * 0.8}s`} repeatCount="indefinite" path={trunk} />
               </rect>
             ))}
           {stages.map((s, i) => (
             <g key={s.label}>
-              <rect x={s.x - (i === 0 ? 62 : 44)} y={bridge.y - 16} width={i === 0 ? 124 : 88} height={32} rx={10} fill="#ffffff" stroke={i === 1 ? "rgba(193,17,49,0.35)" : "rgba(22,17,15,0.12)"} />
-              <text x={s.x} y={bridge.y + 4} fontSize={i === 0 ? 10 : 10.5} textAnchor="middle" fill={i === 1 ? "#c11131" : "rgba(22,17,15,0.82)"} className={i === 0 ? "font-mono" : undefined}>
+              <rect x={s.x - (i === 0 ? 62 : 44)} y={bridge.y - 16} width={i === 0 ? 124 : 88} height={32} rx={10} fill="#fdfbf5" stroke={i === 1 ? "rgba(193,17,49,0.35)" : "rgba(22,17,15,0.12)"} />
+              <text x={s.x} y={bridge.y + 4} fontSize={i === 0 ? 10 : 10.5} textAnchor="middle" fill={i === 1 ? "#a3122f" : "rgba(22,17,15,0.82)"} className={i === 0 ? "font-mono" : undefined}>
                 {s.label}
               </text>
             </g>

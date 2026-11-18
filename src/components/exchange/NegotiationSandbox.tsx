@@ -84,7 +84,7 @@ export function NegotiationSandbox({ x, onInspect }: { x: Exchange; onInspect: (
   return (
     <div className="space-y-5">
       <section className="px-1 pt-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--xch-gold)]">{t.kicker}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-x-ink/45">{t.kicker}</p>
         <h1 className="xch-display mt-3 text-[34px] leading-[1.05] text-x-ink sm:text-[48px]">
           {t.title} <span className="xch-gold-italic">{t.accent}</span>
         </h1>
@@ -98,17 +98,17 @@ export function NegotiationSandbox({ x, onInspect }: { x: Exchange; onInspect: (
             <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-x-ink/45">{t.you}</p>
             <label className="mt-2 block">
               <span className="sr-only">{t.name}</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} spellCheck={false} className="h-10 w-full rounded-full border border-[var(--xch-line)] bg-white px-4 font-mono text-[13px] text-x-ink outline-none transition-colors focus:border-[var(--xch-gold)]" aria-label={t.name} />
+              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} spellCheck={false} className="h-10 w-full rounded-[7px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)] px-4 font-mono text-[13px] text-x-ink outline-none transition-colors focus:border-x-ink/45" aria-label={t.name} />
             </label>
-            <a href="/.well-known/agent-card.json" target="_blank" rel="noopener" className="mt-2 flex items-center gap-2 rounded-full border border-[var(--xch-line-strong)] bg-[color-mix(in_srgb,var(--xch-gold)_6%,white)] px-3.5 py-2 text-[12.5px] text-[var(--xch-verified)] transition-colors hover:bg-[color-mix(in_srgb,var(--xch-gold)_11%,white)]">
+            <a href="/.well-known/agent-card.json" target="_blank" rel="noopener" className="mt-2 flex items-center gap-2 rounded-[7px] border border-[var(--xch-line-strong)] bg-[color-mix(in_srgb,var(--xch-verified)_5%,var(--xch-card-solid))] px-3.5 py-2 text-[12.5px] text-[var(--xch-verified)] transition-colors hover:bg-[color-mix(in_srgb,var(--xch-verified)_10%,var(--xch-card-solid))]">
               <Link2 className="size-3.5 shrink-0" strokeWidth={1.6} />
               <span className="truncate font-mono">{link}</span>
               <ArrowUpRight className="ms-auto size-3.5 shrink-0 opacity-60" />
             </a>
             <p className="mt-1.5 text-[11px] leading-relaxed text-x-ink/45">{t.linkNote}</p>
-            <p className="mt-3 flex items-center justify-between gap-2 rounded-[12px] border border-[var(--xch-line)] bg-white px-3.5 py-2.5">
+            <p className="mt-3 flex items-center justify-between gap-2 rounded-[12px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)] px-3.5 py-2.5">
               <span className="flex items-center gap-1.5 text-[12px] text-x-ink/60">
-                <Lock className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.6} /> {t.floor}
+                <Lock className="size-3.5 text-x-ink/45" strokeWidth={1.6} /> {t.floor}
               </span>
               <span className="tnum font-mono text-[13px] text-x-ink">{Number.isFinite(floor) ? usd(floor) : "—"}</span>
             </p>
@@ -119,8 +119,8 @@ export function NegotiationSandbox({ x, onInspect }: { x: Exchange; onInspect: (
             <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-x-ink/45">{t.counterparty}</p>
             <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-1">
               {AGENTS.map((a) => (
-                <button key={a.id} type="button" disabled={busy} onClick={() => pick(a.id)} aria-pressed={agent === a.id} className={cn("flex min-w-0 items-center gap-2.5 rounded-[12px] border px-3 py-2 text-start transition-colors duration-150 disabled:opacity-50", agent === a.id ? "border-[var(--xch-gold)] bg-white shadow-[0_1px_3px_rgba(40,25,20,0.08)]" : "border-[var(--xch-line)] bg-white/50 hover:bg-white")}>
-                  <a.icon className={cn("size-4 shrink-0", a.id === "adversarial" ? "text-[var(--xch-threat)]" : a.id === "breach" ? "text-[var(--xch-clamp)]" : "text-[var(--xch-gold)]")} strokeWidth={1.5} />
+                <button key={a.id} type="button" disabled={busy} onClick={() => pick(a.id)} aria-pressed={agent === a.id} className={cn("flex min-w-0 items-center gap-2.5 rounded-[12px] border px-3 py-2 text-start transition-colors duration-150 disabled:opacity-50", agent === a.id ? "border-x-ink/45 bg-[var(--xch-card-solid)] shadow-[0_1px_3px_rgba(40,25,20,0.08)]" : "border-[var(--xch-line)] bg-[var(--xch-card-solid)]/50 hover:bg-[var(--xch-card-solid)]")}>
+                  <a.icon className={cn("size-4 shrink-0", a.id === "adversarial" ? "text-[var(--xch-threat)]" : a.id === "breach" ? "text-[var(--xch-clamp)]" : "text-x-ink/45")} strokeWidth={1.5} />
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-x-ink">{t.agents[a.id]}</span>
                     <span className="block truncate font-mono text-[10.5px] text-x-ink/45">bloom.exchange/{SCENARIOS[a.id].peer.name}</span>
@@ -133,22 +133,22 @@ export function NegotiationSandbox({ x, onInspect }: { x: Exchange; onInspect: (
           <label className="block">
             <span className="flex items-baseline justify-between gap-2">
               <span className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-x-ink/45">
-                <Lock className="size-3 text-[var(--xch-gold)]" strokeWidth={1.6} /> {t.ceiling}
+                <Lock className="size-3 text-x-ink/45" strokeWidth={1.6} /> {t.ceiling}
               </span>
               <span className="tnum font-mono text-[13px] text-x-ink">{usd(ceiling)}</span>
             </span>
-            <input type="range" min={20_000} max={90_000} step={500} value={ceiling} disabled={busy} onChange={(e) => setCeiling(Number(e.target.value))} className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-x-ink/[0.07] [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-[var(--xch-gold)] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-[var(--xch-gold)] [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(40,25,20,0.35)]" aria-label={t.ceiling} />
+            <input type="range" min={20_000} max={90_000} step={500} value={ceiling} disabled={busy} onChange={(e) => setCeiling(Number(e.target.value))} className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-x-ink/[0.07] [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-x-ink [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-x-ink [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(40,25,20,0.35)]" aria-label={t.ceiling} />
             <span className="mt-1 block text-[11px] text-x-ink/40">{t.ceilingNote}</span>
           </label>
 
-          <button type="button" disabled={busy} onClick={step} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-x-ink text-[14px] font-medium text-x-paper shadow-[0_12px_30px_-14px_rgba(22,17,15,0.6)] transition-[transform,opacity] duration-150 hover:-translate-y-px disabled:opacity-60 disabled:hover:translate-y-0">
+          <button type="button" disabled={busy} onClick={step} className="xch-btn-ink flex h-12 w-full items-center justify-center gap-2 text-[14px] font-medium disabled:opacity-60">
             {busy ? <Loader2 className="size-4 animate-spin" /> : null} {busy ? t.running : run ? t.again : t.step} {!busy && <ArrowRight className="size-4" strokeWidth={1.75} />}
           </button>
         </section>
 
         {/* The stage: a twilight garden, framed */}
-        <section className="min-w-0 rounded-[18px] bg-white p-2.5 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-44px_rgba(40,25,20,0.4)] ring-1 ring-[var(--xch-line)] sm:p-3">
-          <div className="relative overflow-hidden rounded-[12px] bg-[radial-gradient(120%_90%_at_50%_10%,#1f3d2b_0%,#132a1d_55%,#0b1a12_100%)] ring-1 ring-[var(--xch-line-strong)]">
+        <section className="min-w-0 rounded-[18px] bg-[var(--xch-card-solid)] p-2.5 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-44px_rgba(40,25,20,0.4)] ring-1 ring-[var(--xch-line)] sm:p-3">
+          <div className="relative overflow-hidden rounded-[12px] bg-[radial-gradient(120%_90%_at_50%_10%,#3a4229_0%,#242a1a_55%,#14170e_100%)] ring-1 ring-[var(--xch-line-strong)]">
             <Image src="/paintings/villa-deste.jpg" alt="" fill sizes="(min-width: 1280px) 900px, 100vw" quality={75} className="object-cover opacity-[0.16] saturate-[0.35]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_45%,rgba(226,191,120,0.14),transparent_70%)]" aria-hidden />
 
@@ -187,7 +187,7 @@ export function NegotiationSandbox({ x, onInspect }: { x: Exchange; onInspect: (
                     </>
                   )}
                   {run?.taskId && !busy && (
-                    <button type="button" onClick={() => onInspect(run.taskId!)} className="ms-auto flex items-center gap-1 rounded-full border border-[rgba(226,191,120,0.4)] px-3 py-1 text-[11.5px] text-[#e2bf78] transition-colors hover:bg-[rgba(226,191,120,0.1)]">
+                    <button type="button" onClick={() => onInspect(run.taskId!)} className="ms-auto flex items-center gap-1 rounded-[7px] border border-[rgba(226,191,120,0.4)] px-3 py-1 text-[11.5px] text-[#e2bf78] transition-colors hover:bg-[rgba(226,191,120,0.1)]">
                       {t.inspect} <ArrowUpRight className="size-3.5" />
                     </button>
                   )}
@@ -253,7 +253,7 @@ function Stage({ run, labels: t, you, them }: { run: Exchange["run"]; labels: Sa
         { at: VAULT_THEM, title: t.vaultThem, who: them },
       ].map((v) => (
         <g key={v.title}>
-          <circle cx={v.at.x} cy={v.at.y} r={34} fill="rgba(11,26,18,0.7)" stroke={E.gold} strokeWidth={1.2} />
+          <circle cx={v.at.x} cy={v.at.y} r={34} fill="rgba(20,23,14,0.7)" stroke={E.gold} strokeWidth={1.2} />
           <rect x={v.at.x - 8} y={v.at.y - 4} width={16} height={13} rx={2.5} fill="none" stroke={E.gold} strokeWidth={1.3} />
           <path d={`M${v.at.x - 4.5} ${v.at.y - 4} v-4 a4.5 4.5 0 0 1 9 0 v4`} fill="none" stroke={E.gold} strokeWidth={1.3} />
           <text x={v.at.x} y={v.at.y + 52} textAnchor="middle" fontSize={11} fill={E.cream}>

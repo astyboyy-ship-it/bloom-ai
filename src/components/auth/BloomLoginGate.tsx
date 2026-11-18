@@ -110,7 +110,7 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
 
       <div className="relative mx-auto grid min-h-full max-w-[1280px] grid-cols-1 items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16 lg:py-14">
         <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: EASE }} className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--xch-gold)]">{t.kicker}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-x-ink/45">{t.kicker}</p>
           <h1 className="mt-5 flex flex-wrap items-baseline gap-x-4 leading-none">
             <span className="text-[44px] sm:text-[60px]">
               <BloomWordmark tone="ink" />
@@ -125,8 +125,8 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
               const Icon = PRINCIPLE_ICONS[i] ?? Radio;
               return (
                 <li key={p.title} className="flex gap-3">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--xch-line-strong)] bg-white">
-                    <Icon className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} />
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)]">
+                    <Icon className="size-3.5 text-x-ink/45" strokeWidth={1.5} />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[13px] font-medium text-x-ink">{p.title}</span>
@@ -138,13 +138,13 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
           </ul>
 
           <div className="mt-8 flex max-w-xl flex-col gap-3">
-            <button type="button" onClick={() => finish("sandbox", false)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-x-ink text-[14px] font-medium text-x-paper shadow-[0_12px_30px_-14px_rgba(22,17,15,0.6)] transition-transform duration-150 hover:-translate-y-px">
+            <button type="button" onClick={() => finish("sandbox", false)} className="xch-btn-ink flex h-12 w-full items-center justify-center gap-2 text-[14px] font-medium">
               {t.enter} <ArrowRight className="size-4" strokeWidth={1.75} />
             </button>
 
             {saved && !keyOpen && (
-              <div className="flex flex-wrap items-center gap-2 rounded-full border border-[var(--xch-line)] bg-white px-4 py-2 text-[12.5px]">
-                <KeyRound className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} />
+              <div className="flex flex-wrap items-center gap-2 rounded-[7px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)] px-4 py-2 text-[12.5px]">
+                <KeyRound className="size-3.5 text-x-ink/45" strokeWidth={1.5} />
                 <span className="text-x-ink/55">{t.saved}</span>
                 <span className="font-mono text-x-ink/70">{mask(saved)}</span>
                 <button type="button" disabled={busy} onClick={() => void unlock(saved)} className="ms-auto flex items-center gap-1 font-medium text-x-ink hover:underline disabled:opacity-50">
@@ -188,10 +188,10 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
                   className="overflow-hidden"
                 >
                   <div className="space-y-2.5 pt-1">
-                    <span className={cn("flex h-11 items-center gap-2.5 rounded-full border bg-white px-4 transition-colors duration-150 focus-within:border-[var(--xch-gold)]", error ? "border-[color-mix(in_srgb,var(--xch-threat)_45%,transparent)]" : "border-[var(--xch-line)]")}>
+                    <span className={cn("flex h-11 items-center gap-2.5 rounded-[7px] border bg-[var(--xch-card-solid)] px-4 transition-colors duration-150 focus-within:border-x-ink/45", error ? "border-[color-mix(in_srgb,var(--xch-threat)_45%,transparent)]" : "border-[var(--xch-line)]")}>
                       <KeyRound className="size-4 shrink-0 text-x-ink/35" strokeWidth={1.5} />
                       <input ref={input} value={key} onChange={(e) => (setKey(e.target.value), setError(null))} placeholder={t.keyPh} aria-label={t.keyLabel} autoComplete="off" spellCheck={false} className="h-full w-full bg-transparent font-mono text-[13px] text-x-ink outline-none placeholder:font-sans placeholder:text-x-ink/30" />
-                      <button type="submit" disabled={!key.trim() || busy} className="flex shrink-0 items-center gap-1 rounded-full bg-x-ink px-3 py-1 text-[12px] text-x-paper disabled:opacity-30">
+                      <button type="submit" disabled={!key.trim() || busy} className="xch-btn-ink flex shrink-0 items-center gap-1 px-3 py-1 text-[12px] disabled:opacity-30">
                         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRight className="size-3.5" />} {busy ? t.checking : t.unlock}
                       </button>
                     </span>
@@ -212,17 +212,17 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
 
         <motion.aside initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.25, ease: EASE }} className="mx-auto w-full max-w-[460px] space-y-4 lg:max-w-none">
           <figure>
-            <div className="rounded-[6px] bg-white p-3 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-40px_rgba(40,25,20,0.35)] ring-1 ring-[var(--xch-line)] sm:p-4">
+            <div className="rounded-[6px] bg-[var(--xch-card-solid)] p-3 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-40px_rgba(40,25,20,0.35)] ring-1 ring-[var(--xch-line)] sm:p-4">
               <div className="relative aspect-[16/10] overflow-hidden rounded-[2px] ring-1 ring-[var(--xch-line-strong)] lg:aspect-[5/6]">
                 <Image src="/paintings/villa-deste.jpg" alt="" fill priority sizes="(min-width: 1024px) 480px, 90vw" quality={75} className="object-cover" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(31,61,43,0.12),rgba(11,26,18,0.25))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(31,61,43,0.12),rgba(20,23,14,0.25))]" />
               </div>
             </div>
             <figcaption className="mt-2.5 text-center font-mono text-[9.5px] uppercase tracking-[0.24em] text-x-ink/35">{t.caption}</figcaption>
           </figure>
 
           {/* Run it yourself */}
-          <div className="overflow-hidden rounded-[14px] bg-[#132a1d] ring-1 ring-[rgba(226,191,120,0.25)]">
+          <div className="overflow-hidden rounded-[14px] bg-[#22281a] ring-1 ring-[rgba(226,191,120,0.25)]">
             <div className="flex items-center justify-between border-b border-[rgba(226,191,120,0.15)] px-4 py-2">
               <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#e2bf78]">
                 <Terminal className="size-3.5" strokeWidth={1.5} /> {t.runLocal}

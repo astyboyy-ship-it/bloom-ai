@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, useAnimationControls } from "framer-motion";
 import { Activity, BookOpen, Boxes, Code2, Command, Copy, Crosshair, ExternalLink, Grid3x3, Handshake, Info, KeyRound, LayoutDashboard, LogOut, Network, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,9 +54,9 @@ function LanguageToggle() {
   const { lang, setLang } = useExchangeLang();
   const t = useDeskCopy().lang;
   return (
-    <div role="radiogroup" aria-label={t.label} className="inline-flex rounded-full border border-[var(--xch-line)] bg-white p-0.5">
+    <div role="radiogroup" aria-label={t.label} className="inline-flex rounded-[8px] border border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)] p-0.5">
       {(["en", "es"] as ExchangeLang[]).map((l) => (
-        <button key={l} type="button" role="radio" aria-checked={lang === l} onClick={() => setLang(l)} className={cn("rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-150", lang === l ? "bg-x-ink text-x-paper" : "text-x-ink/50 hover:text-x-ink")}>
+        <button key={l} type="button" role="radio" aria-checked={lang === l} onClick={() => setLang(l)} className={cn("rounded-[7px] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-150", lang === l ? "xch-btn-ink" : "text-x-ink/50 hover:text-x-ink")}>
           {l}
         </button>
       ))}
@@ -207,11 +207,12 @@ export function ExchangeApp() {
 
   const s = x.status;
   return (
+    <MotionConfig reducedMotion="user">
     <DesktopFrame title={t.header.product}>
       <div className="relative" lang={lang}>
         <header className="sticky top-0 z-40 border-b border-[var(--xch-line)] bg-[var(--xch-paper)]/80 backdrop-blur-xl">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
-            <button type="button" onClick={() => setPalette(true)} className="order-last flex h-8 w-full items-center gap-2 rounded-full border border-[var(--xch-line)] bg-white px-3 text-[12px] text-x-ink/40 shadow-[0_1px_2px_rgba(40,25,20,0.04)] transition-colors duration-150 hover:text-x-ink/70 md:order-none md:w-72">
+            <button type="button" onClick={() => setPalette(true)} className="xch-btn order-last flex h-8 w-full items-center gap-2 px-3 text-[12px] text-x-ink/40 hover:text-x-ink/70 md:order-none md:w-72">
               <Command className="size-3.5" /> <span className="flex-1 truncate text-start">{t.header.search}</span>
               <Kbd>⌘K</Kbd>
             </button>
@@ -226,11 +227,11 @@ export function ExchangeApp() {
                   </span>
                 </>
               )}
-              <Link href="/desk" className="hidden rounded-full border border-[var(--xch-line)] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-x-ink/50 hover:text-x-ink lg:block">
+              <Link href="/desk" className="hidden rounded-[7px] border border-[var(--xch-line)] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-x-ink/50 hover:text-x-ink lg:block">
                 {t.header.desk}
               </Link>
               <LanguageToggle />
-              <button type="button" onClick={leave} aria-label={g.signOut} title={g.signOut} className="grid size-7 place-items-center rounded-full border border-[var(--xch-line)] bg-white text-x-ink/50 transition-colors hover:text-[var(--xch-threat)]">
+              <button type="button" onClick={leave} aria-label={g.signOut} title={g.signOut} className="xch-btn grid size-7 place-items-center text-x-ink/55 hover:text-[var(--xch-threat)]">
                 <LogOut className="size-3.5" strokeWidth={1.6} />
               </button>
             </div>
@@ -240,8 +241,8 @@ export function ExchangeApp() {
               const Icon = v.icon;
               const active = view === v.id;
               return (
-                <button key={v.id} type="button" role="tab" aria-selected={active} onClick={() => setView(v.id)} className={cn("relative flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[12.5px] transition-colors duration-150", active ? "text-x-ink" : "text-x-ink/50 hover:text-x-ink/85")}>
-                  {active && <motion.span layoutId="xch-view" className="absolute inset-0 rounded-full border border-[var(--xch-line)] bg-white shadow-[0_1px_3px_rgba(40,25,20,0.08)]" transition={SPRING} />}
+                <button key={v.id} type="button" role="tab" aria-selected={active} onClick={() => setView(v.id)} className={cn("relative flex shrink-0 items-center gap-2 rounded-[7px] px-3 py-1.5 text-[12.5px] transition-colors duration-150", active ? "text-x-ink" : "text-x-ink/50 hover:text-x-ink/85")}>
+                  {active && <motion.span layoutId="xch-view" className="absolute inset-0 rounded-[7px] border border-[var(--xch-line-strong)] bg-[var(--xch-card-solid)] shadow-[inset_0_1px_0_#fff,0_2px_6px_-2px_rgba(40,30,15,0.12)]" transition={SPRING} />}
                   <Icon className="relative size-3.5" strokeWidth={1.6} />
                   <span className="relative">{t.views[v.id]}</span>
                   <Kbd className="relative hidden xl:inline-flex">{v.key}</Kbd>
@@ -254,8 +255,8 @@ export function ExchangeApp() {
 
         <motion.main animate={desk} className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
           {s && !s.licensed && (
-            <p className="mb-4 flex items-start gap-2 rounded-[12px] border border-[var(--xch-line)] bg-white/70 px-3.5 py-2.5 text-[12px] leading-relaxed text-x-ink/60">
-              <Info className="mt-0.5 size-3.5 shrink-0 text-[var(--xch-gold)]" /> {t.notice.sandbox}
+            <p className="mb-4 flex items-start gap-2 rounded-[12px] border border-[var(--xch-line)] bg-[var(--xch-card-solid)]/70 px-3.5 py-2.5 text-[12px] leading-relaxed text-x-ink/60">
+              <Info className="mt-0.5 size-3.5 shrink-0 text-x-ink/45" /> {t.notice.sandbox}
             </p>
           )}
           <AnimatePresence mode="wait">
@@ -297,5 +298,6 @@ export function ExchangeApp() {
       <AnimatePresence>{gate && <BloomLoginGate key="gate" onEnter={enter} />}</AnimatePresence>
       {intro && <GardenIntro onDone={() => setIntro(false)} />}
     </DesktopFrame>
+    </MotionConfig>
   );
 }

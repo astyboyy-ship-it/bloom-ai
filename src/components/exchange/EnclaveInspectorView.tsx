@@ -413,7 +413,7 @@ function Json({ value }: { value: unknown }) {
    opens the tab holding its evidence.
    --------------------------------------------------------------------------------------------------------- */
 
-const G = { gold: "#8f6a1c", ember: "#b4541a", threat: "#c11131", ink: "rgba(22,17,15,0.82)", soft: "rgba(22,17,15,0.45)", line: "rgba(163,122,40,0.35)" };
+const G = { gold: "#7a5c1e", ember: "#9c4a17", threat: "#a3122f", ink: "rgba(22,17,15,0.82)", soft: "rgba(22,17,15,0.45)", line: "rgba(120,88,30,0.35)" };
 
 function SecurityGraph({ view, check, onOpen }: { view: OperatorView; check: VerificationResult | null; onOpen: (t: Tab) => void }) {
   const t = useDeskCopy().inspector;
@@ -457,7 +457,7 @@ function SecurityGraph({ view, check, onOpen }: { view: OperatorView; check: Ver
           })}
           {nodes.map((n) => (
             <g key={n.id} role="button" tabIndex={0} aria-label={`${n.label}: ${n.state}`} className="cursor-pointer outline-none [&:focus-visible_circle]:stroke-[3]" onClick={() => onOpen(n.tab)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(n.tab))}>
-              <circle cx={n.x} cy={n.y} r={20} fill="#ffffff" stroke={n.color} strokeWidth={1.4} />
+              <circle cx={n.x} cy={n.y} r={20} fill="#fdfbf5" stroke={n.color} strokeWidth={1.4} />
               <circle cx={n.x} cy={n.y} r={6} fill={n.color} opacity={0.9} />
               <text x={n.x} y={n.y + 36} textAnchor="middle" fontSize={11} fill={G.ink}>
                 {n.label}
@@ -509,10 +509,10 @@ function BoundaryProbe({ x }: { x: Exchange }) {
   return (
     <div className="mt-2 border-t border-[var(--xch-line)] px-2 pb-1.5 pt-3">
       <p className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-x-ink/45">
-        <Radar className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} /> {t.title}
+        <Radar className="size-3.5 text-x-ink/45" strokeWidth={1.5} /> {t.title}
       </p>
       <p className="mt-1 text-[11px] leading-relaxed text-x-ink/50">{t.sub}</p>
-      <button type="button" disabled={busy} onClick={() => void run()} className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-full bg-x-ink px-3 py-1.5 text-[12px] text-x-paper transition-opacity disabled:opacity-50">
+      <button type="button" disabled={busy} onClick={() => void run()} className="xch-btn-ink mt-2.5 flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[12px] transition-opacity disabled:opacity-50">
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Radar className="size-3.5" strokeWidth={1.5} />} {busy ? t.running : t.run}
       </button>
       {result && "error" in result && <p className="mt-2 text-[11px] text-[var(--xch-threat)]">{result.error}</p>}

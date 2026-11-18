@@ -65,7 +65,7 @@ export function MacroMandateView({ x }: { x: Exchange }) {
               <span className={label}>{t.mandate.fields.maxSlaTier}</span>
               <select value={draft.maxSlaTier} onChange={(e) => setDraft((d) => ({ ...d, maxSlaTier: e.target.value as InitiatorMandate["maxSlaTier"] }))} className={cn(input, "mt-1 capitalize")}>
                 {SLA_TIERS.map((s) => (
-                  <option key={s} value={s} className="bg-white">
+                  <option key={s} value={s} className="bg-[var(--xch-card-solid)]">
                     {s}
                   </option>
                 ))}
@@ -180,17 +180,17 @@ function PriceCorridor({ draft, setDraft, onReset, dirty }: { draft: InitiatorMa
   const valid = InitiatorMandateSchema.safeParse(draft).success;
   const sliders: Slider[] = [
     { key: "costBasisUsd", label: t.fields.costBasisUsd, color: "rgba(22,17,15,0.55)" },
-    { key: "floorPriceUsd", label: d.floor, color: "#b4541a" },
-    { key: "anchorPriceUsd", label: d.anchor, color: "#8f6a1c" },
-    { key: "autoSettleCeilingUsd", label: d.ceiling, color: "#a37a28" },
-    { key: "minMarginPct", label: t.fields.minMarginPct, color: "#be123c" },
+    { key: "floorPriceUsd", label: d.floor, color: "#9c4a17" },
+    { key: "anchorPriceUsd", label: d.anchor, color: "#7a5c1e" },
+    { key: "autoSettleCeilingUsd", label: d.ceiling, color: "#7a5c1e" },
+    { key: "minMarginPct", label: t.fields.minMarginPct, color: "#9f1239" },
   ];
   const markers = [
     { v: draft.costBasisUsd, label: t.fields.costBasisUsd, color: "rgba(22,17,15,0.45)" },
-    { v: draft.floorPriceUsd, label: d.floor, color: "#b4541a" },
-    { v: Number.isFinite(floor) ? floor : 0, label: d.effective, color: "#be123c", strong: true },
-    { v: draft.anchorPriceUsd, label: d.anchor, color: "#8f6a1c", strong: true },
-    { v: draft.autoSettleCeilingUsd, label: d.ceiling, color: "#a37a28" },
+    { v: draft.floorPriceUsd, label: d.floor, color: "#9c4a17" },
+    { v: Number.isFinite(floor) ? floor : 0, label: d.effective, color: "#9f1239", strong: true },
+    { v: draft.anchorPriceUsd, label: d.anchor, color: "#7a5c1e", strong: true },
+    { v: draft.autoSettleCeilingUsd, label: d.ceiling, color: "#7a5c1e" },
   ];
   return (
     <Panel>
@@ -199,7 +199,7 @@ function PriceCorridor({ draft, setDraft, onReset, dirty }: { draft: InitiatorMa
         title={d.corridor}
         sub={d.corridorSub}
         right={
-          <button type="button" onClick={onReset} disabled={!dirty} className="flex items-center gap-1 rounded-full border border-[var(--xch-line)] bg-white px-2.5 py-1 text-[11px] text-x-ink/60 hover:text-x-ink disabled:opacity-35">
+          <button type="button" onClick={onReset} disabled={!dirty} className="xch-btn flex items-center gap-1 px-2.5 py-1 text-[11px] text-x-ink/60 hover:text-x-ink disabled:opacity-35">
             <RotateCcw className="size-3" /> {d.reset}
           </button>
         }
@@ -207,7 +207,7 @@ function PriceCorridor({ draft, setDraft, onReset, dirty }: { draft: InitiatorMa
       {/* The corridor */}
       <div className="relative mt-10 mb-12 h-2.5 rounded-full bg-x-ink/[0.05]" dir="ltr">
         <div className="absolute inset-y-0 start-0 rounded-s-full bg-[color-mix(in_srgb,var(--xch-threat)_14%,transparent)] transition-[width] duration-200" style={{ width: pct(floor) }} />
-        <div className={cn("absolute inset-y-0 rounded-full transition-[left,width] duration-200", valid ? "bg-[linear-gradient(90deg,#d6aa5c,#8f6a1c)]" : "bg-[var(--xch-clamp)]")} style={{ left: pct(floor), width: `calc(${pct(draft.anchorPriceUsd)} - ${pct(floor)})` }} />
+        <div className={cn("absolute inset-y-0 rounded-full transition-[left,width] duration-200", valid ? "bg-[linear-gradient(90deg,#d6aa5c,#7a5c1e)]" : "bg-[var(--xch-clamp)]")} style={{ left: pct(floor), width: `calc(${pct(draft.anchorPriceUsd)} - ${pct(floor)})` }} />
         {markers.map((m, i) => (
           <div key={m.label} className="absolute top-1/2 -translate-x-1/2 transition-[left] duration-200" style={{ left: pct(m.v) }}>
             <span className={cn("block -translate-y-1/2 rounded-full border-2 border-white shadow-[0_1px_3px_rgba(40,25,20,0.25)]", m.strong ? "size-4" : "size-3")} style={{ background: m.color }} />

@@ -17,12 +17,12 @@ import { Badge, SPRING } from "./ui";
  * motion freezes scenes and disables auto-advance.
  */
 const STEP_SECONDS = 9;
-const GOLD = "#8f6a1c";
-const CRIMSON = "#be123c";
-const THREAT = "#c11131";
+const GOLD = "#7a5c1e";
+const CRIMSON = "#9f1239";
+const THREAT = "#a3122f";
 const CREAM = "rgba(22,17,15,0.82)";
-const LINE = "rgba(163,122,40,0.16)";
-const CARD = "#ffffff";
+const LINE = "rgba(120,88,30,0.16)";
+const CARD = "#fdfbf5";
 type Labels = {
   core: string;
   truth: string;
@@ -47,8 +47,8 @@ type Labels = {
 const Defs = () => (
   <defs>
     <radialGradient id="xch-velvet" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stopColor="#be123c" stopOpacity="0.14" />
-      <stop offset="0.6" stopColor="#be123c" stopOpacity="0.05" />
+      <stop offset="0" stopColor="#9f1239" stopOpacity="0.14" />
+      <stop offset="0.6" stopColor="#9f1239" stopOpacity="0.05" />
       <stop offset="1" stopColor="#fdfcfa" stopOpacity="0" />
     </radialGradient>
     <radialGradient id="xch-gold-glow" cx="0.5" cy="0.5" r="0.5">
@@ -87,7 +87,7 @@ function StackScene({ l }: { l: Labels }) {
       </ellipse>
 
       {/* Ground truth feed */}
-      <rect x={330} y={14} width={140} height={30} rx={15} fill={CARD} stroke="rgba(163,122,40,0.4)" />
+      <rect x={330} y={14} width={140} height={30} rx={15} fill={CARD} stroke="rgba(120,88,30,0.4)" />
       <Mono x={400} y={33} anchor="middle" fill={GOLD} size={10} spacing="0.08em">
         {l.truth}
       </Mono>
@@ -110,7 +110,7 @@ function StackScene({ l }: { l: Labels }) {
               <animateMotion dur="2.4s" begin={`${0.3 + i * 0.37}s`} repeatCount="indefinite" path={d} />
               <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.4s" begin={`${0.3 + i * 0.37}s`} repeatCount="indefinite" />
             </circle>
-            <rect x={a.x - 66} y={a.y - 17} width={132} height={34} rx={10} fill={CARD} stroke="rgba(163,122,40,0.24)" />
+            <rect x={a.x - 66} y={a.y - 17} width={132} height={34} rx={10} fill={CARD} stroke="rgba(120,88,30,0.24)" />
             <circle cx={a.x - 50} cy={a.y} r={3.5} fill={GOLD}>
               <animate attributeName="opacity" values="0.4;1;0.4" dur="2.4s" begin={`${0.3 + i * 0.37 + 2}s`} repeatCount="indefinite" />
             </circle>
@@ -144,7 +144,7 @@ function StackScene({ l }: { l: Labels }) {
       <circle cx={core.x} cy={core.y} r={26} fill="none" stroke={GOLD} strokeOpacity={0.3} strokeDasharray="1 4">
       </circle>
       <path d={ROSE_MARK} transform={`translate(${core.x} ${core.y}) scale(0.9)`} fill={CRIMSON} opacity={0.9} />
-      <Mono x={core.x} y={core.y + 56} anchor="middle" size={9.5} fill="rgba(163,122,40,0.8)" spacing="0.14em">
+      <Mono x={core.x} y={core.y + 56} anchor="middle" size={9.5} fill="rgba(120,88,30,0.8)" spacing="0.14em">
         {l.core.toUpperCase()}
       </Mono>
     </svg>
@@ -190,12 +190,12 @@ function LinkScene({ l }: { l: Labels }) {
             <rect width={8} height={6} x={-4} y={-3} rx={1.2} fill={GOLD}>
               <animateMotion dur="1.6s" begin={begin} repeatCount="indefinite" path={d} />
             </rect>
-            <rect x={22} y={y - 21} width={168} height={42} rx={10} fill={CARD} stroke="rgba(163,122,40,0.22)" />
+            <rect x={22} y={y - 21} width={168} height={42} rx={10} fill={CARD} stroke="rgba(120,88,30,0.22)" />
             <Mono x={36} y={y - 3} size={10.5}>
               {ch}
             </Mono>
             <rect x={36} y={y + 5} width={84} height={13} rx={6.5} fill="rgba(225,29,72,0.16)" stroke="rgba(255,92,116,0.5)" />
-            <Mono x={78} y={y + 14.5} size={8} anchor="middle" fill="#be123c">
+            <Mono x={78} y={y + 14.5} size={8} anchor="middle" fill="#9f1239">
               {l.link}
             </Mono>
           </g>
@@ -221,7 +221,7 @@ function LinkScene({ l }: { l: Labels }) {
       <circle cx={sandbox.x} cy={sandbox.y + 1} r={4} fill={GOLD}>
         <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
       </circle>
-      <Mono x={sandbox.x} y={sandbox.y + 40} anchor="middle" size={9} fill="rgba(163,122,40,0.8)" spacing="0.14em">
+      <Mono x={sandbox.x} y={sandbox.y + 40} anchor="middle" size={9} fill="rgba(120,88,30,0.8)" spacing="0.14em">
         {l.sandbox.toUpperCase()}
       </Mono>
     </svg>
@@ -250,7 +250,7 @@ function MatchScene({ l }: { l: Labels }) {
       {GATES.map((gx, g) => (
         <g key={gx}>
           <line x1={gx} x2={gx} y1={22} y2={292} stroke={GOLD} strokeOpacity={0.35} strokeDasharray="2 4" />
-          <Mono x={gx} y={310} anchor="middle" size={9} fill="rgba(163,122,40,0.75)" spacing="0.08em">
+          <Mono x={gx} y={310} anchor="middle" size={9} fill="rgba(120,88,30,0.75)" spacing="0.08em">
             {gateNames[g]}
           </Mono>
         </g>
@@ -272,8 +272,8 @@ function MatchScene({ l }: { l: Labels }) {
         const begin = `${i * 0.45}s`;
         return (
           <g key={i}>
-            <path d={`M150 ${y} L${held ? GATES[b.stop] : 600} ${y}`} stroke={held ? "rgba(193,17,49,0.12)" : "rgba(163,122,40,0.16)"} />
-            {!held && <path d={`M600 ${y} L${target.x - 54} ${target.y}`} stroke="rgba(163,122,40,0.16)" fill="none" />}
+            <path d={`M150 ${y} L${held ? GATES[b.stop] : 600} ${y}`} stroke={held ? "rgba(193,17,49,0.12)" : "rgba(120,88,30,0.16)"} />
+            {!held && <path d={`M600 ${y} L${target.x - 54} ${target.y}`} stroke="rgba(120,88,30,0.16)" fill="none" />}
             <rect x={22} y={y - 14} width={128} height={28} rx={14} fill={CARD} stroke={LINE} />
             <Mono x={86} y={y + 3.5} anchor="middle" size={9.5}>
               {`buyer · 0${i + 1}`}
@@ -295,7 +295,7 @@ function MatchScene({ l }: { l: Labels }) {
           </g>
         );
       })}
-      <Mono x={target.x} y={target.y + 46} anchor="middle" size={8.5} fill="rgba(163,122,40,0.6)">
+      <Mono x={target.x} y={target.y + 46} anchor="middle" size={8.5} fill="rgba(120,88,30,0.6)">
         {"< 1 s"}
       </Mono>
     </svg>
@@ -311,8 +311,8 @@ function OwnerCard({ x, name, at, l }: { x: number; name: string; at: number; l:
   const k = (s: number) => (s / LOOP).toFixed(3);
   return (
     <g>
-      <rect x={x} y={86} width={170} height={148} rx={14} fill={CARD} stroke="rgba(163,122,40,0.28)" />
-      <Mono x={x + 16} y={110} size={8.5} fill="rgba(163,122,40,0.7)" spacing="0.14em">
+      <rect x={x} y={86} width={170} height={148} rx={14} fill={CARD} stroke="rgba(120,88,30,0.28)" />
+      <Mono x={x + 16} y={110} size={8.5} fill="rgba(120,88,30,0.7)" spacing="0.14em">
         {name.toUpperCase()}
       </Mono>
       {["terms", "margin proof", "mandate"].map((row, i) => (
@@ -331,13 +331,13 @@ function OwnerCard({ x, name, at, l }: { x: number; name: string; at: number; l:
       </Mono>
       <g opacity={0}>
         <animate attributeName="opacity" values="0;0;1;1;0" keyTimes={`0;${k(at)};${k(at + 0.12)};0.92;1`} dur={`${LOOP}s`} repeatCount="indefinite" />
-        <rect x={x + 16} y={192} width={138} height={28} rx={14} fill="#a37a28" />
-        <Mono x={x + 85} y={210} anchor="middle" size={10} fill="#ffffff">
+        <rect x={x + 16} y={192} width={138} height={28} rx={14} fill="#7a5c1e" />
+        <Mono x={x + 85} y={210} anchor="middle" size={10} fill="#fdfbf5">
           {`✓ ${l.approved}`}
         </Mono>
       </g>
       {/* The click */}
-      <circle cx={x + 85} cy={206} r={4} fill="none" stroke="#a37a28" opacity={0}>
+      <circle cx={x + 85} cy={206} r={4} fill="none" stroke="#7a5c1e" opacity={0}>
         <animate attributeName="r" values="4;4;26" keyTimes={`0;${k(at)};${k(at + 0.6)}`} dur={`${LOOP}s`} repeatCount="indefinite" />
         <animate attributeName="opacity" values="0;0;0.9;0;0" keyTimes={`0;${k(at)};${k(at + 0.05)};${k(at + 0.6)};1`} dur={`${LOOP}s`} repeatCount="indefinite" />
       </circle>
@@ -379,7 +379,7 @@ function SignoffScene({ l }: { l: Labels }) {
       <rect x={290} y={96} width={220} height={128} rx={14} fill="none" stroke={GOLD} opacity={0}>
         <animate attributeName="opacity" values="0;0;0.85;0.85;0" keyTimes={`0;${k(sealAt)};${k(sealAt + 0.15)};0.92;1`} dur={`${LOOP}s`} repeatCount="indefinite" />
       </rect>
-      <Mono x={400} y={122} anchor="middle" size={8.5} fill="rgba(163,122,40,0.7)" spacing="0.18em">
+      <Mono x={400} y={122} anchor="middle" size={8.5} fill="rgba(120,88,30,0.7)" spacing="0.18em">
         BLOOM-XCH
       </Mono>
       <Mono x={400} y={146} anchor="middle" size={12.5} fill={GOLD}>
@@ -473,7 +473,7 @@ export function BloomInfrastructureTheater({ initialStep = 0 }: { initialStep?: 
       <div className="relative flex flex-wrap items-center gap-3 border-b border-[var(--xch-line)] px-4 py-3 sm:px-5">
         <p className="xch-display text-[21px] text-[var(--xch-ink)]">{t.title}</p>
         <Badge className="ms-auto">{t.illustrative}</Badge>
-        <button type="button" onClick={() => setPlaying((p) => !p)} aria-label={playing ? t.pause : t.play} className="rounded-full border border-[var(--xch-line-strong)] p-1.5 text-x-ink/60 hover:text-x-ink">
+        <button type="button" onClick={() => setPlaying((p) => !p)} aria-label={playing ? t.pause : t.play} className="xch-btn p-1.5 text-x-ink/60 hover:text-x-ink">
           {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
         </button>
       </div>

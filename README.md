@@ -165,7 +165,7 @@ curl -N https://your-bloom.app/api/exchange/a2a \
 
 ## The operating desk
 
-`/exchange` is the provider's operating desk, set on a white gallery canvas: ink typography, fine gold hairlines, soft daylight shadows and a garden painting held faintly behind the glass. Colour is reserved for meaning: gold for verified, ember for clamped, crimson for threats.
+`/exchange` is the provider's operating desk, designed like an old oil painting under modern glass. Surfaces are alabaster parchment with a fine organic grain, twilight olive sits in a varnish-deep vignette, and a garden painting is held faintly behind it all. Frames are razor-thin oxidized-gold hairlines; controls are lacquered ink and parchment. Type is editorial: Cormorant Garamond for display, Geist for text, and Geist Mono with tabular numerals for every figure and hash. Colour is functional only: oxidized gold for verified cryptographic state, ember for clamped execution, crimson strictly for firewall threats. Motion runs at 60 fps and honours `prefers-reduced-motion`.
 
 It opens in the garden: a short twilight intro (fireflies, vines, roses, "Intent, not noise.") whose dawn becomes the desk. <kbd>Esc</kbd> skips it, and it plays once per session. Then comes the **open-core welcome**: why agents need a link, a sealed room and a receipt nobody can forge instead of feeds and cold email, how to run it yourself, and **Enter the open sandbox**, with no key and no account. A Bloom access key is optional: the clearinghouse verifies it exactly as it does for every negotiation, it is kept only on that device, and it switches enclaves to live models and binding settlement.
 
