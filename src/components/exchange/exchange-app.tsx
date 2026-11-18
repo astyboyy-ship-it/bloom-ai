@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { Activity, BookOpen, Boxes, Code2, Command, Copy, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, LayoutDashboard, LogOut, Network, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
+import { Activity, BookOpen, Boxes, Code2, Command, Copy, Crosshair, ExternalLink, Grid3x3, Handshake, Info, KeyRound, LayoutDashboard, LogOut, Network, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { BloomLoginGate, SESSION_KEY, signOut, type GateResult } from "@/components/auth/BloomLoginGate";
@@ -15,9 +15,11 @@ import { CommandPalette, type PaletteItem } from "./command-palette";
 import { useExchangeCopy, type ExchangeView } from "./copy";
 import { useDeskCopy, useExchangeLang, type ExchangeLang, type GuideModuleId } from "./desk-copy";
 import { EnclaveInspectorView } from "./EnclaveInspectorView";
+import { GardenIntro, INTRO_KEY } from "./GardenIntro";
 import { GlobalPulse, usePulse } from "./GlobalPulse";
 import { GuideAndShowcaseHub } from "./GuideAndShowcaseHub";
 import { MacroMandateView } from "./MacroMandateView";
+import { NegotiationSandbox } from "./NegotiationSandbox";
 import { OmniProtocolView } from "./OmniProtocolView";
 import { useOmniCopy } from "./omni-copy";
 import { OverviewDashboard } from "./OverviewDashboard";
@@ -29,14 +31,15 @@ import { useExchange } from "./use-exchange";
 
 const VIEWS: { id: ExchangeView; icon: typeof Activity; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "1" },
-  { id: "guide", icon: BookOpen, key: "2" },
-  { id: "ledger", icon: Activity, key: "3" },
-  { id: "intents", icon: Network, key: "4" },
-  { id: "mandate", icon: Grid3x3, key: "5" },
-  { id: "inspector", icon: ScanSearch, key: "6" },
-  { id: "sdk", icon: Code2, key: "7" },
+  { id: "sandbox", icon: Handshake, key: "2" },
+  { id: "guide", icon: BookOpen, key: "3" },
+  { id: "ledger", icon: Activity, key: "4" },
+  { id: "intents", icon: Network, key: "5" },
+  { id: "mandate", icon: Grid3x3, key: "6" },
+  { id: "inspector", icon: ScanSearch, key: "7" },
+  { id: "sdk", icon: Code2, key: "8" },
 ];
-const SOVEREIGN_VIEW = { id: "sovereign" as ExchangeView, icon: Server, key: "8" };
+const SOVEREIGN_VIEW = { id: "sovereign" as ExchangeView, icon: Server, key: "9" };
 const MODE_KEY = "bloom-exchange-mode";
 const VIEW_KEY = "bloom-exchange-view";
 const SCENARIO_ICONS: Record<ScenarioId, typeof Target> = { standard: Target, adversarial: Swords, swarm: Boxes, breach: Crosshair };
@@ -63,7 +66,7 @@ function LanguageToggle() {
 
 /**
  * /exchange: the Bloom Exchange operating desk. A standalone product with its own gate: an access key (verified
- * by the clearinghouse) or the sandbox. Keyboard-first: ⌘K palette, ⌘R telemetry refresh, 1–8 for views.
+ * by the clearinghouse) or the sandbox. Keyboard-first: ⌘K palette, ⌘R telemetry refresh, 1–9 for views.
  */
 export function ExchangeApp() {
   const t = useExchangeCopy();
@@ -78,15 +81,20 @@ export function ExchangeApp() {
   const stats = usePulse(x.pulseTick);
 
   // The gate: null until this session's state is read (the layout's inline script lifts the veil for a session).
+  // The garden intro plays over the gate once per session (never under reduced motion).
   const [gate, setGate] = useState<boolean | null>(null);
+  const [intro, setIntro] = useState(false);
   useEffect(() => {
     let inSession = false;
+    let introSeen = false;
     try {
       inSession = sessionStorage.getItem(SESSION_KEY) !== null;
+      introSeen = sessionStorage.getItem(INTRO_KEY) !== null;
     } catch {
       // No storage: show the gate.
     }
     setGate(!inSession);
+    setIntro(!inSession && !introSeen && !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   useEffect(() => {
     if (gate) desk.set({ opacity: 0, scale: 0.985 });
@@ -114,7 +122,7 @@ export function ExchangeApp() {
 
   const enter = useCallback(
     (r: GateResult) => {
-      if (r.firstVisit) setView("guide");
+      if (r.firstVisit) setView("sandbox");
       setGate(false);
       void desk.start({ opacity: 1, scale: 1, transition: SPRING });
     },
@@ -162,15 +170,15 @@ export function ExchangeApp() {
     (id: GuideModuleId) => {
       if (id === "sandbox") setView("inspector");
       else if (id === "stack") setView("mandate");
-      else if (id === "settle") fire("standard");
+      else if (id === "settle") setView("sandbox");
     },
-    [setView, fire],
+    [setView],
   );
 
   const [palette, setPalette] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (gate) return;
+      if (gate || intro) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette((p) => !p);
@@ -182,7 +190,7 @@ export function ExchangeApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [gate, palette, setView, views]);
+  }, [gate, intro, palette, setView, views]);
 
   const items = useMemo<PaletteItem[]>(
     () => [
@@ -258,7 +266,10 @@ export function ExchangeApp() {
                   stats={stats}
                   mode={mode}
                   onInspect={inspect}
-                  onFire={() => fire("standard")}
+                  onFire={() => {
+                    setView("sandbox");
+                    void x.fire("standard");
+                  }}
                   onInject={openInject}
                   onGuide={() => setView("guide")}
                   onSdk={() => setView("sdk")}
@@ -268,6 +279,7 @@ export function ExchangeApp() {
                   }}
                 />
               )}
+              {view === "sandbox" && <NegotiationSandbox x={x} onInspect={inspect} />}
               {view === "guide" && <GuideAndShowcaseHub onAction={guideAction} />}
               {view === "ledger" && <ClearingLedgerView x={x} onInspect={inspect} />}
               {view === "intents" && <OmniProtocolView x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
@@ -283,6 +295,7 @@ export function ExchangeApp() {
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={items} />
       {gate === null && <div className="xch-gate-veil fixed inset-0 z-[120] bg-[var(--xch-paper)]" aria-hidden />}
       <AnimatePresence>{gate && <BloomLoginGate key="gate" onEnter={enter} />}</AnimatePresence>
+      {intro && <GardenIntro onDone={() => setIntro(false)} />}
     </DesktopFrame>
   );
 }

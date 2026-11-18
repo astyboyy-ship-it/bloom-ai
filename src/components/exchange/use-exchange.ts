@@ -207,9 +207,21 @@ export function useExchange() {
     [operator, headers],
   );
 
+  /**
+   * Fires a real A2A negotiation as an external agent would. `opts` lets the negotiation sandbox name the
+   * counterparty and set its sealed ceiling; the request still goes through the same gateway, vault and engines.
+   */
   const fire = useCallback(
-    async (id: ScenarioId) => {
-      const s = SCENARIOS[id];
+    async (id: ScenarioId, opts?: { peerName?: string; ceilingPriceUsd?: number }) => {
+      const base = SCENARIOS[id];
+      const ceiling = opts?.ceilingPriceUsd && opts.ceilingPriceUsd > 0 ? Math.round(opts.ceilingPriceUsd) : null;
+      const s = {
+        ...base,
+        peer: opts?.peerName?.trim() ? { ...base.peer, name: opts.peerName.trim().slice(0, 60) } : base.peer,
+        mandate: ceiling
+          ? { ...base.mandate, ceilingPriceUsd: ceiling, maxBudgetUsd: Math.max(base.mandate.maxBudgetUsd, Math.round(ceiling * 1.05)), openingPriceUsd: Math.min(base.mandate.openingPriceUsd ?? Infinity, Math.round(ceiling * 0.72)) }
+          : base.mandate,
+      };
       const line = (source: string, text: string, tone: LogLine["tone"] = "info", at = new Date().toISOString()): LogLine => ({ id: ++logId.current, at, source, text, tone });
       setRun({ scenario: id, taskId: null, state: "submitted", rounds: [], log: [], certificateId: null, error: null });
       const update = (fn: (r: LiveRun) => LiveRun) => setRun((r) => (r ? fn(r) : r));

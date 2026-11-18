@@ -86,7 +86,7 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
       <div className="pointer-events-none fixed inset-0" aria-hidden>
         <Image src="/paintings/golden-landscape.jpg" alt="" fill sizes="100vw" quality={75} className="object-cover opacity-[0.07] saturate-[0.8]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,252,250,0.55),rgba(253,252,250,0.9)_40%,rgba(253,252,250,0.96))]" />
-        <div className="xch-velvet absolute -left-[12%] -top-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.06),transparent)]" />
+        <div className="xch-velvet absolute -left-[12%] -top-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(122,160,104,0.10),transparent)]" />
         <div className="xch-velvet absolute -bottom-[22%] -right-[8%] h-[65vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(214,170,92,0.12),transparent)] [animation-delay:-3.5s]" />
         <FloraField blooms={FRAME_ROSES} className="opacity-80" still />
       </div>

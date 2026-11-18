@@ -1,25 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Fingerprint, KeyRound, Loader2, LogOut, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Copy, Fingerprint, KeyRound, Loader2, LogOut, Radio, ShieldCheck, Terminal } from "lucide-react";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { updateSettings, useDeskSettings } from "@/components/desk/settings";
 import { useDeskCopy } from "@/components/exchange/desk-copy";
 import { cn } from "@/lib/utils";
 
 /**
- * The entrance to Bloom Exchange: a white gallery wall with one framed painting and a single decision. A Bloom
- * access key is verified by the clearinghouse itself (/api/exchange/status reads it exactly as every negotiation
- * does) and then kept in desk settings on this device; or the visitor enters the sandbox with no key. There are
- * no accounts or passwords here: the key is the credential. The gate shows once per browser session.
+ * The entrance to Bloom Exchange: an open-core manifesto on a white gallery wall with one framed garden painting.
+ * The sandbox is open to everyone, no key and no account. A Bloom access key is optional: it is verified by the
+ * clearinghouse itself (/api/exchange/status reads it exactly as every negotiation does), kept in desk settings on
+ * this device, and switches enclaves to live models and binding settlement. Shown once per browser session.
  */
 export const SESSION_KEY = "bloom-exchange-session";
 export type GateResult = { kind: "key" | "sandbox"; operator: boolean; firstVisit: boolean };
 
 const ONBOARDED_KEY = "bloom-exchange-onboarded";
 const EASE = [0.22, 1, 0.36, 1] as const;
+const RUN_LOCAL = ["npm install", "npm run dev", "open http://localhost:3000/exchange"];
 
 type Status = { licensed: boolean; operator: boolean };
 
@@ -53,22 +54,20 @@ export function signOut() {
   }
 }
 
+const PRINCIPLE_ICONS = [Radio, ShieldCheck, Fingerprint, Terminal];
+
 export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }) {
   const t = useDeskCopy().gate;
   const reduce = useReducedMotion() ?? false;
   const { settings } = useDeskSettings();
   const saved = settings.licenseKey.trim();
   const [entering, setEntering] = useState(false);
-  const [mode, setMode] = useState<"saved" | "new">(saved ? "saved" : "new");
+  const [keyOpen, setKeyOpen] = useState(false);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-
-  useEffect(() => setMode(saved ? "saved" : "new"), [saved]);
-  useEffect(() => {
-    if (mode === "new") input.current?.focus();
-  }, [mode]);
 
   const finish = (kind: "key" | "sandbox", operator: boolean) => {
     let firstVisit = false;
@@ -96,123 +95,152 @@ export function BloomLoginGate({ onEnter }: { onEnter: (r: GateResult) => void }
     finish("key", s.operator);
   };
 
+  const copyRun = () =>
+    void navigator.clipboard?.writeText(RUN_LOCAL.join("\n")).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    });
+
   return (
-    <motion.div
-      className="xch xch-atmosphere xch-scroll fixed inset-0 z-[120] overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Bloom ${t.product}`}
-      initial={{ opacity: 0 }}
-      animate={entering ? { opacity: 0, scale: 1.015 } : { opacity: 1, scale: 1 }}
-      transition={{ duration: entering ? 0.5 : 0.6, ease: EASE }}
-    >
-      {/* Daylight on the gallery wall */}
+    <motion.div className="xch xch-atmosphere xch-scroll fixed inset-0 z-[120] overflow-y-auto" role="dialog" aria-modal="true" aria-label={`Bloom ${t.product}`} initial={{ opacity: 0 }} animate={entering ? { opacity: 0, scale: 1.015 } : { opacity: 1, scale: 1 }} transition={{ duration: entering ? 0.5 : 0.6, ease: EASE }}>
       <div className="pointer-events-none fixed inset-0" aria-hidden>
-        <div className="xch-velvet absolute -left-[10%] -top-[20%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.07),transparent)]" />
+        <div className="xch-velvet absolute -left-[10%] -top-[20%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(122,160,104,0.10),transparent)]" />
         <div className="xch-velvet absolute -bottom-[25%] right-[-5%] h-[70vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(214,170,92,0.14),transparent)] [animation-delay:-4s]" />
       </div>
 
-      <div className="relative mx-auto grid min-h-full max-w-[1240px] grid-cols-1 items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:gap-16 lg:py-16">
+      <div className="relative mx-auto grid min-h-full max-w-[1280px] grid-cols-1 items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16 lg:py-14">
         <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: EASE }} className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--xch-gold)]">{t.kicker}</p>
-          <h1 className="mt-6 flex flex-wrap items-baseline gap-x-4 leading-none">
-            <span className="text-[54px] sm:text-[72px]">
+          <h1 className="mt-5 flex flex-wrap items-baseline gap-x-4 leading-none">
+            <span className="text-[44px] sm:text-[60px]">
               <BloomWordmark tone="ink" />
             </span>
-            <span className="xch-gold-italic text-[52px] sm:text-[68px]">{t.product}</span>
+            <span className="xch-gold-italic text-[42px] sm:text-[56px]">{t.product}</span>
           </h1>
-          <p className="xch-display mt-5 max-w-md text-[24px] leading-snug text-x-ink/75">{t.tagline}</p>
-          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
-            {t.points.map((p, i) => {
-              const Icon = [ShieldCheck, Fingerprint, Sparkles][i] ?? ShieldCheck;
+          <p className="xch-display mt-6 text-[40px] leading-[1.02] text-x-ink sm:text-[56px]">{t.headline}</p>
+          <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-x-ink/65">{t.manifesto}</p>
+
+          <ul className="mt-7 grid max-w-2xl grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            {t.principles.map((p, i) => {
+              const Icon = PRINCIPLE_ICONS[i] ?? Radio;
               return (
-                <li key={p} className="flex items-center gap-1.5 text-[12.5px] text-x-ink/55">
-                  <Icon className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} /> {p}
+                <li key={p.title} className="flex gap-3">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--xch-line-strong)] bg-white">
+                    <Icon className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-medium text-x-ink">{p.title}</span>
+                    <span className="mt-0.5 block text-[12px] leading-relaxed text-x-ink/55">{p.body}</span>
+                  </span>
                 </li>
               );
             })}
           </ul>
 
-          <div className="mt-10 max-w-md">
-            <AnimatePresence mode="wait" initial={false}>
-              {mode === "saved" ? (
-                <motion.div key="saved" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25, ease: EASE }} className="space-y-3">
-                  <p className="flex items-center gap-2 text-[12.5px] text-x-ink/55">
-                    <KeyRound className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} /> {t.saved} · <span className="font-mono text-x-ink/70">{mask(saved)}</span>
-                  </p>
-                  <button type="button" disabled={busy} onClick={() => void unlock(saved)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-x-ink text-[14px] font-medium text-x-paper shadow-[0_12px_30px_-14px_rgba(22,17,15,0.6)] transition-transform duration-150 hover:-translate-y-px disabled:opacity-60">
-                    {busy ? <Loader2 className="size-4 animate-spin" /> : null} {busy ? t.checking : t.continue} {!busy && <ArrowRight className="size-4" strokeWidth={1.75} />}
-                  </button>
-                  <div className="flex items-center justify-between text-[12px]">
-                    <button type="button" onClick={() => (setMode("new"), setError(null))} className="text-x-ink/55 underline-offset-4 hover:text-x-ink hover:underline">
-                      {t.useAnother}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateSettings({ licenseKey: "" });
-                        setMode("new");
-                      }}
-                      className="flex items-center gap-1 text-x-ink/45 hover:text-[var(--xch-threat)]"
-                    >
-                      <LogOut className="size-3.5" strokeWidth={1.5} /> {t.signOut}
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
+          <div className="mt-8 flex max-w-xl flex-col gap-3">
+            <button type="button" onClick={() => finish("sandbox", false)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-x-ink text-[14px] font-medium text-x-paper shadow-[0_12px_30px_-14px_rgba(22,17,15,0.6)] transition-transform duration-150 hover:-translate-y-px">
+              {t.enter} <ArrowRight className="size-4" strokeWidth={1.75} />
+            </button>
+
+            {saved && !keyOpen && (
+              <div className="flex flex-wrap items-center gap-2 rounded-full border border-[var(--xch-line)] bg-white px-4 py-2 text-[12.5px]">
+                <KeyRound className="size-3.5 text-[var(--xch-gold)]" strokeWidth={1.5} />
+                <span className="text-x-ink/55">{t.saved}</span>
+                <span className="font-mono text-x-ink/70">{mask(saved)}</span>
+                <button type="button" disabled={busy} onClick={() => void unlock(saved)} className="ms-auto flex items-center gap-1 font-medium text-x-ink hover:underline disabled:opacity-50">
+                  {busy ? <Loader2 className="size-3.5 animate-spin" /> : null} {t.continue}
+                </button>
+                <button type="button" onClick={() => updateSettings({ licenseKey: "" })} aria-label={t.signOut} title={t.signOut} className="text-x-ink/40 hover:text-[var(--xch-threat)]">
+                  <LogOut className="size-3.5" strokeWidth={1.5} />
+                </button>
+              </div>
+            )}
+            {error && saved && !keyOpen && (
+              <p role="alert" className="text-[12px] text-[var(--xch-threat)]">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setKeyOpen((o) => !o);
+                setError(null);
+                window.setTimeout(() => input.current?.focus(), 60);
+              }}
+              aria-expanded={keyOpen}
+              className="flex items-center justify-center gap-1.5 self-center text-[12.5px] text-x-ink/55 underline-offset-4 hover:text-x-ink hover:underline"
+            >
+              <KeyRound className="size-3.5" strokeWidth={1.5} /> {keyOpen ? t.keyHide : saved ? t.useAnother : t.keyOptional}
+            </button>
+            <AnimatePresence initial={false}>
+              {keyOpen && (
                 <motion.form
-                  key="new"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
+                  key="key"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.25, ease: EASE }}
                   onSubmit={(e) => {
                     e.preventDefault();
                     void unlock(key);
                   }}
-                  className="space-y-3"
+                  className="overflow-hidden"
                 >
-                  <label className="block">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-x-ink/45">{t.keyLabel}</span>
-                    <span className={cn("mt-2 flex h-12 items-center gap-2.5 rounded-full border bg-white px-4 shadow-[0_1px_2px_rgba(40,25,20,0.05)] transition-colors duration-150 focus-within:border-[var(--xch-gold)]", error ? "border-[color-mix(in_srgb,var(--xch-threat)_45%,transparent)]" : "border-[var(--xch-line)]")}>
+                  <div className="space-y-2.5 pt-1">
+                    <span className={cn("flex h-11 items-center gap-2.5 rounded-full border bg-white px-4 transition-colors duration-150 focus-within:border-[var(--xch-gold)]", error ? "border-[color-mix(in_srgb,var(--xch-threat)_45%,transparent)]" : "border-[var(--xch-line)]")}>
                       <KeyRound className="size-4 shrink-0 text-x-ink/35" strokeWidth={1.5} />
-                      <input ref={input} value={key} onChange={(e) => (setKey(e.target.value), setError(null))} placeholder={t.keyPh} autoComplete="off" spellCheck={false} className="h-full w-full bg-transparent font-mono text-[13px] text-x-ink outline-none placeholder:font-sans placeholder:text-x-ink/30" />
+                      <input ref={input} value={key} onChange={(e) => (setKey(e.target.value), setError(null))} placeholder={t.keyPh} aria-label={t.keyLabel} autoComplete="off" spellCheck={false} className="h-full w-full bg-transparent font-mono text-[13px] text-x-ink outline-none placeholder:font-sans placeholder:text-x-ink/30" />
+                      <button type="submit" disabled={!key.trim() || busy} className="flex shrink-0 items-center gap-1 rounded-full bg-x-ink px-3 py-1 text-[12px] text-x-paper disabled:opacity-30">
+                        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRight className="size-3.5" />} {busy ? t.checking : t.unlock}
+                      </button>
                     </span>
-                  </label>
-                  {error && (
-                    <p role="alert" className="text-[12px] leading-relaxed text-[var(--xch-threat)]">
-                      {error}
+                    {error && (
+                      <p role="alert" className="px-1 text-[12px] leading-relaxed text-[var(--xch-threat)]">
+                        {error}
+                      </p>
+                    )}
+                    <p className="px-1 text-[11.5px] leading-relaxed text-x-ink/45">
+                      {t.keyWhy} {t.note}
                     </p>
-                  )}
-                  <button type="submit" disabled={!key.trim() || busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-x-ink text-[14px] font-medium text-x-paper shadow-[0_12px_30px_-14px_rgba(22,17,15,0.6)] transition-[transform,opacity] duration-150 hover:-translate-y-px disabled:opacity-35 disabled:hover:translate-y-0">
-                    {busy ? <Loader2 className="size-4 animate-spin" /> : null} {busy ? t.checking : t.unlock} {!busy && <ArrowRight className="size-4" strokeWidth={1.75} />}
-                  </button>
-                  <div className="flex items-center gap-3 py-1" aria-hidden>
-                    <span className="h-px flex-1 bg-[var(--xch-line)]" />
-                    <span className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-x-ink/30">{t.or}</span>
-                    <span className="h-px flex-1 bg-[var(--xch-line)]" />
                   </div>
-                  <button type="button" onClick={() => finish("sandbox", false)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-[var(--xch-line-strong)] bg-white/60 text-[14px] text-x-ink transition-colors duration-150 hover:bg-white">
-                    {t.sandbox}
-                  </button>
-                  <p className="text-center text-[11.5px] text-x-ink/45">{t.sandboxNote}</p>
                 </motion.form>
               )}
             </AnimatePresence>
-            <p className="mt-8 text-[11px] leading-relaxed text-x-ink/40">{t.note}</p>
           </div>
         </motion.section>
 
-        {/* The painting, mounted: white mat, gold hairline, daylight shadow */}
-        <motion.figure initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.25, ease: EASE }} className="mx-auto w-full max-w-[460px] lg:max-w-none">
-          <div className="rounded-[6px] bg-white p-3 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-40px_rgba(40,25,20,0.35)] ring-1 ring-[var(--xch-line)] sm:p-5">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-[2px] ring-1 ring-[var(--xch-line-strong)] lg:aspect-[4/5]">
-              <Image src="/paintings/villa-deste.jpg" alt="" fill priority sizes="(min-width: 1024px) 520px, 90vw" quality={75} className="object-cover" />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0)_55%,rgba(253,252,250,0.35))]" />
+        <motion.aside initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, delay: 0.25, ease: EASE }} className="mx-auto w-full max-w-[460px] space-y-4 lg:max-w-none">
+          <figure>
+            <div className="rounded-[6px] bg-white p-3 shadow-[0_2px_4px_rgba(40,25,20,0.05),0_40px_80px_-40px_rgba(40,25,20,0.35)] ring-1 ring-[var(--xch-line)] sm:p-4">
+              <div className="relative aspect-[16/10] overflow-hidden rounded-[2px] ring-1 ring-[var(--xch-line-strong)] lg:aspect-[5/6]">
+                <Image src="/paintings/villa-deste.jpg" alt="" fill priority sizes="(min-width: 1024px) 480px, 90vw" quality={75} className="object-cover" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(31,61,43,0.12),rgba(11,26,18,0.25))]" />
+              </div>
             </div>
+            <figcaption className="mt-2.5 text-center font-mono text-[9.5px] uppercase tracking-[0.24em] text-x-ink/35">{t.caption}</figcaption>
+          </figure>
+
+          {/* Run it yourself */}
+          <div className="overflow-hidden rounded-[14px] bg-[#132a1d] ring-1 ring-[rgba(226,191,120,0.25)]">
+            <div className="flex items-center justify-between border-b border-[rgba(226,191,120,0.15)] px-4 py-2">
+              <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#e2bf78]">
+                <Terminal className="size-3.5" strokeWidth={1.5} /> {t.runLocal}
+              </span>
+              <button type="button" onClick={copyRun} aria-label="Copy" className="text-[rgba(240,236,224,0.6)] transition-colors hover:text-white">
+                {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+              </button>
+            </div>
+            <pre className="xch-scroll overflow-x-auto px-4 py-3 font-mono text-[12px] leading-relaxed text-[rgba(240,236,224,0.88)]">
+              {RUN_LOCAL.map((l) => (
+                <span key={l} className="block">
+                  <span className="select-none text-[#e2bf78]/70">$ </span>
+                  {l}
+                </span>
+              ))}
+            </pre>
           </div>
-          <figcaption className="mt-3 text-center font-mono text-[9.5px] uppercase tracking-[0.24em] text-x-ink/35">{t.caption}</figcaption>
-        </motion.figure>
+        </motion.aside>
       </div>
     </motion.div>
   );

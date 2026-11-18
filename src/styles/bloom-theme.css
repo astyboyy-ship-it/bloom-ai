@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------------------------------
    Bloom Exchange · the white gallery
-   A luminous, stark white canvas with Bloom's painterly depth held in the margins: ink typography, fine
+   A luminous white canvas with the garden's painterly depth held in the margins (twilight sage, warm gold): ink typography, fine
    gold hairlines like a gallery mount, soft daylight shadows, and a whisper of the garden paintings behind
    the glass. Colour stays semantic and is the only colour on the page:
      gold     verified, settled, signed
@@ -25,7 +25,8 @@
   --xch-verified: #8f6a1c;
   --xch-clamp: #b4541a;
   --xch-threat: #c11131;
-  --xch-glow-crimson: rgba(225, 29, 72, 0.06);
+  --xch-glow-crimson: rgba(225, 29, 72, 0.05);
+  --xch-glow-eden: rgba(122, 160, 104, 0.12);
   --xch-glow-gold: rgba(214, 170, 92, 0.12);
   --xch-shadow: 0 1px 2px rgba(40, 25, 20, 0.04), 0 18px 40px -24px rgba(40, 25, 20, 0.18);
   --xch-spring: cubic-bezier(0.22, 1, 0.36, 1);
@@ -73,7 +74,8 @@
 /* The canvas: paper white, warm daylight from above, a breath of rose at the corner. */
 .xch-atmosphere {
   background:
-    radial-gradient(60% 45% at 10% 0%, var(--xch-glow-crimson), transparent 70%),
+    radial-gradient(60% 45% at 10% 0%, var(--xch-glow-eden), transparent 70%),
+    radial-gradient(40% 35% at 85% 95%, var(--xch-glow-crimson), transparent 70%),
     radial-gradient(55% 40% at 95% 8%, var(--xch-glow-gold), transparent 70%),
     radial-gradient(70% 50% at 50% 115%, rgba(214, 170, 92, 0.08), transparent 70%),
     var(--xch-bg);
