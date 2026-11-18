@@ -11,20 +11,15 @@ const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3
 function Metric({ label, value, sub, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: string }) {
   return (
     <div className="flex shrink-0 items-baseline gap-1.5 border-s border-[var(--xch-line)] ps-3.5">
-      <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/35">{label}</span>
-      <span className={cn("tnum font-mono text-[12px] text-white/90", tone)}>{value}</span>
-      {sub && <span className="tnum font-mono text-[10px] text-white/35">{sub}</span>}
+      <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-x-ink/35">{label}</span>
+      <span className={cn("tnum font-mono text-[12px] text-x-ink/90", tone)}>{value}</span>
+      {sub && <span className="tnum font-mono text-[10px] text-x-ink/35">{sub}</span>}
     </div>
   );
 }
 
-/**
- * The macro heartbeat across the top of the terminal: real aggregates from /api/exchange/pulse over the last 15
- * minutes (numbers only), refreshed every few seconds and whenever this terminal clears something. Never invents
- * activity: with nothing cleared yet it says so.
- */
-export function GlobalPulse({ tick, mode }: { tick: number; mode: "cloud" | "sovereign" }) {
-  const t = useOmniCopy();
+/** Real aggregates from /api/exchange/pulse over the last 15 minutes, refreshed every few seconds, on ⌘R and whenever this desk clears something. */
+export function usePulse(tick: number): PulseStats | null {
   const [s, setS] = useState<PulseStats | null>(null);
   useEffect(() => {
     let alive = true;
@@ -42,16 +37,23 @@ export function GlobalPulse({ tick, mode }: { tick: number; mode: "cloud" | "sov
       window.removeEventListener(REFRESH_EVENT, load);
     };
   }, [tick]);
+  return s;
+}
 
-  const active = s && s.enclaves > 0;
+/**
+ * The macro heartbeat across the top of the desk (numbers only). Never invents activity: with nothing cleared yet
+ * it says so.
+ */
+export function GlobalPulse({ stats: s, mode }: { stats: PulseStats | null; mode: "cloud" | "sovereign" }) {
+  const t = useOmniCopy();  const active = s && s.enclaves > 0;
   const maxDomain = s ? Math.max(1, ...Object.values(s.domainsActive)) : 1;
   return (
-    <div className="border-b border-[var(--xch-line)] bg-black/30">
-      <div className="mx-auto flex max-w-[1600px] items-center gap-3.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:px-6" aria-live="off">
+    <div className="border-b border-[var(--xch-line)] bg-white/50">
+      <div className="mx-auto flex max-w-[1600px] items-center gap-3.5 xch-noscroll overflow-x-auto px-4 py-2 sm:px-6" aria-live="off">
         <span className="flex shrink-0 items-center gap-2">
           <span className="xch-breathe size-2 rounded-full bg-[var(--xch-verified)]" aria-hidden />
           <span className="xch-breathe-soft font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--xch-verified)]">{t.pulse.live}</span>
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{mode === "sovereign" ? t.sovereign.view : t.sovereign.cloud}</span>
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-x-ink/40">{mode === "sovereign" ? t.sovereign.view : t.sovereign.cloud}</span>
         </span>
         <Metric label={t.pulse.adapters} value={s?.adapters ?? "—"} sub={`${s?.domains ?? 6} ${t.pulse.domains}`} />
         <div className="flex shrink-0 items-end gap-[3px] border-s border-[var(--xch-line)] ps-3.5" aria-hidden>
@@ -69,7 +71,7 @@ export function GlobalPulse({ tick, mode }: { tick: number; mode: "cloud" | "sov
             <Metric label={t.pulse.clearRate} value={s.healthPct === null ? "—" : `${s.healthPct}%`} sub={s.quarantined ? `${s.quarantined} ⊘` : undefined} />
           </>
         ) : (
-          <span className="shrink-0 border-s border-[var(--xch-line)] ps-3.5 font-mono text-[10.5px] text-white/35">{t.pulse.awaiting}</span>
+          <span className="shrink-0 border-s border-[var(--xch-line)] ps-3.5 font-mono text-[10.5px] text-x-ink/35">{t.pulse.awaiting}</span>
         )}
       </div>
     </div>

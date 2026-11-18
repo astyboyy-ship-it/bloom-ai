@@ -14,11 +14,11 @@ export const PARLIAMENT_NODES = [
 
 /** Engine names stay neutral; color is reserved for meaning (verified, clamped, threat). */
 export const ENGINE_TONE: Record<string, string> = {
-  shield: "text-rose-300/90",
-  cortex: "text-white/70",
-  aether: "text-white/70",
+  shield: "text-[var(--xch-threat)]",
+  cortex: "text-x-ink/70",
+  aether: "text-x-ink/70",
   sovereign: "text-[var(--xch-verified)]",
-  apex: "text-white/70",
+  apex: "text-x-ink/70",
 };
 
 /** 150ms tension-damped spring for palettes, drawers and split panes. */
@@ -36,10 +36,10 @@ export function PanelHeader({ icon: Icon, title, sub, right }: { icon: LucideIco
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="xch-display flex items-center gap-2 text-[19px] leading-tight text-[var(--xch-cream)]">
+        <h2 className="xch-display flex items-center gap-2 text-[19px] leading-tight text-[var(--xch-ink)]">
           <Icon className="size-[15px] shrink-0 text-[var(--xch-gold)]/60" strokeWidth={1.75} /> {title}
         </h2>
-        {sub && <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-white/45">{sub}</p>}
+        {sub && <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-x-ink/45">{sub}</p>}
       </div>
       {right}
     </header>
@@ -51,8 +51,8 @@ const TONES: Record<Tone, string> = {
   emerald: "border-[color-mix(in_srgb,var(--xch-verified)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-verified)_7%,transparent)] text-[var(--xch-verified)]",
   amber: "border-[color-mix(in_srgb,var(--xch-clamp)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-clamp)_7%,transparent)] text-[var(--xch-clamp)]",
   rose: "border-[color-mix(in_srgb,var(--xch-threat)_40%,transparent)] bg-[color-mix(in_srgb,var(--xch-threat)_7%,transparent)] text-[var(--xch-threat)]",
-  muted: "border-[var(--xch-line)] text-white/55",
-  solid: "border-[var(--xch-line-strong)] bg-white/[0.04] text-white/80",
+  muted: "border-[var(--xch-line)] text-x-ink/55",
+  solid: "border-[var(--xch-line-strong)] bg-x-ink/[0.04] text-x-ink/80",
 };
 
 export function Badge({ tone = "muted", className, children }: { tone?: Tone; className?: string; children: React.ReactNode }) {
@@ -60,15 +60,15 @@ export function Badge({ tone = "muted", className, children }: { tone?: Tone; cl
 }
 
 export function Kbd({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <kbd className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded border border-[var(--xch-line-strong)] bg-white/[0.03] px-1 font-mono text-[10px] text-white/55", className)}>{children}</kbd>;
+  return <kbd className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded border border-[var(--xch-line-strong)] bg-x-ink/[0.03] px-1 font-mono text-[10px] text-x-ink/55", className)}>{children}</kbd>;
 }
 
 export function Stat({ label, value, tone, sub }: { label: string; value: React.ReactNode; tone?: string; sub?: React.ReactNode }) {
   return (
-    <div className="min-w-0 rounded-[10px] border border-[var(--xch-line)] bg-black/20 px-3 py-2.5">
-      <p className="truncate font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{label}</p>
-      <p className={cn("tnum mt-1 truncate font-mono text-[17px] tracking-[-0.01em] text-white", tone)}>{value}</p>
-      {sub && <p className="tnum mt-0.5 truncate font-mono text-[10px] text-white/35">{sub}</p>}
+    <div className="min-w-0 rounded-[10px] border border-[var(--xch-line)] bg-x-ink/[0.025] px-3 py-2.5">
+      <p className="truncate font-mono text-[9.5px] uppercase tracking-[0.16em] text-x-ink/40">{label}</p>
+      <p className={cn("tnum mt-1 truncate font-mono text-[17px] tracking-[-0.01em] text-x-ink", tone)}>{value}</p>
+      {sub && <p className="tnum mt-0.5 truncate font-mono text-[10px] text-x-ink/35">{sub}</p>}
     </div>
   );
 }

@@ -1,54 +1,61 @@
 /* ---------------------------------------------------------------------------------------------------
-   Bloom Exchange · Bloom identity
-   The Operating Desk's own language carried into the clearing terminal: an obsidian-rose canvas, velvety
-   crimson light, warm gold ambience, plum glass framed by fine rose-gold hairlines, the Cormorant display
-   serif with gold italics, and the painterly depth of the site's paintings. Colour stays semantic:
-     gold    verified, settled, signed
-     ember   clamped by an invariant, escalated
-     crimson threat neutralized, quarantined
+   Bloom Exchange · the white gallery
+   A luminous, stark white canvas with Bloom's painterly depth held in the margins: ink typography, fine
+   gold hairlines like a gallery mount, soft daylight shadows, and a whisper of the garden paintings behind
+   the glass. Colour stays semantic and is the only colour on the page:
+     gold     verified, settled, signed
+     ember    clamped by an invariant, escalated
+     crimson  threat neutralized, quarantined (and the bloom itself)
+   Utilities: text-x-ink / bg-x-paper (+ opacity) resolve to these tokens; see @theme in globals.css.
    --------------------------------------------------------------------------------------------------- */
 
 .xch {
-  --xch-bg: #0c0709;
-  --xch-card: rgb(24 12 16 / 0.72);
-  --xch-card-solid: #170b0f;
-  --xch-raise: #1f1015;
-  --xch-line: rgba(255, 255, 255, 0.06);
-  --xch-line-strong: rgba(240, 213, 154, 0.16);
-  --xch-cream: #f1ede8;
-  --xch-gold: #f0d59a;
-  --xch-crimson: #e11d48;
-  --xch-verified: #e9c77b;
-  --xch-clamp: #f4a261;
-  --xch-threat: #ff4d6d;
-  --xch-glow-crimson: rgba(225, 29, 72, 0.14);
-  --xch-glow-gold: rgba(240, 190, 110, 0.07);
+  color-scheme: light;
+  --xch-paper: #fdfcfa;
+  --xch-bg: var(--xch-paper);
+  --xch-ink: #16110f;
+  --xch-cream: var(--xch-ink);
+  --xch-card: rgb(255 255 255 / 0.84);
+  --xch-card-solid: #ffffff;
+  --xch-raise: #f7f4ef;
+  --xch-line: rgba(22, 17, 15, 0.08);
+  --xch-line-strong: rgba(163, 122, 40, 0.28);
+  --xch-gold: #a37a28;
+  --xch-crimson: #be123c;
+  --xch-verified: #8f6a1c;
+  --xch-clamp: #b4541a;
+  --xch-threat: #c11131;
+  --xch-glow-crimson: rgba(225, 29, 72, 0.06);
+  --xch-glow-gold: rgba(214, 170, 92, 0.12);
+  --xch-shadow: 0 1px 2px rgba(40, 25, 20, 0.04), 0 18px 40px -24px rgba(40, 25, 20, 0.18);
   --xch-spring: cubic-bezier(0.22, 1, 0.36, 1);
   background: var(--xch-bg);
-  color: var(--xch-cream);
+  color: var(--xch-ink);
 }
 .xch .tnum,
 .xch .font-mono {
   font-variant-numeric: tabular-nums;
 }
+.xch ::selection {
+  background: rgba(214, 170, 92, 0.28);
+}
 
-/* Plum glass framed by a rose-gold hairline: a cool white edge, a warm gold catch-light along the top. */
+/* A mounted print: white card, fine hairline, a gold catch-light on top, soft daylight shadow. */
 .xch-card {
   background: var(--xch-card);
   border: 1px solid var(--xch-line);
   border-radius: 16px;
   box-shadow:
-    inset 0 1px 0 rgba(240, 213, 154, 0.07),
-    0 0 0 1px rgba(0, 0, 0, 0.25),
-    0 30px 60px -40px rgba(0, 0, 0, 0.9);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  backdrop-filter: blur(14px) saturate(120%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    var(--xch-shadow);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  backdrop-filter: blur(10px) saturate(115%);
 }
 .xch-hair {
   border-color: var(--xch-line);
 }
 
-/* Display headings in Bloom's Cormorant with the gold-italic accent the homepage uses. */
+/* Display headings in Bloom's Cormorant with a deep gold italic accent. */
 .xch-display {
   font-family: var(--font-display);
   font-weight: 500;
@@ -57,33 +64,33 @@
 .xch-gold-italic {
   font-family: var(--font-display);
   font-style: italic;
-  background: linear-gradient(100deg, #f6e3b4 0%, #e9c77b 45%, #c9954a 100%);
+  background: linear-gradient(100deg, #c9a04e 0%, #9a7424 50%, #7a5418 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* The canvas: obsidian-rose with two slow velvety crimson glows and warm gold ambient light. */
+/* The canvas: paper white, warm daylight from above, a breath of rose at the corner. */
 .xch-atmosphere {
   background:
-    radial-gradient(60% 45% at 12% 0%, var(--xch-glow-crimson), transparent 70%),
-    radial-gradient(50% 40% at 92% 18%, rgba(225, 29, 72, 0.09), transparent 70%),
-    radial-gradient(70% 50% at 50% 110%, var(--xch-glow-gold), transparent 70%),
+    radial-gradient(60% 45% at 10% 0%, var(--xch-glow-crimson), transparent 70%),
+    radial-gradient(55% 40% at 95% 8%, var(--xch-glow-gold), transparent 70%),
+    radial-gradient(70% 50% at 50% 115%, rgba(214, 170, 92, 0.08), transparent 70%),
     var(--xch-bg);
 }
 @keyframes xch-velvet {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.6;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.08);
+    transform: scale(1.06);
   }
 }
 .xch-velvet {
-  animation: xch-velvet 7s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  animation: xch-velvet 9s cubic-bezier(0.37, 0, 0.63, 1) infinite;
   will-change: opacity, transform;
 }
 
@@ -99,26 +106,29 @@
   -webkit-app-region: no-drag;
 }
 
-/* Organic particle bloom: petals burst out from a minted receipt and drift down. */
-@keyframes xch-petal {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(0.4);
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1);
-    opacity: 0;
-  }
+/* Quiet scrollbars: a hairline thumb, no track. */
+.xch-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(22, 17, 15, 0.16) transparent;
 }
-.xch-petal {
-  animation: xch-petal 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-  will-change: transform, opacity;
+.xch-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.xch-scroll::-webkit-scrollbar-thumb {
+  background: rgba(22, 17, 15, 0.14);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+.xch-noscroll {
+  scrollbar-width: none;
+}
+.xch-noscroll::-webkit-scrollbar {
+  display: none;
 }
 
-/* Boot: hairlines drawn across the canvas. */
+/* Hairlines drawn across the canvas. */
 @keyframes xch-draw {
   from {
     stroke-dashoffset: 1;
@@ -134,8 +144,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .xch-velvet,
-  .xch-petal {
+  .xch-velvet {
     animation: none;
   }
   .xch-draw {

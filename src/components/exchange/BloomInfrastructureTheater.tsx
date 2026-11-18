@@ -8,7 +8,7 @@ import { useOmniCopy } from "./omni-copy";
 import { Badge, SPRING } from "./ui";
 
 /**
- * How Bloom ends agent chaos, in four steps and Bloom's own palette: (1) a company's AI stack orchestrated under
+ * How Bloom ends agent chaos, in four steps and Bloom's white-gallery palette: (1) a company's AI stack orchestrated under
  * one sovereign, fed by ground truth and clamped in code; (2) a Bloom link met anywhere (email, DMs, APIs) that
  * moves the conversation out of the human thread into a double-blind sandbox; (3) intents tested against both
  * sealed mandates at machine speed, no-fit buyers held at the bound; (4) one-click sign-off for each owner and a
@@ -17,12 +17,12 @@ import { Badge, SPRING } from "./ui";
  * motion freezes scenes and disables auto-advance.
  */
 const STEP_SECONDS = 9;
-const GOLD = "#e9c77b";
-const CRIMSON = "#e11d48";
-const THREAT = "#ff4d6d";
-const CREAM = "rgba(241,237,232,0.82)";
-const LINE = "rgba(240,213,154,0.16)";
-const CARD = "#170b0f";
+const GOLD = "#8f6a1c";
+const CRIMSON = "#be123c";
+const THREAT = "#c11131";
+const CREAM = "rgba(22,17,15,0.82)";
+const LINE = "rgba(163,122,40,0.16)";
+const CARD = "#ffffff";
 type Labels = {
   core: string;
   truth: string;
@@ -47,13 +47,13 @@ type Labels = {
 const Defs = () => (
   <defs>
     <radialGradient id="xch-velvet" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stopColor="#e11d48" stopOpacity="0.38" />
-      <stop offset="0.6" stopColor="#7a0820" stopOpacity="0.16" />
-      <stop offset="1" stopColor="#0c0709" stopOpacity="0" />
+      <stop offset="0" stopColor="#be123c" stopOpacity="0.14" />
+      <stop offset="0.6" stopColor="#be123c" stopOpacity="0.05" />
+      <stop offset="1" stopColor="#fdfcfa" stopOpacity="0" />
     </radialGradient>
     <radialGradient id="xch-gold-glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stopColor="#f0d59a" stopOpacity="0.35" />
-      <stop offset="1" stopColor="#f0d59a" stopOpacity="0" />
+      <stop offset="0" stopColor="#d6aa5c" stopOpacity="0.28" />
+      <stop offset="1" stopColor="#d6aa5c" stopOpacity="0" />
     </radialGradient>
   </defs>
 );
@@ -87,7 +87,7 @@ function StackScene({ l }: { l: Labels }) {
       </ellipse>
 
       {/* Ground truth feed */}
-      <rect x={330} y={14} width={140} height={30} rx={15} fill={CARD} stroke="rgba(240,213,154,0.4)" />
+      <rect x={330} y={14} width={140} height={30} rx={15} fill={CARD} stroke="rgba(163,122,40,0.4)" />
       <Mono x={400} y={33} anchor="middle" fill={GOLD} size={10} spacing="0.08em">
         {l.truth}
       </Mono>
@@ -110,7 +110,7 @@ function StackScene({ l }: { l: Labels }) {
               <animateMotion dur="2.4s" begin={`${0.3 + i * 0.37}s`} repeatCount="indefinite" path={d} />
               <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.4s" begin={`${0.3 + i * 0.37}s`} repeatCount="indefinite" />
             </circle>
-            <rect x={a.x - 66} y={a.y - 17} width={132} height={34} rx={10} fill={CARD} stroke="rgba(240,213,154,0.24)" />
+            <rect x={a.x - 66} y={a.y - 17} width={132} height={34} rx={10} fill={CARD} stroke="rgba(163,122,40,0.24)" />
             <circle cx={a.x - 50} cy={a.y} r={3.5} fill={GOLD}>
               <animate attributeName="opacity" values="0.4;1;0.4" dur="2.4s" begin={`${0.3 + i * 0.37 + 2}s`} repeatCount="indefinite" />
             </circle>
@@ -144,7 +144,7 @@ function StackScene({ l }: { l: Labels }) {
       <circle cx={core.x} cy={core.y} r={26} fill="none" stroke={GOLD} strokeOpacity={0.3} strokeDasharray="1 4">
       </circle>
       <path d={ROSE_MARK} transform={`translate(${core.x} ${core.y}) scale(0.9)`} fill={CRIMSON} opacity={0.9} />
-      <Mono x={core.x} y={core.y + 56} anchor="middle" size={9.5} fill="rgba(240,213,154,0.8)" spacing="0.14em">
+      <Mono x={core.x} y={core.y + 56} anchor="middle" size={9.5} fill="rgba(163,122,40,0.8)" spacing="0.14em">
         {l.core.toUpperCase()}
       </Mono>
     </svg>
@@ -190,12 +190,12 @@ function LinkScene({ l }: { l: Labels }) {
             <rect width={8} height={6} x={-4} y={-3} rx={1.2} fill={GOLD}>
               <animateMotion dur="1.6s" begin={begin} repeatCount="indefinite" path={d} />
             </rect>
-            <rect x={22} y={y - 21} width={168} height={42} rx={10} fill={CARD} stroke="rgba(240,213,154,0.22)" />
+            <rect x={22} y={y - 21} width={168} height={42} rx={10} fill={CARD} stroke="rgba(163,122,40,0.22)" />
             <Mono x={36} y={y - 3} size={10.5}>
               {ch}
             </Mono>
             <rect x={36} y={y + 5} width={84} height={13} rx={6.5} fill="rgba(225,29,72,0.16)" stroke="rgba(255,92,116,0.5)" />
-            <Mono x={78} y={y + 14.5} size={8} anchor="middle" fill="#ff8fa0">
+            <Mono x={78} y={y + 14.5} size={8} anchor="middle" fill="#be123c">
               {l.link}
             </Mono>
           </g>
@@ -203,11 +203,11 @@ function LinkScene({ l }: { l: Labels }) {
       })}
 
       {/* The human thread: slow, dashed, never arriving within the frame */}
-      <path d={human} fill="none" stroke="rgba(241,237,232,0.18)" strokeDasharray="2 7" />
-      <circle r={3} fill="rgba(241,237,232,0.55)">
+      <path d={human} fill="none" stroke="rgba(22,17,15,0.18)" strokeDasharray="2 7" />
+      <circle r={3} fill="rgba(22,17,15,0.55)">
         <animateMotion dur="14s" repeatCount="indefinite" path={human} />
       </circle>
-      <Mono x={200} y={292} size={8.5} fill="rgba(241,237,232,0.4)">
+      <Mono x={200} y={292} size={8.5} fill="rgba(22,17,15,0.4)">
         {l.human}
       </Mono>
 
@@ -221,7 +221,7 @@ function LinkScene({ l }: { l: Labels }) {
       <circle cx={sandbox.x} cy={sandbox.y + 1} r={4} fill={GOLD}>
         <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
       </circle>
-      <Mono x={sandbox.x} y={sandbox.y + 40} anchor="middle" size={9} fill="rgba(240,213,154,0.8)" spacing="0.14em">
+      <Mono x={sandbox.x} y={sandbox.y + 40} anchor="middle" size={9} fill="rgba(163,122,40,0.8)" spacing="0.14em">
         {l.sandbox.toUpperCase()}
       </Mono>
     </svg>
@@ -250,7 +250,7 @@ function MatchScene({ l }: { l: Labels }) {
       {GATES.map((gx, g) => (
         <g key={gx}>
           <line x1={gx} x2={gx} y1={22} y2={292} stroke={GOLD} strokeOpacity={0.35} strokeDasharray="2 4" />
-          <Mono x={gx} y={310} anchor="middle" size={9} fill="rgba(240,213,154,0.75)" spacing="0.08em">
+          <Mono x={gx} y={310} anchor="middle" size={9} fill="rgba(163,122,40,0.75)" spacing="0.08em">
             {gateNames[g]}
           </Mono>
         </g>
@@ -272,8 +272,8 @@ function MatchScene({ l }: { l: Labels }) {
         const begin = `${i * 0.45}s`;
         return (
           <g key={i}>
-            <path d={`M150 ${y} L${held ? GATES[b.stop] : 600} ${y}`} stroke={held ? "rgba(255,77,109,0.12)" : "rgba(240,213,154,0.16)"} />
-            {!held && <path d={`M600 ${y} L${target.x - 54} ${target.y}`} stroke="rgba(240,213,154,0.16)" fill="none" />}
+            <path d={`M150 ${y} L${held ? GATES[b.stop] : 600} ${y}`} stroke={held ? "rgba(193,17,49,0.12)" : "rgba(163,122,40,0.16)"} />
+            {!held && <path d={`M600 ${y} L${target.x - 54} ${target.y}`} stroke="rgba(163,122,40,0.16)" fill="none" />}
             <rect x={22} y={y - 14} width={128} height={28} rx={14} fill={CARD} stroke={LINE} />
             <Mono x={86} y={y + 3.5} anchor="middle" size={9.5}>
               {`buyer · 0${i + 1}`}
@@ -287,7 +287,7 @@ function MatchScene({ l }: { l: Labels }) {
               <g opacity={0}>
                 <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.45;0.5;0.8;0.95" dur={`${dur}s`} begin={begin} repeatCount="indefinite" />
                 <rect x={GATES[b.stop] - 3} y={y - 9} width={6} height={18} rx={2} fill={THREAT} opacity={0.75} />
-                <Mono x={GATES[b.stop] + 10} y={y + 3.5} size={8.5} fill="rgba(255,77,109,0.9)">
+                <Mono x={GATES[b.stop] + 10} y={y + 3.5} size={8.5} fill="rgba(193,17,49,0.9)">
                   {l.held}
                 </Mono>
               </g>
@@ -295,7 +295,7 @@ function MatchScene({ l }: { l: Labels }) {
           </g>
         );
       })}
-      <Mono x={target.x} y={target.y + 46} anchor="middle" size={8.5} fill="rgba(240,213,154,0.6)">
+      <Mono x={target.x} y={target.y + 46} anchor="middle" size={8.5} fill="rgba(163,122,40,0.6)">
         {"< 1 s"}
       </Mono>
     </svg>
@@ -311,13 +311,13 @@ function OwnerCard({ x, name, at, l }: { x: number; name: string; at: number; l:
   const k = (s: number) => (s / LOOP).toFixed(3);
   return (
     <g>
-      <rect x={x} y={86} width={170} height={148} rx={14} fill={CARD} stroke="rgba(240,213,154,0.28)" />
-      <Mono x={x + 16} y={110} size={8.5} fill="rgba(240,213,154,0.7)" spacing="0.14em">
+      <rect x={x} y={86} width={170} height={148} rx={14} fill={CARD} stroke="rgba(163,122,40,0.28)" />
+      <Mono x={x + 16} y={110} size={8.5} fill="rgba(163,122,40,0.7)" spacing="0.14em">
         {name.toUpperCase()}
       </Mono>
       {["terms", "margin proof", "mandate"].map((row, i) => (
         <g key={row}>
-          <Mono x={x + 16} y={134 + i * 17} size={9.5} fill="rgba(241,237,232,0.55)">
+          <Mono x={x + 16} y={134 + i * 17} size={9.5} fill="rgba(22,17,15,0.55)">
             {row}
           </Mono>
           <Mono x={x + 154} y={134 + i * 17} size={9.5} fill={GOLD} anchor="end">
@@ -331,13 +331,13 @@ function OwnerCard({ x, name, at, l }: { x: number; name: string; at: number; l:
       </Mono>
       <g opacity={0}>
         <animate attributeName="opacity" values="0;0;1;1;0" keyTimes={`0;${k(at)};${k(at + 0.12)};0.92;1`} dur={`${LOOP}s`} repeatCount="indefinite" />
-        <rect x={x + 16} y={192} width={138} height={28} rx={14} fill="#f0d59a" />
-        <Mono x={x + 85} y={210} anchor="middle" size={10} fill="#1a0d0a">
+        <rect x={x + 16} y={192} width={138} height={28} rx={14} fill="#a37a28" />
+        <Mono x={x + 85} y={210} anchor="middle" size={10} fill="#ffffff">
           {`✓ ${l.approved}`}
         </Mono>
       </g>
       {/* The click */}
-      <circle cx={x + 85} cy={206} r={4} fill="none" stroke="#f0d59a" opacity={0}>
+      <circle cx={x + 85} cy={206} r={4} fill="none" stroke="#a37a28" opacity={0}>
         <animate attributeName="r" values="4;4;26" keyTimes={`0;${k(at)};${k(at + 0.6)}`} dur={`${LOOP}s`} repeatCount="indefinite" />
         <animate attributeName="opacity" values="0;0;0.9;0;0" keyTimes={`0;${k(at)};${k(at + 0.05)};${k(at + 0.6)};1`} dur={`${LOOP}s`} repeatCount="indefinite" />
       </circle>
@@ -379,7 +379,7 @@ function SignoffScene({ l }: { l: Labels }) {
       <rect x={290} y={96} width={220} height={128} rx={14} fill="none" stroke={GOLD} opacity={0}>
         <animate attributeName="opacity" values="0;0;0.85;0.85;0" keyTimes={`0;${k(sealAt)};${k(sealAt + 0.15)};0.92;1`} dur={`${LOOP}s`} repeatCount="indefinite" />
       </rect>
-      <Mono x={400} y={122} anchor="middle" size={8.5} fill="rgba(240,213,154,0.7)" spacing="0.18em">
+      <Mono x={400} y={122} anchor="middle" size={8.5} fill="rgba(163,122,40,0.7)" spacing="0.18em">
         BLOOM-XCH
       </Mono>
       <Mono x={400} y={146} anchor="middle" size={12.5} fill={GOLD}>
@@ -390,7 +390,7 @@ function SignoffScene({ l }: { l: Labels }) {
         const at = sealAt + i * 0.15;
         return (
           <g key={key}>
-            <Mono x={318} y={178 + i * 15} size={9.5} fill="rgba(241,237,232,0.6)">
+            <Mono x={318} y={178 + i * 15} size={9.5} fill="rgba(22,17,15,0.6)">
               {key}
             </Mono>
             <text x={482} y={178 + i * 15} textAnchor="end" fontSize={9.5} fill={GOLD} className="font-mono" opacity={0}>
@@ -410,9 +410,9 @@ function SignoffScene({ l }: { l: Labels }) {
   );
 }
 
-export function BloomInfrastructureTheater() {
+export function BloomInfrastructureTheater({ initialStep = 0 }: { initialStep?: number }) {
   const t = useOmniCopy().theater;
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const [playing, setPlaying] = useState(true);
   const [hover, setHover] = useState(false);
   const [still, setStill] = useState(false);
@@ -461,8 +461,8 @@ export function BloomInfrastructureTheater() {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onKeyDown={(e) => {
-        if (e.key === "ArrowRight") go(step + (document.dir === "rtl" ? -1 : 1));
-        if (e.key === "ArrowLeft") go(step + (document.dir === "rtl" ? 1 : -1));
+        if (e.key === "ArrowRight") go(step + 1);
+        if (e.key === "ArrowLeft") go(step - 1);
         if (e.key === " ") {
           e.preventDefault();
           setPlaying((p) => !p);
@@ -471,20 +471,20 @@ export function BloomInfrastructureTheater() {
     >
       <div className="xch-velvet pointer-events-none absolute -left-24 -top-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.12),transparent)]" aria-hidden />
       <div className="relative flex flex-wrap items-center gap-3 border-b border-[var(--xch-line)] px-4 py-3 sm:px-5">
-        <p className="xch-display text-[21px] text-[var(--xch-cream)]">{t.title}</p>
+        <p className="xch-display text-[21px] text-[var(--xch-ink)]">{t.title}</p>
         <Badge className="ms-auto">{t.illustrative}</Badge>
-        <button type="button" onClick={() => setPlaying((p) => !p)} aria-label={playing ? t.pause : t.play} className="rounded-full border border-[var(--xch-line-strong)] p-1.5 text-white/60 hover:text-white">
+        <button type="button" onClick={() => setPlaying((p) => !p)} aria-label={playing ? t.pause : t.play} className="rounded-full border border-[var(--xch-line-strong)] p-1.5 text-x-ink/60 hover:text-x-ink">
           {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
         </button>
       </div>
 
       <div role="tablist" className="relative grid grid-cols-2 gap-px border-b border-[var(--xch-line)] bg-[var(--xch-line)] sm:grid-cols-4">
         {t.scenes.map((s, i) => (
-          <button key={s.kicker} type="button" role="tab" aria-selected={step === i} onClick={() => (go(i), setPlaying(false))} className={cn("relative bg-[#140a0d] px-3 py-2.5 text-start transition-colors duration-150 sm:px-4", step === i ? "text-white" : "text-white/45 hover:text-white/75")}>
+          <button key={s.kicker} type="button" role="tab" aria-selected={step === i} onClick={() => (go(i), setPlaying(false))} className={cn("relative bg-[var(--xch-raise)] px-3 py-2.5 text-start transition-colors duration-150 sm:px-4", step === i ? "text-x-ink" : "text-x-ink/45 hover:text-x-ink/75")}>
             <span className={cn("block font-mono text-[9.5px] uppercase tracking-[0.16em]", "text-[var(--xch-verified)]", step !== i && "opacity-60")}>{s.kicker}</span>
             <span className="mt-0.5 block truncate text-[12.5px]">{s.title}</span>
-            <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white/[0.04]">
-              {step === i && <span key={step} className="xch-step-progress absolute inset-0 block origin-left bg-[var(--xch-verified)] rtl:origin-right" style={{ animationDuration: `${STEP_SECONDS}s`, animationPlayState: running ? "running" : "paused" }} onAnimationEnd={() => running && go(step + 1)} />}
+            <span className="absolute inset-x-0 bottom-0 h-[2px] bg-x-ink/[0.04]">
+              {step === i && <span key={step} className="xch-step-progress absolute inset-0 block origin-left bg-[var(--xch-verified)]" style={{ animationDuration: `${STEP_SECONDS}s`, animationPlayState: running ? "running" : "paused" }} onAnimationEnd={() => running && go(step + 1)} />}
               {step > i && <span className="absolute inset-0 block bg-[var(--xch-verified)]/40" />}
             </span>
           </button>
@@ -494,7 +494,7 @@ export function BloomInfrastructureTheater() {
       <div className="relative grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         <div ref={stage} className="min-w-0 border-[var(--xch-line)] p-3 sm:p-4 lg:border-e" dir="ltr">
           <AnimatePresence mode="wait">
-            <motion.div key={step} initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.01 }} transition={SPRING} className="overflow-hidden rounded-[12px] border border-[var(--xch-line-strong)] bg-black/25">
+            <motion.div key={step} initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.01 }} transition={SPRING} className="overflow-hidden rounded-[12px] border border-[var(--xch-line-strong)] bg-x-ink/[0.025]">
               {step === 0 && <StackScene l={t.labels} />}
               {step === 1 && <LinkScene l={t.labels} />}
               {step === 2 && <MatchScene l={t.labels} />}
@@ -505,11 +505,11 @@ export function BloomInfrastructureTheater() {
         <AnimatePresence mode="wait">
           <motion.div key={step} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={SPRING} className="min-w-0 p-4 sm:p-6">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--xch-verified)]">{scene.kicker}</p>
-            <h3 className="xch-display mt-2 text-[32px] leading-[1.05] text-[var(--xch-cream)]">{scene.title}</h3>
-            <p className="mt-3 text-[13px] leading-relaxed text-white/55">{scene.sub}</p>
+            <h3 className="xch-display mt-2 text-[32px] leading-[1.05] text-[var(--xch-ink)]">{scene.title}</h3>
+            <p className="mt-3 text-[13px] leading-relaxed text-x-ink/55">{scene.sub}</p>
             <ul className="mt-5 space-y-2.5">
               {scene.bullets.map((b, i) => (
-                <li key={b} className="xch-row-in flex items-start gap-2.5 text-[12.5px] leading-snug text-white/80" style={{ animationDelay: `${80 + i * 70}ms` }}>
+                <li key={b} className="xch-row-in flex items-start gap-2.5 text-[12.5px] leading-snug text-x-ink/80" style={{ animationDelay: `${80 + i * 70}ms` }}>
                   <Check className="mt-[3px] size-3 shrink-0 text-[var(--xch-verified)]" />
                   {b}
                 </li>

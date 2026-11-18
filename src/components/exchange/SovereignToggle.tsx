@@ -15,12 +15,12 @@ export type ConsoleMode = "cloud" | "sovereign";
 export function SovereignToggle({ mode, onChange }: { mode: ConsoleMode; onChange: (m: ConsoleMode) => void }) {
   const t = useOmniCopy().sovereign;
   return (
-    <div role="radiogroup" aria-label={t.node} className="relative inline-flex rounded-lg border border-[var(--xch-line)] bg-black/30 p-0.5">
+    <div role="radiogroup" aria-label={t.node} className="relative inline-flex rounded-lg border border-[var(--xch-line)] bg-x-ink/[0.025] p-0.5">
       {(["cloud", "sovereign"] as const).map((m) => {
         const Icon = m === "cloud" ? Cloud : Server;
         return (
-          <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => onChange(m)} className={cn("relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] transition-colors duration-150", mode === m ? (m === "sovereign" ? "text-[var(--xch-verified)]" : "text-white") : "text-white/45 hover:text-white/80")}>
-            {mode === m && <motion.span layoutId="xch-mode" className="absolute inset-0 rounded-md bg-white/[0.07]" transition={SPRING} />}
+          <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => onChange(m)} className={cn("relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] transition-colors duration-150", mode === m ? (m === "sovereign" ? "text-[var(--xch-verified)]" : "text-x-ink") : "text-x-ink/45 hover:text-x-ink/80")}>
+            {mode === m && <motion.span layoutId="xch-mode" className="absolute inset-0 rounded-md bg-x-ink/[0.07]" transition={SPRING} />}
             <Icon className="relative size-3.5" strokeWidth={1.75} />
             <span className="relative hidden whitespace-nowrap md:inline">{m === "cloud" ? t.cloud : t.node}</span>
           </button>
@@ -33,8 +33,8 @@ export function SovereignToggle({ mode, onChange }: { mode: ConsoleMode; onChang
 function Row({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 border-t border-[var(--xch-line)] py-2 first:border-t-0">
-      <span className="text-[11.5px] text-white/45">{label}</span>
-      <span className={cn("tnum min-w-0 truncate text-end font-mono text-[11.5px] text-white/85", tone)} dir="ltr">
+      <span className="text-[11.5px] text-x-ink/45">{label}</span>
+      <span className={cn("tnum min-w-0 truncate text-end font-mono text-[11.5px] text-x-ink/85", tone)} dir="ltr">
         {value}
       </span>
     </div>
@@ -71,21 +71,21 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
     <div className="space-y-4">
       <section className={cn("xch-card relative overflow-hidden p-4 sm:p-5", sovereign ? "border-[color-mix(in_srgb,var(--xch-verified)_35%,transparent)]" : "")}>
         <div className="flex flex-wrap items-start gap-3">
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg border", sovereign ? "border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] text-[var(--xch-verified)]" : "border-[var(--xch-line-strong)] text-white/60")}>
+          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg border", sovereign ? "border-[color-mix(in_srgb,var(--xch-verified)_45%,transparent)] text-[var(--xch-verified)]" : "border-[var(--xch-line-strong)] text-x-ink/60")}>
             {sovereign ? <Server className="size-4" /> : <Cloud className="size-4" />}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-[14px] font-medium text-white">
+            <p className="flex items-center gap-2 text-[14px] font-medium text-x-ink">
               {sovereign && <span className="xch-breathe size-2 rounded-full bg-[var(--xch-verified)]" aria-hidden />}
               {sovereign ? t.connected : t.notConnected}
             </p>
-            <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-white/50">{sovereign ? t.connectedSub : t.notConnectedSub}</p>
+            <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-x-ink/50">{sovereign ? t.connectedSub : t.notConnectedSub}</p>
             {!sovereign && (
               <ol className="mt-3 space-y-1.5">
                 {t.steps.map((cmd, i) => (
                   <li key={cmd} className="flex items-center gap-2.5">
                     <span className="tnum font-mono text-[10px] text-[var(--xch-verified)]">{String(i + 1).padStart(2, "0")}</span>
-                    <code className="min-w-0 truncate rounded-md border border-[var(--xch-line)] bg-black/40 px-2.5 py-1 font-mono text-[11.5px] text-white/80" dir="ltr">
+                    <code className="min-w-0 truncate rounded-md border border-[var(--xch-line)] bg-x-ink/[0.025] px-2.5 py-1 font-mono text-[11.5px] text-x-ink/80" dir="ltr">
                       {cmd}
                     </code>
                   </li>
@@ -93,7 +93,7 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
               </ol>
             )}
           </div>
-          <a href="https://github.com/astyboyy-ship-it/bloom-ai/tree/main/deploy/sovereign-node" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-md border border-[var(--xch-line)] px-2.5 py-1 text-[11.5px] text-white/60 hover:text-white">
+          <a href="https://github.com/astyboyy-ship-it/bloom-ai/tree/main/deploy/sovereign-node" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-md border border-[var(--xch-line)] px-2.5 py-1 text-[11.5px] text-x-ink/60 hover:text-x-ink">
             <Terminal className="size-3.5" /> {t.docs}
           </a>
         </div>
@@ -107,8 +107,8 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
             <Row label={t.kid} value={<HashDecode text={s.root.kid} />} tone="text-[var(--xch-verified)]" />
             <Row label={t.origin} value={s.root.origin} tone={s.root.origin === "configured" ? "text-[var(--xch-verified)]" : "text-[var(--xch-clamp)]"} />
           </div>
-          <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/40">{t.fingerprint}</p>
-          <p className="tnum mt-1.5 break-all font-mono text-[11.5px] leading-relaxed text-white/80" dir="ltr">
+          <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.14em] text-x-ink/40">{t.fingerprint}</p>
+          <p className="tnum mt-1.5 break-all font-mono text-[11.5px] leading-relaxed text-x-ink/80" dir="ltr">
             {s.root.fingerprint}
           </p>
         </Panel>
@@ -127,7 +127,7 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
         <Panel>
           <PanelHeader icon={Cpu} title={t.hardware} />
           {!hw ? (
-            <p className="mt-4 flex items-start gap-2 text-[12px] leading-relaxed text-white/45">
+            <p className="mt-4 flex items-start gap-2 text-[12px] leading-relaxed text-x-ink/45">
               <Lock className="mt-0.5 size-3.5 shrink-0" /> {t.operatorOnly}
             </p>
           ) : (
@@ -137,12 +137,12 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
               <Row label={t.cpu} value={`${hw.cpus} × ${hw.cpuModel}`} />
               <div className="border-t border-[var(--xch-line)] py-2">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[11.5px] text-white/45">{t.memory}</span>
-                  <span className="tnum font-mono text-[11.5px] text-white/85" dir="ltr">
+                  <span className="text-[11.5px] text-x-ink/45">{t.memory}</span>
+                  <span className="tnum font-mono text-[11.5px] text-x-ink/85" dir="ltr">
                     {usedMem.toFixed(1)} / {hw.memTotalGb} GB
                   </span>
                 </div>
-                <div className="relative mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="relative mt-1.5 h-1 overflow-hidden rounded-full bg-x-ink/[0.06]">
                   <div className="xch-fill absolute inset-0 rounded-full bg-[var(--xch-verified)]" style={{ transform: `scaleX(${hw.memTotalGb ? usedMem / hw.memTotalGb : 0})` }} />
                 </div>
               </div>
@@ -173,25 +173,25 @@ export function SovereignConsole({ headers }: { headers: Record<string, string> 
           }
         />
         {!s.audit ? (
-          <p className="mt-4 flex items-start gap-2 text-[12px] text-white/45">
+          <p className="mt-4 flex items-start gap-2 text-[12px] text-x-ink/45">
             <Lock className="mt-0.5 size-3.5 shrink-0" /> {t.operatorOnly}
           </p>
         ) : s.audit.entries.length === 0 ? (
-          <p className="mt-4 text-[12px] text-white/45">{t.noAudit}</p>
+          <p className="mt-4 text-[12px] text-x-ink/45">{t.noAudit}</p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
+          <div className="mt-3 xch-scroll overflow-x-auto">
             <table className="tnum w-full min-w-[640px] font-mono text-[11px]">
               <tbody>
                 {s.audit.entries.map((e) => (
                   <tr key={e.hash} className={cn("border-t border-[var(--xch-line)] align-top", e.verdict === "quarantined" && "xch-intercept")}>
-                    <td className="py-1.5 pe-3 text-white/35">{new Date(e.at).toLocaleTimeString([], { hour12: false })}</td>
+                    <td className="py-1.5 pe-3 text-x-ink/35">{new Date(e.at).toLocaleTimeString([], { hour12: false })}</td>
                     <td className="py-1.5 pe-3">
                       <Badge tone={e.verdict === "quarantined" ? "rose" : "amber"}>{e.verdict}</Badge>
                     </td>
-                    <td className="max-w-[260px] truncate py-1.5 pe-3 text-white/60">{Object.entries(e.vectors).map(([v, n]) => `${v}×${n}`).join(" ")}</td>
-                    <td className="py-1.5 pe-3 text-white/45">{e.peer}</td>
-                    <td className="py-1.5 text-white/30" dir="ltr">
-                      {short(e.prevHash, 8)} → <span className="text-white/60">{short(e.hash, 8)}</span>
+                    <td className="max-w-[260px] truncate py-1.5 pe-3 text-x-ink/60">{Object.entries(e.vectors).map(([v, n]) => `${v}×${n}`).join(" ")}</td>
+                    <td className="py-1.5 pe-3 text-x-ink/45">{e.peer}</td>
+                    <td className="py-1.5 text-x-ink/30" dir="ltr">
+                      {short(e.prevHash, 8)} → <span className="text-x-ink/60">{short(e.hash, 8)}</span>
                     </td>
                   </tr>
                 ))}

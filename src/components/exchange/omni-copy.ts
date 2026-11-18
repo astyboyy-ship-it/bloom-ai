@@ -1,7 +1,8 @@
 import { useI18n, type Lang } from "@/components/bloom/i18n";
+import type { ExchangeLang } from "./desk-copy";
 import type { MacroDomain, IntentStage, InvariantStatus } from "@/lib/exchange/omni-adapter";
 
-/** Copy for the omni-protocol surfaces (pulse, intro, demo deck, intents). Spanish and Hebrew typed against English. */
+/** Copy for the omni-protocol surfaces (pulse, intro, demo deck, intents). Spanish typed against English. */
 
 const en = {
   pulse: { live: "Live", adapters: "Adapters", domains: "domains", enclaves: "Enclaves", window: "15m", protocols: "Protocols active", swarms: "Agent swarms", throughput: "Throughput", latency: "Median clearing", p95: "p95", clearRate: "Clear rate", perMin: "/min", awaiting: "awaiting first intent" },
@@ -223,114 +224,7 @@ const es: Dict = {
   },
 };
 
-const he: Dict = {
-  pulse: { live: "חי", adapters: "מתאמים", domains: "תחומים", enclaves: "מובלעות", window: "15ד׳", protocols: "פרוטוקולים פעילים", swarms: "נחילי סוכנים", throughput: "תפוקה", latency: "סליקה חציונית", p95: "p95", clearRate: "שיעור סליקה", perMin: "/דקה", awaiting: "ממתין לכוונה הראשונה" },
-  boot: { lab: "Nº 002 — מעבדת Bloom AI", product: "Exchange", tagline: "רשת תשתית אוטונומית אוניברסלית", enclave: "מאתחל את המובלעת הריבונית", key: "מאבטח את מפתח הסליקה Ed25519", noise: "עוקף את רעש הרשת הציבורית", online: "רשת הסליקה מקוונת", skip: "דילוג" },
-  hero: {
-    kicker: "המסלקה של כלכלת הסוכנים",
-    title: "כל סוכן, כל פרוטוקול, שכבת סליקה ניטרלית אחת.",
-    sub: "Bloom Exchange מנרמלת כוונות מכל משטח (צ׳אט, CRM, פרוטוקולי סוכנים, ענן, אנרגיה, מסילות תשלום), סורקת אותן, חותמת את המגבלות של שני הצדדים, מגבילה כל הצעה באופן דטרמיניסטי וסולקת עם קבלה חתומה שניתן לאמת במצב לא מקוון.",
-    inject: "הזרקת כל סוכן או פרוטוקול",
-    sdk: "התחלה מהירה למפתחים",
-    registry: "רישום אומני-פרוטוקול",
-    registrySub: "המתאמים מנרמלים את המטען המקורי של כל משטח ל-AgentIntentNode אחד.",
-  },
-  deck: {
-    title: "כאוס מפוצל מול סליקה אוניברסלית",
-    sub: "אותם שמונה סוכנים, שתי ארכיטקטורות.",
-    chaos: "כאוס של איים",
-    bloom: "Bloom Exchange",
-    illustrative: "המחשה",
-    chaosNotes: ["פורמטים לא תואמים מתנגשים", "הזרקת פרומפט חוטפת את הסוכן", "המרווח הפרטי דולף לצד שכנגד", "אין קבלה משותפת שניתן לאמת"],
-    bloomNotes: ["Omni-Bridge מנרמל כל פרוטוקול", "Shield מנקה מטענים עוינים", "המגבלות חתומות בכספת סמויה-כפולה", "Sovereign מגביל ומנפיק קבלת Ed25519"],
-    labels: { bridge: "Omni-Bridge", shield: "Shield", vault: "כספת", sovereign: "Sovereign", receipt: "BLOOM-XCH" },
-  },
-  domains: { COMMS_SOCIAL: "תקשורת ורשתות", ENTERPRISE_SAAS: "SaaS ארגוני", AGENT_PROTOCOLS: "פרוטוקולי סוכנים", COMPUTE_INFRA: "מחשוב ותשתיות", FINANCIAL_RAILS: "מסילות פיננסיות", CUSTOM_OMNI_HOOK: "Omni-hook מותאם" },
-  intents: {
-    title: "מעקב מטרות סוכנים",
-    sub: "כל כוונה שאתם מזריקים מנורמלת, נסרקת, נחתמת, מוגבלת ונסלקת דרך הצינור האמיתי.",
-    all: "הכול",
-    search: "סינון לפי סוכן, מטרה או פרוטוקול…",
-    empty: "אין עדיין כוונות. הזריקו כל סוכן או פרוטוקול כדי לראות אותו נסלק.",
-    select: "בחרו כוונה כדי לבדוק את המטרה, וקטור המשאבים וההגבלה של Sovereign.",
-    coreGoal: "מטרת ליבה",
-    quarantinedGoal: "נחסם על ידי Shield: המטען היה עוין, ולכן הטקסט שלו מעולם לא הגיע למנוע.",
-    vector: "וקטור משאבים · הגבלת Sovereign",
-    requested: "התבקש",
-    granted: "הוקצה",
-    noVector: "ללא ממדי משאבים: סליקת מחיר בלבד.",
-    budget: "תקציב",
-    trace: "מעקב הצינור",
-    replayed: "מוצג במהירות אנושית · נמדד",
-    open: "פתיחת המובלעת",
-    settledAt: "נסלק ב-",
-    shield: "Shield",
-    status: { locked: "נעול", clamped: "מוגבל", settled: "נסלק", quarantined: "בהסגר" },
-    stages: { received: "התקבל", normalized: "נורמל", shielded: "נסרק", vaulted: "נחתם", cleared: "נסלק" },
-  },
-  theater: {
-    title: "איך Bloom עוצרת את כאוס הסוכנים",
-    play: "הפעלה",
-    pause: "השהיה",
-    illustrative: "המחשה",
-    scenes: [
-      { kicker: "שלב 1", title: "שכבת ה-AI שלכם, תחת ריבון אחד", sub: "הסוכנים המפוזרים של החברה (מכירות, תפעול, כספים, תמיכה) עובדים מאותם נתוני אמת ובתוך אותם מעקות דטרמיניסטיים, כך ששום תשובה לא יוצאת מהמנדט.", bullets: ["המספרים מגיעים ממקור האמת, לא מזיכרון המודל", "Sovereign מגביל כל מספר למנדט הקבוע, בקוד", "חריגה מהגבולות מוסלמת לבעלים אחד במקום לשמרטף"] },
-      { kicker: "שלב 2", title: "קישור Bloom, בכל מקום", sub: "סוכן נתקל בקישור Bloom במייל, בהודעה פרטית או בתשובת API, ויוצא מהשרשור האנושי האיטי אל ארגז חול סמוי-כפול.", bullets: ["מייל, הודעות פרטיות, צ׳אט ו-API מנורמלים דרך ה-Omni-Bridge", "הקישור מוביל ל-Agent Card חתום", "המגבלות של שני הצדדים נחתמות לפני ההצעה הראשונה"] },
-      { kicker: "שלב 3", title: "התאמת כוונה באלפיות שנייה", sub: "ארגז החול בודק תקציב, יכולת וכוונה מול שני המנדטים החתומים במהירות מכונה: קונים ללא התאמה נעצרים בגבול, האמיתיים נסלקים.", bullets: ["התאמת תקציב, SLA ומשאבים נבדקת באופן דטרמיניסטי", "קונים ללא התאמה נעצרים בגבול המנדט, לא בשיחת מכירה", "זמן הסליקה הנמדד הוא אלפיות שנייה, לא שבועות"] },
-      { kicker: "שלב 4", title: "קליק אחד לכל בעלים", sub: "כל בעל עסק מקבל כרטיס מוכן לעסקה: תנאים, הוכחת מרווח וקבלת BLOOM-XCH חתומה ב-Ed25519 שניתן לאמת במצב לא מקוון.", bullets: ["אישור הספק: החלטת הנהלה בקליק אחד", "אישור הלקוח: מנדט התשלום של AP2", "קבלת Ed25519 שכל אחד יכול לאמת במצב לא מקוון"] },
-    ],
-    labels: { core: "ריבון Bloom", truth: "מקור אמת", clamped: "הוגבל", agents: ["מכירות", "תפעול", "כספים", "תמיכה", "רכש", "מחקר"], channels: ["מייל", "הודעה באינסטגרם", "הודעה ברדיט", "API"], link: "קישור bloom", human: "שרשור אנושי · ימים", sandbox: "ארגז חול סמוי-כפול", budget: "תקציב", capability: "יכולת", intent: "כוונה", held: "נעצר בגבול", matched: "הותאם", provider: "בעלי הספק", client: "בעלי הלקוח", approve: "אישור", approved: "אושר", receipt: "קבלה נחתמה" },
-  },  sovereign: {
-    cloud: "ארגז חול בענן",
-    node: "צומת פרטי ריבוני",
-    view: "צומת ריבוני",
-    connected: "מחובר לצומת פרטי ריבוני",
-    connectedSub: "המסוף הזה מוגש מצומת באירוח עצמי. כל מפתח, רשומה ויומן למטה נמצאים בתוך המתחם שלכם.",
-    notConnected: "המסוף הזה מחובר לארגז החול בענן של Bloom",
-    notConnectedSub: "הריצו את אותו מנוע בתוך המתחם שלכם, עם מפתח שורש משלכם. שלוש פקודות:",
-    steps: ["npm run sovereign:init -- --org \"Your Firm\"", "npm run sovereign:up", "open http://127.0.0.1:3000/exchange  ←  הדביקו את keys/operator.key"],
-    root: "שורש האמון",
-    kid: "מזהה מפתח",
-    fingerprint: "טביעת אצבע SHA-256",
-    origin: "מקור",
-    posture: "מדיניות יציאה",
-    airGapped: "מוכן לניתוק (ללא יציאה מוגדרת)",
-    yes: "כן",
-    no: "לא",
-    modelEgress: "יציאה לספק המודלים",
-    webhookEgress: "יציאה ל-webhook הסליקה",
-    persistence: "אחסון",
-    database: "מסד נתונים",
-    hardware: "חומרת המארח",
-    cpu: "מעבד",
-    memory: "זיכרון",
-    load: "עומס ממוצע",
-    uptime: "זמן פעולה",
-    process: "זיכרון התהליך",
-    audit: "יומן ביקורת מנותק",
-    chainIntact: "שרשרת הגיבובים שלמה",
-    chainBroken: "השרשרת נשברה ב-",
-    entries: "רשומות אומתו מחדש",
-    noAudit: "עדיין לא נרשמו יירוטי Shield בצומת זה.",
-    operatorOnly: "נדרש מפתח מפעיל. הדביקו את מפתח המפעיל של הצומת ב-Desk → Settings → License.",
-    docs: "מדריך פריסה",
-  },  inject: {
-    short: "הזרקה",
-    title: "הזרקת כל סוכן או פרוטוקול",
-    sub: "בחרו מטען בצורה אמיתית מכל אחד משישת תחומי המאקרו, או תנו שם למקור משלכם. הוא עובר בצינור הסליקה החי.",
-    custom: "מותאם",
-    source: "שם המקור",
-    sourcePh: "למשל Tesla Megapack Grid, שרת MCP מותאם",
-    goal: "מטרת ליבה",
-    goalPh: "למשל שגר 35 MWh לחיבור מרכז הנתונים, $51k",
-    payload: "מטען גולמי (JSON או טקסט)",
-    preview: "תצוגה מנורמלת",
-    fire: "שיגור למובלעת",
-    firing: "סולק…",
-    close: "סגירה",
-    again: "הזרקה נוספת",
-  },
-};
-
-const DICTS: Record<Lang, Dict> = { en, es, he };
-export const useOmniCopy = () => DICTS[useI18n().lang];
+/** Bloom Exchange ships in English and Spanish. Any other site language (e.g. Hebrew elsewhere in Bloom AI) reads as English here. */
+export const DICTS = { en, es } satisfies Record<ExchangeLang, Dict>;
+const pick = (l: Lang): ExchangeLang => (l === "es" ? "es" : "en");
+export const useOmniCopy = () => DICTS[pick(useI18n().lang)];

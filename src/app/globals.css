@@ -14,6 +14,9 @@
   --font-logo: var(--font-outfit), var(--font-geist-sans), system-ui, sans-serif;
   --font-jp: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
   --color-ink: #0b0612;
+  /* Bloom Exchange (scoped to .xch, defined in src/styles/bloom-theme.css) */
+  --color-x-ink: var(--xch-ink);
+  --color-x-paper: var(--xch-paper);
   /* Operating Desk (hybrid identity): obsidian surfaces and razor-thin cyan lines from the OS spec,
      with the site's gold kept as the brand accent and each engine keeping its own palette. */
   --color-os-bg: #07080c;
@@ -1384,8 +1387,8 @@
 /* ---------------------------------------------------------------------------------------------------
    Bloom Exchange
    --------------------------------------------------------------------------------------------------- */
-/* A session that has already seen the boot sequence never paints it (set by an inline script in /exchange). */
-[data-xch-booted] .xch-boot {
+/* A session that has already passed the gate never paints its veil (set by an inline script in /exchange). */
+[data-xch-session] .xch-gate-veil {
   display: none;
 }
 @keyframes xch-sweep {

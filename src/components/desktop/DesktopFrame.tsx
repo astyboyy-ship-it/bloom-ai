@@ -5,15 +5,14 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { FloraField, type Bloom } from "@/components/bloom/art/flora";
 import { BloomWordmark } from "@/components/bloom/logo";
-import { cn } from "@/lib/utils";
 
 /**
  * The native window around Bloom Exchange. In the desktop app (Tauri, frameless window) it draws the title bar:
  * a drag region (double-click maximizes), the Bloom wordmark, and petal-toned window controls wired to the native
  * window. In a browser it keeps the same chrome without controls, so the terminal never feels like a web tab.
  * Shortcuts: ⌘/Ctrl+R refreshes telemetry instead of reloading the page (⌘/Ctrl+K stays with the command palette).
- * The atmosphere is Bloom's own: obsidian-rose, velvety crimson glows, warm gold light, a whisper of painting and
- * two roses at the frame.
+ * The atmosphere is the white gallery: paper white, warm daylight, a whisper of a garden painting behind the glass
+ * and two roses at the frame.
  */
 
 export const REFRESH_EVENT = "xch:refresh";
@@ -82,16 +81,17 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
   );
 
   return (
-    <div className="xch xch-atmosphere relative flex h-dvh flex-col overflow-hidden">
+    <div className="xch xch-atmosphere relative flex h-dvh flex-col overflow-hidden" dir="ltr">
       {/* Atmosphere: painting whisper, velvety crimson glows, roses at the frame */}
       <div className="pointer-events-none fixed inset-0" aria-hidden>
-        <Image src="/paintings/venice-moonlight.jpg" alt="" fill sizes="100vw" quality={75} className="object-cover opacity-[0.05] saturate-50" />
-        <div className="xch-velvet absolute -left-[12%] -top-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.14),transparent)]" />
-        <div className="xch-velvet absolute -bottom-[22%] -right-[8%] h-[65vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.10),transparent)] [animation-delay:-3.5s]" />
-        <FloraField blooms={FRAME_ROSES} className="opacity-60" still />
+        <Image src="/paintings/golden-landscape.jpg" alt="" fill sizes="100vw" quality={75} className="object-cover opacity-[0.07] saturate-[0.8]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,252,250,0.55),rgba(253,252,250,0.9)_40%,rgba(253,252,250,0.96))]" />
+        <div className="xch-velvet absolute -left-[12%] -top-[18%] h-[60vh] w-[55vw] rounded-full bg-[radial-gradient(closest-side,rgba(225,29,72,0.06),transparent)]" />
+        <div className="xch-velvet absolute -bottom-[22%] -right-[8%] h-[65vh] w-[50vw] rounded-full bg-[radial-gradient(closest-side,rgba(214,170,92,0.12),transparent)] [animation-delay:-3.5s]" />
+        <FloraField blooms={FRAME_ROSES} className="opacity-80" still />
       </div>
 
-      <header className="xch-titlebar relative z-50 flex h-9 shrink-0 items-center gap-3 border-b border-[var(--xch-line)] bg-[#0c0709]/70 px-3 backdrop-blur-xl" data-tauri-drag-region>
+      <header className="xch-titlebar relative z-50 flex h-9 shrink-0 items-center gap-3 border-b border-[var(--xch-line)] bg-white/70 px-3 backdrop-blur-xl" data-tauri-drag-region>
         {win && (
           <div className="flex items-center gap-2" data-no-drag>
             <Control label="Close" tone="#e11d48" onClick={() => void win.close()} glyph={glyph("M2.5 2.5l5 5M7.5 2.5l-5 5")} />
@@ -101,20 +101,20 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
         )}
         <div className="pointer-events-none flex min-w-0 items-baseline gap-2" data-tauri-drag-region>
           <span className="text-[15px] leading-none">
-            <BloomWordmark />
+            <BloomWordmark tone="ink" />
           </span>
           <span className="xch-gold-italic truncate text-[17px] leading-none">{title}</span>
         </div>
-        <div className="pointer-events-none ms-auto hidden items-center gap-3 font-mono text-[10px] text-white/35 sm:flex" data-tauri-drag-region>
+        <div className="pointer-events-none ms-auto hidden items-center gap-3 font-mono text-[10px] text-x-ink/35 sm:flex" data-tauri-drag-region>
           <span>⌘K</span>
-          <span className="text-white/15">·</span>
+          <span className="text-x-ink/15">·</span>
           <span>⌘R</span>
         </div>
         {/* A gold hairline sweeps the title bar on every telemetry refresh */}
-        {pulse > 0 && <motion.span key={pulse} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-transparent via-[#f0d59a] to-transparent" initial={{ scaleX: 0, opacity: 1 }} animate={{ scaleX: 1, opacity: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />}
+        {pulse > 0 && <motion.span key={pulse} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-transparent via-[var(--xch-gold)] to-transparent" initial={{ scaleX: 0, opacity: 1 }} animate={{ scaleX: 1, opacity: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />}
       </header>
 
-      <div className={cn("relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden")}>{children}</div>
+      <div className="xch-scroll relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
     </div>
   );
 }

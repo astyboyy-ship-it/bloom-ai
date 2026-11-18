@@ -40,7 +40,7 @@ function Code({ title, code }: { title: string; code: string }) {
   return (
     <div className="min-w-0">
       <div className="flex items-center justify-between">
-        <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{title}</p>
+        <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-x-ink/40">{title}</p>
         <button
           type="button"
           onClick={() =>
@@ -49,12 +49,12 @@ function Code({ title, code }: { title: string; code: string }) {
               setTimeout(() => setCopied(false), 1400);
             })
           }
-          className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-white/45 hover:text-white"
+          className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-x-ink/45 hover:text-x-ink"
         >
           {copied ? <Check className="size-3 text-[var(--xch-verified)]" /> : <Copy className="size-3" />} {copied ? t.copied : t.copy}
         </button>
       </div>
-      <pre className="tnum mt-1.5 overflow-auto rounded-[10px] border border-[var(--xch-line)] bg-black/50 p-3.5 font-mono text-[11px] leading-relaxed text-white/75" dir="ltr">
+      <pre className="tnum mt-1.5 overflow-auto rounded-[10px] border border-[var(--xch-line)] bg-x-ink/25 p-3.5 font-mono text-[11px] leading-relaxed text-x-ink/75" dir="ltr">
         {code}
       </pre>
     </div>
@@ -80,7 +80,7 @@ export function SdkView({ x }: { x: Exchange }) {
       <div className="space-y-4 xl:col-span-4">
         <Panel>
           <div className="flex items-center justify-between gap-2">
-            <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40">{t.endpoint}</p>
+            <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-x-ink/40">{t.endpoint}</p>
             {card && (
               <Badge tone={card.verified ? "emerald" : "amber"}>
                 {card.verified ? <ShieldCheck className="size-3" /> : <ShieldAlert className="size-3" />}
@@ -88,7 +88,7 @@ export function SdkView({ x }: { x: Exchange }) {
               </Badge>
             )}
           </div>
-          <a href="/.well-known/agent-card.json" target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-1.5 truncate rounded-md border border-[var(--xch-line)] bg-black/30 px-2.5 py-1.5 font-mono text-[11px] text-white/80 hover:text-white" dir="ltr">
+          <a href="/.well-known/agent-card.json" target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-1.5 truncate rounded-md border border-[var(--xch-line)] bg-x-ink/[0.025] px-2.5 py-1.5 font-mono text-[11px] text-x-ink/80 hover:text-x-ink" dir="ltr">
             <span className="truncate">{origin}/.well-known/agent-card.json</span>
             <ExternalLink className="size-3 shrink-0" />
           </a>
@@ -101,8 +101,8 @@ export function SdkView({ x }: { x: Exchange }) {
                 ["version", card.card.version],
               ].map(([k, v]) => (
                 <div key={k} className="flex gap-2">
-                  <dt className="w-16 shrink-0 text-white/35">{k}</dt>
-                  <dd className="min-w-0 break-all text-white/70">{v}</dd>
+                  <dt className="w-16 shrink-0 text-x-ink/35">{k}</dt>
+                  <dd className="min-w-0 break-all text-x-ink/70">{v}</dd>
                 </div>
               ))}
             </dl>
@@ -113,7 +113,7 @@ export function SdkView({ x }: { x: Exchange }) {
             {t.steps.map((s, i) => (
               <li key={i} className="grid grid-cols-[22px_1fr] gap-2">
                 <span className="tnum font-mono text-[10px] text-[var(--xch-verified)]">{String(i + 1).padStart(2, "0")}</span>
-                <span className="text-[12px] leading-relaxed text-white/70">{s}</span>
+                <span className="text-[12px] leading-relaxed text-x-ink/70">{s}</span>
               </li>
             ))}
           </ol>

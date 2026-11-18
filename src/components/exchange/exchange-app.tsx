@@ -3,43 +3,40 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, LayoutDashboard, Network, RotateCcw, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
+import { Activity, BookOpen, Boxes, Code2, Command, Copy, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, LayoutDashboard, LogOut, Network, ScanSearch, Server, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 
-
-import { LanguageSwitcher } from "@/components/bloom/language-switcher";
+import { BloomLoginGate, SESSION_KEY, signOut, type GateResult } from "@/components/auth/BloomLoginGate";
+import { DesktopFrame } from "@/components/desktop/DesktopFrame";
+import type { MacroDomain } from "@/lib/exchange/omni-adapter";
 import { cn } from "@/lib/utils";
+import { ClearingLedgerView } from "./ClearingLedgerView";
 import { CommandPalette, type PaletteItem } from "./command-palette";
 import { useExchangeCopy, type ExchangeView } from "./copy";
-import type { MacroDomain } from "@/lib/exchange/omni-adapter";
-import { AgentGoalInspector } from "./AgentGoalInspector";
-import { DesktopFrame } from "@/components/desktop/DesktopFrame";
-import { BloomInfrastructureTheater } from "./BloomInfrastructureTheater";
-import { BOOT_KEY, CinematicBootIntro } from "./CinematicBootIntro";
-import { SovereignConsole, SovereignToggle, type ConsoleMode } from "./SovereignToggle";
-import { GlobalPulse } from "./GlobalPulse";
-import { IntroHero } from "./IntroHero";
+import { useDeskCopy, useExchangeLang, type ExchangeLang, type GuideModuleId } from "./desk-copy";
+import { EnclaveInspectorView } from "./EnclaveInspectorView";
+import { GlobalPulse, usePulse } from "./GlobalPulse";
+import { GuideAndShowcaseHub } from "./GuideAndShowcaseHub";
+import { MacroMandateView } from "./MacroMandateView";
+import { OmniProtocolView } from "./OmniProtocolView";
 import { useOmniCopy } from "./omni-copy";
-import { InspectorView } from "./inspector-view";
-import { Kpis } from "./kpis";
-import { Ledger } from "./ledger";
-import { MandateView } from "./mandate-view";
-import { TrafficRadar } from "./radar";
+import { OverviewDashboard } from "./OverviewDashboard";
 import type { ScenarioId } from "./scenarios";
 import { quickstart, SdkView } from "./sdk-view";
-import { StressTest } from "./stress-test";
+import { SovereignConsole, SovereignToggle, type ConsoleMode } from "./SovereignToggle";
 import { Badge, Kbd, SPRING } from "./ui";
 import { useExchange } from "./use-exchange";
 
 const VIEWS: { id: ExchangeView; icon: typeof Activity; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "1" },
-  { id: "ledger", icon: Activity, key: "2" },
-  { id: "intents", icon: Network, key: "3" },
-  { id: "mandate", icon: Grid3x3, key: "4" },
-  { id: "inspector", icon: ScanSearch, key: "5" },
-  { id: "sdk", icon: Code2, key: "6" },
+  { id: "guide", icon: BookOpen, key: "2" },
+  { id: "ledger", icon: Activity, key: "3" },
+  { id: "intents", icon: Network, key: "4" },
+  { id: "mandate", icon: Grid3x3, key: "5" },
+  { id: "inspector", icon: ScanSearch, key: "6" },
+  { id: "sdk", icon: Code2, key: "7" },
 ];
-const SOVEREIGN_VIEW = { id: "sovereign" as ExchangeView, icon: Server, key: "7" };
+const SOVEREIGN_VIEW = { id: "sovereign" as ExchangeView, icon: Server, key: "8" };
 const MODE_KEY = "bloom-exchange-mode";
 const VIEW_KEY = "bloom-exchange-view";
 const SCENARIO_ICONS: Record<ScenarioId, typeof Target> = { standard: Target, adversarial: Swords, swarm: Boxes, breach: Crosshair };
@@ -49,36 +46,51 @@ const typing = (e: KeyboardEvent) => {
   return Boolean(el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)));
 };
 
-/** /exchange: the Bloom Exchange clearing terminal. A standalone product, not a desk tab. Keyboard-first: ⌘K, 1–4. */
+/** EN / ES. The Exchange ships in two languages; the choice is shared with the rest of Bloom AI. */
+function LanguageToggle() {
+  const { lang, setLang } = useExchangeLang();
+  const t = useDeskCopy().lang;
+  return (
+    <div role="radiogroup" aria-label={t.label} className="inline-flex rounded-full border border-[var(--xch-line)] bg-white p-0.5">
+      {(["en", "es"] as ExchangeLang[]).map((l) => (
+        <button key={l} type="button" role="radio" aria-checked={lang === l} onClick={() => setLang(l)} className={cn("rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-150", lang === l ? "bg-x-ink text-x-paper" : "text-x-ink/50 hover:text-x-ink")}>
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * /exchange: the Bloom Exchange operating desk. A standalone product with its own gate: an access key (verified
+ * by the clearinghouse) or the sandbox. Keyboard-first: ⌘K palette, ⌘R telemetry refresh, 1–8 for views.
+ */
 export function ExchangeApp() {
   const t = useExchangeCopy();
   const o = useOmniCopy();
+  const g = useDeskCopy().gate;
+  const { lang } = useExchangeLang();
   const x = useExchange();
   const [injectOpen, setInjectOpen] = useState(false);
   const [domain, setDomain] = useState<MacroDomain | "all">("all");
   const [mode, setModeState] = useState<ConsoleMode>("cloud");
-  const terminal = useAnimationControls();
+  const desk = useAnimationControls();
+  const stats = usePulse(x.pulseTick);
 
-  // The boot overlay is server-rendered; the layout's inline script hides it before paint when this session has seen it.
-  const [boot, setBoot] = useState<number | null>(0);
+  // The gate: null until this session's state is read (the layout's inline script lifts the veil for a session).
+  const [gate, setGate] = useState<boolean | null>(null);
   useEffect(() => {
-    let seen = false;
+    let inSession = false;
     try {
-      seen = sessionStorage.getItem(BOOT_KEY) === "1";
+      inSession = sessionStorage.getItem(SESSION_KEY) !== null;
     } catch {
-      // No storage: play it.
+      // No storage: show the gate.
     }
-    if (seen || window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBoot(null);
+    setGate(!inSession);
   }, []);
-  const replay = useCallback(() => {
-    try {
-      sessionStorage.removeItem(BOOT_KEY);
-    } catch {
-      // Replays anyway.
-    }
-    delete document.documentElement.dataset.xchBooted;
-    setBoot((b) => (b ?? 0) + 1);
-  }, []);
+  useEffect(() => {
+    if (gate) desk.set({ opacity: 0, scale: 0.985 });
+  }, [gate, desk]);
 
   const [view, setViewState] = useState<ExchangeView>("overview");
   useEffect(() => {
@@ -91,15 +103,6 @@ export function ExchangeApp() {
       // Starts on the overview.
     }
   }, []);
-
-  // The terminal waits behind the boot and springs into place (150ms) the moment the boot starts its exit.
-  // A skipped boot (repeat visit) lands on the final state at once instead of staying hidden.
-  useEffect(() => {
-    if (boot === null) return;
-    terminal.set({ scale: 0.97, opacity: 0 });
-    return () => terminal.set({ scale: 1, opacity: 1 });
-  }, [boot, terminal]);
-  const springIn = useCallback(() => void terminal.start({ scale: 1, opacity: 1, transition: SPRING }), [terminal]);
   const setView = useCallback((v: ExchangeView) => {
     setViewState(v);
     try {
@@ -107,6 +110,19 @@ export function ExchangeApp() {
     } catch {
       // Not remembered; fine.
     }
+  }, []);
+
+  const enter = useCallback(
+    (r: GateResult) => {
+      if (r.firstVisit) setView("guide");
+      setGate(false);
+      void desk.start({ opacity: 1, scale: 1, transition: SPRING });
+    },
+    [desk, setView],
+  );
+  const leave = useCallback(() => {
+    signOut();
+    setGate(true);
   }, []);
 
   const setMode = useCallback(
@@ -131,10 +147,30 @@ export function ExchangeApp() {
     },
     [setView],
   );
+  const openInject = useCallback(() => {
+    setView("intents");
+    setInjectOpen(true);
+  }, [setView]);
+  const fire = useCallback(
+    (s: ScenarioId) => {
+      setView("ledger");
+      void x.fire(s);
+    },
+    [setView, x],
+  );
+  const guideAction = useCallback(
+    (id: GuideModuleId) => {
+      if (id === "sandbox") setView("inspector");
+      else if (id === "stack") setView("mandate");
+      else if (id === "settle") fire("standard");
+    },
+    [setView, fire],
+  );
 
   const [palette, setPalette] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (gate) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette((p) => !p);
@@ -146,51 +182,28 @@ export function ExchangeApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [palette, setView, views]);
+  }, [gate, palette, setView, views]);
 
   const items = useMemo<PaletteItem[]>(
     () => [
       ...views.map((v) => ({ id: `view-${v.id}`, group: "views" as const, label: t.views[v.id], hint: v.key, icon: v.icon, run: () => setView(v.id) })),
       { id: "mode-toggle", group: "actions" as const, label: mode === "sovereign" ? o.sovereign.cloud : o.sovereign.node, hint: "sovereign", icon: mode === "sovereign" ? ExternalLink : Server, run: () => setMode(mode === "sovereign" ? "cloud" : "sovereign") },
-      ...(["standard", "adversarial", "swarm", "breach"] as ScenarioId[]).map((s) => ({
-        id: `fire-${s}`,
-        group: "actions" as const,
-        label: `${t.palette.fire}: ${t.stress.scenarios[s].name}`,
-        icon: SCENARIO_ICONS[s],
-        run: () => {
-          setView("ledger");
-          void x.fire(s);
-        },
-      })),
-      {
-        id: "inject",
-        group: "actions",
-        label: o.hero.inject,
-        hint: "omni",
-        icon: Zap,
-        run: () => {
-          setView("intents");
-          setInjectOpen(true);
-        },
-      },
+      ...(["standard", "adversarial", "swarm", "breach"] as ScenarioId[]).map((s) => ({ id: `fire-${s}`, group: "actions" as const, label: `${t.palette.fire}: ${t.stress.scenarios[s].name}`, icon: SCENARIO_ICONS[s], run: () => fire(s) })),
+      { id: "inject", group: "actions", label: o.hero.inject, hint: "omni", icon: Zap, run: openInject },
       { id: "card", group: "actions", label: t.palette.card, hint: "/.well-known", icon: ExternalLink, run: () => window.open("/.well-known/agent-card.json", "_blank", "noopener") },
       { id: "copy", group: "actions", label: t.palette.copy, icon: Copy, run: () => void navigator.clipboard?.writeText(quickstart(window.location.origin)).then(() => toast.success(t.sdk.copied)) },
-      { id: "replay", group: "actions", label: t.palette.replay, icon: RotateCcw, run: replay },
+      { id: "sign-out", group: "actions", label: g.signOut, icon: LogOut, run: leave },
     ],
-    [t, o, x, setView, replay, views, mode, setMode],
+    [t, o, g, setView, views, mode, setMode, fire, openInject, leave],
   );
 
   const s = x.status;
   return (
     <DesktopFrame title={t.header.product}>
-      <div className="pointer-events-none fixed inset-0 opacity-60" aria-hidden>
-        <div className="bloom-noise h-full w-full" />
-      </div>
-
-      <div className="relative">
-        <header className="sticky top-0 z-40 border-b border-[var(--xch-line)] bg-[#0c0709]/75 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
-            <button type="button" onClick={() => setPalette(true)} className="order-last flex h-8 w-full items-center gap-2 rounded-full border border-[var(--xch-line-strong)] bg-white/[0.02] px-3 text-[12px] text-white/40 transition-colors duration-150 hover:text-white/70 md:order-none md:w-72">
+      <div className="relative" lang={lang}>
+        <header className="sticky top-0 z-40 border-b border-[var(--xch-line)] bg-[var(--xch-paper)]/80 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
+            <button type="button" onClick={() => setPalette(true)} className="order-last flex h-8 w-full items-center gap-2 rounded-full border border-[var(--xch-line)] bg-white px-3 text-[12px] text-x-ink/40 shadow-[0_1px_2px_rgba(40,25,20,0.04)] transition-colors duration-150 hover:text-x-ink/70 md:order-none md:w-72">
               <Command className="size-3.5" /> <span className="flex-1 truncate text-start">{t.header.search}</span>
               <Kbd>⌘K</Kbd>
             </button>
@@ -200,74 +213,66 @@ export function ExchangeApp() {
                 <>
                   <Badge tone={s.source === "live" ? "emerald" : "solid"}>{s.source === "live" ? t.header.live : t.header.simulated}</Badge>
                   <Badge tone={s.operator ? "emerald" : "muted"}>{s.operator ? t.header.operator : s.licensed ? t.header.production : t.header.sandbox}</Badge>
-                  <span className="tnum hidden items-center gap-1 font-mono text-[10px] text-white/35 xl:flex" title={t.header.key} dir="ltr">
+                  <span className="tnum hidden items-center gap-1 font-mono text-[10px] text-x-ink/40 xl:flex" title={t.header.key}>
                     <KeyRound className="size-3" /> {s.kid}
                   </span>
                 </>
               )}
-              <button type="button" onClick={replay} className="flex items-center gap-1 rounded-md border border-[var(--xch-line)] px-2 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-white/50 hover:text-white" aria-label={t.header.replay}>
-                <RotateCcw className="size-3" /> <span className="hidden sm:inline">{t.header.replay}</span>
-              </button>
-              <Link href="/desk" className="hidden rounded-md border border-[var(--xch-line)] px-2 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-white/50 hover:text-white lg:block">
+              <Link href="/desk" className="hidden rounded-full border border-[var(--xch-line)] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-x-ink/50 hover:text-x-ink lg:block">
                 {t.header.desk}
               </Link>
-              <LanguageSwitcher />
+              <LanguageToggle />
+              <button type="button" onClick={leave} aria-label={g.signOut} title={g.signOut} className="grid size-7 place-items-center rounded-full border border-[var(--xch-line)] bg-white text-x-ink/50 transition-colors hover:text-[var(--xch-threat)]">
+                <LogOut className="size-3.5" strokeWidth={1.6} />
+              </button>
             </div>
           </div>
-          <nav className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Views">
+          <nav className="xch-noscroll mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-3 pb-2 [mask-image:linear-gradient(90deg,transparent,#000_12px,#000_calc(100%-12px),transparent)] sm:px-5" role="tablist" aria-label="Views">
             {views.map((v) => {
               const Icon = v.icon;
               const active = view === v.id;
               return (
-                <button key={v.id} type="button" role="tab" aria-selected={active} onClick={() => setView(v.id)} className={cn("relative flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-[12.5px] transition-colors duration-150", active ? "text-white" : "text-white/45 hover:text-white/80")}>
-                  {active && <motion.span layoutId="xch-view" className="absolute inset-0 rounded-md bg-white/[0.07]" transition={SPRING} />}
-                  <Icon className="relative size-3.5" strokeWidth={1.75} />
+                <button key={v.id} type="button" role="tab" aria-selected={active} onClick={() => setView(v.id)} className={cn("relative flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[12.5px] transition-colors duration-150", active ? "text-x-ink" : "text-x-ink/50 hover:text-x-ink/85")}>
+                  {active && <motion.span layoutId="xch-view" className="absolute inset-0 rounded-full border border-[var(--xch-line)] bg-white shadow-[0_1px_3px_rgba(40,25,20,0.08)]" transition={SPRING} />}
+                  <Icon className="relative size-3.5" strokeWidth={1.6} />
                   <span className="relative">{t.views[v.id]}</span>
-                  <Kbd className="relative hidden lg:inline-flex">{v.key}</Kbd>
+                  <Kbd className="relative hidden xl:inline-flex">{v.key}</Kbd>
                 </button>
               );
             })}
           </nav>
-          <GlobalPulse tick={x.pulseTick} mode={mode} />
+          <GlobalPulse stats={stats} mode={mode} />
         </header>
 
-        <motion.main animate={terminal} className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
+        <motion.main animate={desk} className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
           {s && !s.licensed && (
-            <p className="mb-4 flex items-start gap-2 rounded-[10px] border border-[var(--xch-line)] bg-white/[0.02] px-3.5 py-2.5 text-[12px] leading-relaxed text-white/55">
-              <Info className="mt-0.5 size-3.5 shrink-0 text-white/40" /> {t.notice.sandbox}
+            <p className="mb-4 flex items-start gap-2 rounded-[12px] border border-[var(--xch-line)] bg-white/70 px-3.5 py-2.5 text-[12px] leading-relaxed text-x-ink/60">
+              <Info className="mt-0.5 size-3.5 shrink-0 text-[var(--xch-gold)]" /> {t.notice.sandbox}
             </p>
           )}
           <AnimatePresence mode="wait">
             <motion.div key={view} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={SPRING}>
               {view === "overview" && (
-                <div className="space-y-4">
-                  <IntroHero
-                    onInject={() => {
-                      setView("intents");
-                      setInjectOpen(true);
-                    }}
-                    onSdk={() => setView("sdk")}
-                    onDomain={(d) => {
-                      setDomain(d);
-                      setView("intents");
-                    }}
-                  />
-                  <BloomInfrastructureTheater />
-                </div>
+                <OverviewDashboard
+                  x={x}
+                  stats={stats}
+                  mode={mode}
+                  onInspect={inspect}
+                  onFire={() => fire("standard")}
+                  onInject={openInject}
+                  onGuide={() => setView("guide")}
+                  onSdk={() => setView("sdk")}
+                  onDomain={(d) => {
+                    setDomain(d);
+                    setView("intents");
+                  }}
+                />
               )}
-              {view === "intents" && <AgentGoalInspector x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
-              {view === "ledger" && (
-                <div className="space-y-4">
-                  <Kpis rows={x.rows} />
-                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-                    <TrafficRadar traffic={x.traffic} className="xl:col-span-7" />
-                    <Ledger x={x} onInspect={inspect} className="xl:col-span-5" />
-                    <StressTest x={x} onInspect={inspect} className="xl:col-span-12" />
-                  </div>
-                </div>
-              )}
-              {view === "mandate" && <MandateView x={x} />}
-              {view === "inspector" && <InspectorView x={x} selected={selected} onSelect={setSelected} />}
+              {view === "guide" && <GuideAndShowcaseHub onAction={guideAction} />}
+              {view === "ledger" && <ClearingLedgerView x={x} onInspect={inspect} />}
+              {view === "intents" && <OmniProtocolView x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
+              {view === "mandate" && <MacroMandateView x={x} />}
+              {view === "inspector" && <EnclaveInspectorView x={x} selected={selected} onSelect={setSelected} />}
               {view === "sdk" && <SdkView x={x} />}
               {view === "sovereign" && <SovereignConsole headers={x.headers} />}
             </motion.div>
@@ -276,7 +281,8 @@ export function ExchangeApp() {
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={items} />
-      {boot !== null && <CinematicBootIntro key={boot} kid={x.status?.kid ?? null} onLeave={springIn} onDone={() => setBoot(null)} />}
+      {gate === null && <div className="xch-gate-veil fixed inset-0 z-[120] bg-[var(--xch-paper)]" aria-hidden />}
+      <AnimatePresence>{gate && <BloomLoginGate key="gate" onEnter={enter} />}</AnimatePresence>
     </DesktopFrame>
   );
 }

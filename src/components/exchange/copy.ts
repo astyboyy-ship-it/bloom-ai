@@ -1,18 +1,19 @@
 import { useI18n, type Lang } from "@/components/bloom/i18n";
+import type { ExchangeLang } from "./desk-copy";
 import type { ResourceDimension } from "@/lib/exchange/types";
 
 /**
- * Copy for Bloom Exchange. Spanish and Hebrew are typed against English, so a missing string fails the
+ * Copy for Bloom Exchange. Spanish is typed against English, so a missing string fails the
  * type-check. Protocol names (A2A, AP2, x402, JSON-RPC, SSE), engine names and BLOOM-XCH stay as they are.
  */
 
-type View = "overview" | "ledger" | "intents" | "mandate" | "inspector" | "sdk" | "sovereign";
+type View = "overview" | "guide" | "ledger" | "intents" | "mandate" | "inspector" | "sdk" | "sovereign";
 type Scenario = "standard" | "adversarial" | "swarm" | "breach";
 
 const en = {
   boot: { handshake: "Key-pair handshake", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "Party A · Provider", partyB: "Party B · Client", enclave: "Double-blind enclave sealed", ready: "Clearinghouse online" },
   header: { product: "Exchange", tagline: "Autonomous Clearinghouse", replay: "Replay boot", desk: "Operating Desk", live: "Live models", simulated: "Simulated", operator: "Operator", sandbox: "Sandbox", production: "Licensed", key: "Signing key", search: "Search or jump to…" },
-  views: { overview: "Overview", ledger: "Live Clearing Ledger", intents: "Omni-Protocol Intents", mandate: "Macro Mandate & Invariant Matrix", inspector: "Double-Blind Enclave Inspector", sdk: "Developer SDK Quickstart", sovereign: "Sovereign Node" } as Record<View, string>,
+  views: { overview: "Overview", guide: "Showcase & Guide", ledger: "Live Clearing Ledger", intents: "Omni-Protocol Intents", mandate: "Macro Mandate & Invariant Matrix", inspector: "Double-Blind Enclave Inspector", sdk: "Developer SDK Quickstart", sovereign: "Sovereign Node" } as Record<View, string>,
   palette: {
     placeholder: "Type a view or an action…",
     views: "Views",
@@ -148,7 +149,7 @@ type Dict = typeof en;
 const es: Dict = {
   boot: { handshake: "Intercambio de claves", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "Parte A · Proveedor", partyB: "Parte B · Cliente", enclave: "Enclave doble ciego sellado", ready: "Cámara de compensación en línea" },
   header: { product: "Exchange", tagline: "Cámara de compensación autónoma", replay: "Repetir arranque", desk: "Mesa de operaciones", live: "Modelos en vivo", simulated: "Simulado", operator: "Operador", sandbox: "Sandbox", production: "Con licencia", key: "Clave de firma", search: "Buscar o ir a…" },
-  views: { overview: "Resumen", ledger: "Libro de compensación en vivo", intents: "Intenciones omniprotocolo", mandate: "Mandato macro y matriz de invariantes", inspector: "Inspector de enclaves doble ciego", sdk: "Inicio rápido del SDK", sovereign: "Nodo soberano" },
+  views: { overview: "Resumen", guide: "Muestra y guía", ledger: "Libro de compensación en vivo", intents: "Intenciones omniprotocolo", mandate: "Mandato macro y matriz de invariantes", inspector: "Inspector de enclaves doble ciego", sdk: "Inicio rápido del SDK", sovereign: "Nodo soberano" },
   palette: { placeholder: "Escribe una vista o una acción…", views: "Vistas", actions: "Acciones", empty: "Sin resultados.", fire: "Lanzar escenario", replay: "Repetir la secuencia de arranque", card: "Abrir la Agent Card firmada", copy: "Copiar el inicio rápido del SDK", hint: "para navegar", open: "para abrir" },
   notice: { sandbox: "Modo sandbox: simulación determinista con fidelidad total al protocolo. Los certificados se firman pero no son vinculantes. Activa una clave de acceso para negociar en vivo." },
   kpi: { settled: "Liquidadas", volume: "Volumen compensado", threats: "Amenazas neutralizadas", rounds: "Rondas prom.", exceptions: "Excepciones abiertas", session: "esta sesión" },
@@ -268,131 +269,10 @@ const es: Dict = {
   },
 };
 
-const he: Dict = {
-  boot: { handshake: "החלפת מפתחות", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "צד א׳ · ספק", partyB: "צד ב׳ · לקוח", enclave: "מובלעת סמויה-כפולה נחתמה", ready: "מסלקה מקוונת" },
-  header: { product: "Exchange", tagline: "מסלקה אוטונומית", replay: "הפעלה מחדש", desk: "שולחן התפעול", live: "מודלים חיים", simulated: "סימולציה", operator: "מפעיל", sandbox: "ארגז חול", production: "מורשה", key: "מפתח חתימה", search: "חיפוש או מעבר אל…" },
-  views: { overview: "סקירה", ledger: "ספר סליקה חי", intents: "כוונות אומני-פרוטוקול", mandate: "מנדט מאקרו ומטריצת אינווריאנטים", inspector: "בודק מובלעות סמויות-כפולות", sdk: "התחלה מהירה ל-SDK", sovereign: "צומת ריבוני" },
-  palette: { placeholder: "הקלידו תצוגה או פעולה…", views: "תצוגות", actions: "פעולות", empty: "אין תוצאות.", fire: "שיגור תרחיש", replay: "הפעלה מחדש של רצף הפתיחה", card: "פתיחת ה-Agent Card החתומה", copy: "העתקת ההתחלה המהירה ל-SDK", hint: "לניווט", open: "לפתיחה" },
-  notice: { sandbox: "מצב ארגז חול: סימולציה דטרמיניסטית בנאמנות מלאה לפרוטוקול. התעודות חתומות אך אינן מחייבות. הפעילו מפתח גישה כדי לנהל משא ומתן חי." },
-  kpi: { settled: "נסלקו", volume: "נפח שנסלק", threats: "איומים שנוטרלו", rounds: "סבבים בממוצע", exceptions: "חריגות פתוחות", session: "בהפעלה זו" },
-  radar: {
-    title: "טופולוגיה אוטונומית ותעבורה",
-    sub: "לחיצות יד A2A, יירוטי Shield וסליקות במסלקה, בזמן אמת.",
-    peers: "סוכנים חיצוניים",
-    enclave: "מובלעת סליקה",
-    parliament: "הפרלמנט של Bloom",
-    empty: "אין עדיין תעבורה. שגרו תרחיש למטה, או הקישו ⌘K.",
-    kinds: { handshake: "לחיצת יד", blocked: "יירוט", round: "סבב", settled: "נסלק", exception: "חריגה", rejected: "נדחה" },
-  },
-  mandate: {
-    title: "מנדט מחיר קבוע",
-    subOperator: "המגבלות הפרטיות שכל מובלעת ייצור נסלקת תחתיהן. חתומות בשרת; אף צד שכנגד לא רואה אותן.",
-    subSandbox: "מנדט ארגז החול שלכם, שמור בדפדפן זה. הפעילו מפתח מפעיל כדי להגדיר את המנדט הקבוע החי.",
-    fields: { anchorPriceUsd: "מחיר מחירון", floorPriceUsd: "רצפת מחיר", costBasisUsd: "בסיס עלות", minMarginPct: "רצפת מרווח %", maxNetDays: "ימי שוטף מרביים", maxSlaTier: "רמת SLA מרבית", autoSettleCeilingUsd: "תקרת סליקה אוטומטית" },
-    effectiveFloor: "רצפה אפקטיבית",
-    save: "חתימת המנדט",
-    saved: "המנדט נחתם",
-    invalid: "בדקו את הערכים: מחיר המחירון חייב להיות לפחות 3% מעל הרצפה האפקטיבית.",
-  },
-  matrix: {
-    title: "מטריצת ממדי משאבים",
-    sub: "קיבולת ורצפת מחיר ליחידה לכל משאב מאקרו. Sovereign מקצה min(בקשה, קיבולת) ומעלה את רצפת המחיר ל-Σ מוקצה × רצפה ליחידה.",
-    dimension: "ממד",
-    offered: "מוצע",
-    capacity: "קיבולת",
-    unitFloor: "רצפה ליחידה",
-    maxFloor: "רצפה בקיבולת מלאה",
-    dims: { computeUnits: "יחידות מחשוב", energyKwh: "אנרגיה", capitalUsd: "הון", complianceToken: "אסימוני ציות", bandwidthGbps: "רוחב פס" },
-  },
-  invariants: {
-    title: "אינווריאנטים דטרמיניסטיים",
-    sub: "נאכפים בקוד אחרי כל הצעת מודל, לפני שדבר נשלח או נחתם. שום פרומפט לא יכול לרכך אותם.",
-    enforced: "נאכף",
-    items: [
-      { engine: "sovereign", rule: "מחיר ≥ מקס(רצפה, עלות ÷ (1 − מרווח), Σ מוקצה × רצפה ליחידה), ועוד רצועת ביטחון." },
-      { engine: "sovereign", rule: "הכמות המוקצית ≤ הקיבולת בכל ממד; מתחת למינימום של הלקוח זו חריגת גבולות." },
-      { engine: "sovereign", rule: "הצעות לעולם אינן עולות אחרי ויתור ואינן חורגות ממחיר המחירון." },
-      { engine: "sovereign", rule: "ויתור בתור אחד ≤ 35% מהפער בין העוגן לרזרבה, וקטן יותר ככל שהאמון נמוך." },
-      { engine: "apex", rule: "לעולם לא להציע מתחת למחיר שהלקוח כבר הניח על השולחן." },
-      { engine: "aether", rule: "ימי שוטף ≤ המרבי במנדט; SLA ≤ הרמה הגבוהה ביותר המוצעת." },
-      { engine: "shield", rule: "כל שדה חיצוני נסרק; ממצא קריטי מעביר את הטקסט להסגר, ורק התנאים המובנים נשארים." },
-      { engine: "sovereign", rule: "תעודה מונפקת רק כששני המנדטים החתומים מאומתים; חתימת Ed25519 וחותם HMAC." },
-    ],
-  },
-  sdk: {
-    title: "חיבור סוכן בחמש שורות",
-    sub: "לקוח TypeScript ללא תלויות: מגלה את ה-Agent Card החתומה, מנהל משא ומתן ב-A2A JSON-RPC ומאמת תעודות במצב לא מקוון.",
-    endpoint: "נקודת הקצה של Agent Card",
-    verified: "החתימה אומתה",
-    unverified: "החתימה לא אומתה",
-    install: "התקנה",
-    quickstart: "משא ומתן ואימות",
-    resources: "סליקת ממדי משאבים",
-    curl: "JSON-RPC גולמי",
-    copy: "העתקה",
-    copied: "הועתק",
-    steps: ["גילוי: ה-SDK קורא את /.well-known/agent-card.json ומצמיד את מפתח ה-Ed25519.", "הפקדה: המנדט שלכם נחתם בכספת הסמויה-הכפולה; מנועי הספק לעולם לא רואים אותו.", "סליקה: הסבבים מוזרמים ב-SSE; Sovereign מגביל כל הצעה של הספק.", "אימות: תקציר, שרשרת גיבובים, חתימת Ed25519 והוכחות AP2, במצב לא מקוון."],
-  },
-  stress: {
-    title: "סוכן חיצוני חי ומבחן לחץ עוין",
-    sub: "שוגר משא ומתן A2A JSON-RPC אמיתי אל המסלקה, בדיוק כמו סוכן חיצוני, ומשדר כיצד המנועים מגינים, מגבילים וסולקים.",
-    scenarios: {
-      standard: { name: "משא ומתן רגיל", body: "סוכן רכש מנומס עם תקציב סביר." },
-      adversarial: { name: "הזרקה + הצעת חסר", body: "הוראות נסתרות, הומוגליפים, Agent Card מורעלת ועוגן פתיחה של 24% מהמחירון." },
-      swarm: { name: "בקשת משאבים של נחיל", body: "סוכן נחיל ששומר מחשוב, אנרגיה ורוחב פס הרבה מעבר לקיבולת." },
-      breach: { name: "פריצת גבולות", body: "לקוח שהתקרה שלו מתחת לרצפה שלכם. נוחת בתור החריגות." },
-    },
-    fire: "שגר",
-    running: "סולק…",
-    payload: "מטען התקיפה",
-    rounds: "סבבים",
-    log: "יומן המנועים",
-    idle: "בחרו תרחיש כדי לפתוח מובלעת.",
-    you: "ספק",
-    them: "לקוח",
-    inspect: "בדיקה",
-    outcome: { completed: "נסלק", input_required: "הוסלם", failed: "נכשל", canceled: "בוטל", working: "בעבודה", submitted: "נשלח" },
-  },
-  ledger: {
-    title: "סליקות ותור חריגות",
-    settled: "נסלקו",
-    exceptions: "חריגות",
-    empty: "אין עדיין סליקות.",
-    noExceptions: "אין מה להכריע. חריגות מופיעות רק כשסוכן חורג מהגבולות הקבועים שלכם.",
-    override: "עקיפת הנהלה",
-    reject: "דחייה",
-    rounds: "סבבים",
-    trust: "אמון",
-    kinds: { out_of_bounds: "מחוץ לגבולות הקבועים", above_auto_settle: "מעל תקרת הסליקה האוטומטית", sla_infeasible: "SLA לא מוצע", resource_bounds: "חריגה מקיבולת המשאבים" },
-    env: { production: "ייצור", sandbox: "ארגז חול", "stress-test": "לחץ" },
-  },
-  inspector: {
-    list: "מובלעות",
-    select: "בחרו מובלעת כדי לבדוק את הסבבים, ביקורת Shield, הוכחת המרווח והתעודה.",
-    none: "אין עדיין מובלעות. שגרו תרחיש מספר הסליקה.",
-    tabs: { rounds: "סבבים", resources: "משאבים", shield: "ביקורת Shield", aether: "הוכחת Aether", ap2: "מנדטים AP2", certificate: "תעודה" },
-    verifying: "מאמת מקומית…",
-    valid: "אומת במצב לא מקוון · תקציר · שרשרת · Ed25519 · AP2",
-    invalid: "האימות נכשל",
-    download: "JSON",
-    print: "הדפסה",
-    close: "סגירה",
-    cols: { n: "#", side: "צד", price: "מחיר", delta: "Δ", net: "שוטף", sla: "SLA", clamp: "Sovereign", hash: "גיבוב" },
-    resCols: { dimension: "ממד", requested: "התבקש", granted: "הוקצה", compliance: "עמידה", commitment: "התחייבות לרצפה" },
-    noResources: "מובלעת זו סלקה מחיר ותנאים בלבד; לא התבקשו ממדי משאבים.",
-    trust: "אמון בצד שכנגד",
-    posture: "עמדה",
-    verdict: "פסיקת חומת האש",
-    noThreats: "לא זוהו איומים. המטען עבר נקי.",
-    threatCols: { vector: "וקטור", severity: "חומרה", field: "שדה", excerpt: "תוכן מנוטרל" },
-    margin: { realized: "מרווח בפועל", floor: "רצפת מרווח", headroom: "מרחב", pv: "מרווח מותאם ערך נוכחי", timeValue: "עלות ערך הזמן", capital: "עלות הון", resourceFloor: "רצפת משאבים", resourceHeadroom: "מעל רצפת המשאבים", restructures: "ארגוני תנאים מחדש", none: "לא נדרש ארגון מחדש של התנאים." },
-    cert: { issued: "הונפקה", terms: "תנאים", due: "מועד תשלום", compliance: "עמידה", commitments: "התחייבויות מנדט", signature: "חתימת Ed25519", seal: "חותם HMAC של המפעיל", binding: "מחייב", rail: "מסילת סליקה", chainHead: "ראש השרשרת" },
-    noCert: "אין תעודה: המובלעת לא נסלקה.",
-  },
-};
-
-const DICTS: Record<Lang, Dict> = { en, es, he };
-export const useExchangeCopy = () => DICTS[useI18n().lang];
+/** Bloom Exchange ships in English and Spanish. Any other site language (e.g. Hebrew elsewhere in Bloom AI) reads as English here. */
+export const DICTS = { en, es } satisfies Record<ExchangeLang, Dict>;
+const pick = (l: Lang): ExchangeLang => (l === "es" ? "es" : "en");
+export const useExchangeCopy = () => DICTS[pick(useI18n().lang)];
 export type ExchangeCopy = Dict;
 export type ExchangeView = View;
 export type ScenarioKey = Scenario;

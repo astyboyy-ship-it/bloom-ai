@@ -163,21 +163,25 @@ curl -N https://your-bloom.app/api/exchange/a2a \
   -d '{"jsonrpc":"2.0","id":1,"method":"SendStreamingMessage","params":{"message":{"messageId":"m1","role":"user","parts":[{"kind":"data","data":{"bloomExchange":{"mandate":{"ceilingPriceUsd":52000,"maxBudgetUsd":55000,"requiredSlaTier":"gold","targetNetDays":45},"item":{"description":"12-month license"}}}}]}}}'
 ```
 
-## The clearing terminal
+## The operating desk
 
-`/exchange` is the provider's operating desk, in Bloom's own identity: obsidian-rose, velvety crimson glows, warm gold light, rose-gold hairlines and the Cormorant display serif, with color reserved for meaning (gold verified, ember clamped, crimson threat). It opens with a 4.5-second boot sequence (hairline grid, the Bloom emblem blooming in, live diagnostics that decode this deployment's real root key); <kbd>Esc</kbd> skips it, and it plays once per session. The whole desk sits in a desktop frame with its own title bar: <kbd>⌘R</kbd> or <kbd>Ctrl R</kbd> refreshes telemetry without reloading, and a global telemetry pulse runs across the top. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>6</kbd>:
+`/exchange` is the provider's operating desk, set on a white gallery canvas: ink typography, fine gold hairlines, soft daylight shadows and a garden painting held faintly behind the glass. Colour is reserved for meaning: gold for verified, ember for clamped, crimson for threats.
 
-1. **Overview.** The thesis, the omni-protocol registry, and a four-step theater (an illustration) of how Bloom ends agent chaos: (1) a company's agents orchestrated under one sovereign, fed by ground truth and clamped in code; (2) a Bloom link met in email, DMs or an API, moving the conversation into a double-blind sandbox (the link itself is a concept; the sandbox ships today); (3) intents tested against both sealed mandates, with no-fit buyers held at the bound; (4) one-click sign-off for each owner and a BLOOM-XCH Ed25519 receipt.
-2. **Live Clearing Ledger.** KPIs, the traffic topology, settlements and the exception queue, and a stress-test bay that fires real A2A requests (standard, injection and lowball, swarm resource hoarding, bounds breach).
-3. **Omni-Protocol Intents.** Every injected intent's core goal, source protocol, resource vector and Sovereign clamp. The "Inject any agent or protocol" drawer fires real-shaped payloads from all six domains, or any custom source, through the live pipeline.
-4. **Macro Mandate & Invariant Matrix.** The standing price mandate, per-dimension capacity and unit floors, and the invariants Sovereign enforces.
-5. **Double-Blind Enclave Inspector.** Split pane: rounds and clamps, resource proofs, Shield audit, Aether margin proof, AP2 payloads, and the certificate, verified offline in the browser.
-6. **Developer SDK Quickstart.** The live signed Agent Card and copy-ready snippets.
+It opens on a **gate**. Paste a Bloom access key, which the clearinghouse verifies exactly as it does for every negotiation and which is kept only on that device, or explore the **sandbox** with no key. There are no accounts or passwords: the key is the credential. Sign out from the header or with <kbd>⌘K</kbd>.
 
-A **Cloud Sandbox / Sovereign Private Node** switch in the header opens the node console. It shows the root key fingerprint and the egress posture, plus host hardware and the Shield audit ledger with its hash chain re-verified on every refresh (Operator key only).
+The desk sits in its own window frame. <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> opens the command palette, <kbd>⌘R</kbd> / <kbd>Ctrl R</kbd> refreshes telemetry without reloading, and <kbd>1</kbd>–<kbd>8</kbd> jump between views:
 
-It ships in English, Spanish and Hebrew (right-to-left), and as a standalone desktop app: `npm run tauri:exchange` opens a frameless native window whose title bar (drag region, petal-toned window controls) is drawn by the desk itself.
+1. **Overview.** The command center. It shows clearing volume and the latest BLOOM-XCH receipts from this desk's ledger, median settlement time and clear rate from the 15-minute pulse, Shield status, and the node and its signing key. Below are a live activity feed and the omni-protocol registry. Every number is measured, and empty states say so.
+2. **Showcase & Guide.** An animated four-step walkthrough of how Bloom ends agent chaos, plus one card per module with the mechanics in three lines and a button that does the thing on this desk. The modules are Universal Bloom Links, the double-blind sandbox, agent-stack orchestration and one-click Ed25519 settlement. Bloom Links are marked as a concept; the other three ship today. The walkthroughs are illustrations, not screen recordings. First-time visitors land here.
+3. **Live Clearing Ledger.** KPIs, a throughput chart, and the traffic topology. The clearing terminal lists every enclave as a table with tabular numbers and a status of Settled, Clamped, Awaiting sign-off or Rejected. Each row has one-click receipt export, an owner override or reject for held deals, and a full audit export. Below sits the stress-test bay, which fires real A2A requests.
+4. **Omni-Protocol Intents.** A live routing pipeline: six macro-domain lanes feed the Omni-Bridge, become one AgentIntentNode, and pass Shield, the vault and Sovereign. Selecting a lane filters the trace. Under it is every intent's goal trace with its resource clamp, and the "Inject any agent or protocol" drawer.
+5. **Macro Mandate & Invariant Matrix.** A price corridor whose sliders move the effective floor live, computed by the same function Sovereign uses. Also the standing mandate, the resource matrix, and the invariants enforced in code.
+6. **Double-Blind Enclave Inspector.** An enclave security graph built from the enclave's live state: both vaults, Shield, rounds, Sovereign's clamps and the receipt's offline verification. Each node opens its evidence: rounds, resources, Shield audit, Aether proof, AP2 mandates and the certificate. A **boundary probe** sends a real extraction attempt through the live pipeline and reports whether any sealed figure came back.
+7. **Developer SDK Quickstart.** The live signed Agent Card and copy-ready snippets.
 
+A **Cloud Sandbox / Sovereign Private Node** switch in the header adds the node console as view 8. It shows the root key fingerprint, the egress posture, host hardware, and the Shield audit ledger with its hash chain re-verified on every refresh (Operator key only).
+
+It ships in English and Spanish, and as a standalone desktop app: `npm run tauri:exchange` opens a frameless native window whose title bar (drag region and window controls) is drawn by the desk itself.
 ## Self-hosting
 
 Bloom Exchange runs on Vercel with Upstash Redis.
