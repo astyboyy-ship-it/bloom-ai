@@ -26,3 +26,6 @@ npm-debug.log*
 
 # BLOOM access keys and local datasets (never commit signed keys)
 /.bloom/
+
+# The env template is public and holds placeholders only.
+!.env.example

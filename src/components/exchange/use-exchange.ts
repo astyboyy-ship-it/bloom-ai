@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cardKeys, sseJson, verifyAgentCard, type AgentCard, type Jwk } from "@bloom/exchange-sdk";
 import { requestHeaders, useDeskSettings } from "@/components/desk/settings";
 import { DEFAULT_STANDING_MANDATE, InitiatorMandateSchema, type ExchangeEvent, type InitiatorMandate, type OperatorView, type PublicRound, type TaskState } from "@/lib/exchange/types";
-import { SCENARIO_ITEM, SCENARIOS, type ScenarioId } from "./scenarios";
+import { SCENARIOS, type ScenarioId } from "./scenarios";
 
 export type Status = { source: "live" | "simulated"; provider: string; environment: "operator" | "production" | "sandbox"; licensed: boolean; operator: boolean; notice: string | null; kid: string; keyOrigin: string };
 
@@ -26,7 +26,8 @@ export type Row = {
 
 export type TrafficKind = "handshake" | "blocked" | "round" | "settled" | "exception" | "rejected";
 export type TrafficItem = { id: string; at: string; taskId: string; kind: TrafficKind; peer: string; detail: string };
-export type LogLine = { id: number; at: string; source: string; text: string; tone: "info" | "good" | "warn" | "bad" };
+export type LogLine = { id: number; at: string; source: string; text: string; tone: "info" | "good" | "warn" | "bad" | "threat" | "clamp" };
+export type AuditRow = { at: string; taskId: string; peer: string; verdict: string; vectors: Record<string, number>; prevHash: string; hash: string };
 export type LiveRun = { scenario: ScenarioId; taskId: string | null; state: TaskState; rounds: PublicRound[]; log: LogLine[]; certificateId: string | null; error: string | null };
 
 const VIEWS_KEY = "bloom-exchange-views";
@@ -79,6 +80,7 @@ export function useExchange() {
   const [views, setViews] = useState<Record<string, OperatorView>>({});
   const [serverRows, setServerRows] = useState<Row[]>([]);
   const [traffic, setTraffic] = useState<TrafficItem[]>([]);
+  const [audit, setAudit] = useState<AuditRow[]>([]);
   const [run, setRun] = useState<LiveRun | null>(null);
   const logId = useRef(0);
   const operator = status?.operator === true;
@@ -130,7 +132,8 @@ export function useExchange() {
     try {
       const r = await fetch("/api/exchange/ledger", { headers, cache: "no-store" });
       if (!r.ok) return;
-      const d = (await r.json()) as { settled: Row[]; exceptions: Row[]; traffic: Omit<TrafficItem, "id">[] };
+      const d = (await r.json()) as { settled: Row[]; exceptions: Row[]; traffic: Omit<TrafficItem, "id">[]; audit?: AuditRow[] };
+      setAudit(d.audit ?? []);
       setServerRows([...d.exceptions, ...d.settled]);
       pushTraffic(d.traffic.map((e) => ({ ...e, id: `srv:${e.at}:${e.taskId}:${e.kind}` })));
     } catch {
@@ -211,7 +214,7 @@ export function useExchange() {
             role: "user",
             parts: [
               { kind: "text", text: s.message },
-              { kind: "data", data: { bloomExchange: { intent: "negotiate", mandate: s.mandate, item: SCENARIO_ITEM, paymentRail: id === "breach" ? "x402" : "stripe", peer: s.peer, ...(operator ? { stressTest: true } : { sandbox: { initiatorMandate: mandate } }) } } },
+              { kind: "data", data: { bloomExchange: { intent: "negotiate", mandate: s.mandate, item: s.item, paymentRail: id === "breach" || id === "swarm" ? "x402" : "stripe", peer: s.peer, ...(operator ? { stressTest: true } : { sandbox: { initiatorMandate: mandate } }) } } },
             ],
           },
         },
@@ -245,14 +248,14 @@ export function useExchange() {
           const tid = taskId;
           switch (e.type) {
             case "firewall.scan":
-              update((x) => ({ ...x, log: [...x.log, line("shield", e.threats.length ? `Firewall ${e.verdict}: ${e.threats.length} vector${e.threats.length === 1 ? "" : "s"} (${[...new Set(e.threats.map((t) => t.vector))].join(", ")})` : "Firewall clean", e.threats.length ? "warn" : "good", e.at)] }));
+              update((x) => ({ ...x, log: [...x.log, line("shield", e.threats.length ? `Firewall ${e.verdict}: ${e.threats.length} vector${e.threats.length === 1 ? "" : "s"} (${[...new Set(e.threats.map((t) => t.vector))].join(", ")})` : "Firewall clean", e.threats.length ? "threat" : "good", e.at)] }));
               if (e.threats.length) local(tid, "blocked", `${e.threats.length} vectors · ${e.verdict}`, e.at);
               break;
             case "engine.signal":
               update((x) => ({ ...x, log: [...x.log, line(e.engine, e.text, e.engine === "shield" || e.engine === "cortex" ? "warn" : "info", e.at)] }));
               break;
             case "clamp":
-              update((x) => ({ ...x, log: [...x.log, line("sovereign", `R${e.round} clamped · ${e.reasons.join(" · ")}`, "warn", e.at)] }));
+              update((x) => ({ ...x, log: [...x.log, line("sovereign", `R${e.round} clamped · ${e.reasons.join(" · ")}`, "clamp", e.at)] }));
               break;
             case "round":
               update((x) => ({ ...x, state: "working", rounds: [...x.rounds, e.round] }));
@@ -298,7 +301,7 @@ export function useExchange() {
     [headers, storeView, pushTraffic, refreshLedger],
   );
 
-  return { status, card, mandate, saveMandate, rows, traffic, run, fire, decide, loadView, views };
+  return { status, card, mandate, saveMandate, rows, traffic, audit, run, fire, decide, loadView, views };
 }
 
 export type Exchange = ReturnType<typeof useExchange>;

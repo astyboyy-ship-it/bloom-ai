@@ -16,7 +16,27 @@ export const effectiveFloor = (m: { floorPriceUsd: number; minMarginPct: number;
   Math.max(m.floorPriceUsd, m.minMarginPct >= 100 ? Infinity : m.costBasisUsd / (1 - m.minMarginPct / 100));
 export const effectiveCeiling = (m: { ceilingPriceUsd: number; maxBudgetUsd: number }): number => Math.min(m.ceilingPriceUsd, m.maxBudgetUsd);
 
-/** The provider's private limits. The lowest acceptable price is the higher of the floor and the margin floor. */
+/**
+ * Universal resource dimensions an enclave can clear alongside price: compute, energy, capital, compliance
+ * attestations and bandwidth. A provider offers a capacity and a unit floor per dimension; a client requests a
+ * quantity (and the least it will accept). Sovereign allocates deterministically before any offer is made.
+ */
+export const RESOURCE_DIMENSIONS = ["computeUnits", "energyKwh", "capitalUsd", "complianceToken", "bandwidthGbps"] as const;
+export type ResourceDimension = (typeof RESOURCE_DIMENSIONS)[number];
+export const RESOURCE_UNITS: Record<ResourceDimension, string> = { computeUnits: "CU", energyKwh: "kWh", capitalUsd: "USD", complianceToken: "tokens", bandwidthGbps: "Gbps" };
+
+const quantity = z.number().finite().positive().max(1_000_000_000_000);
+const ResourceOffer = z.object({ capacity: quantity, floorUnitPriceUsd: z.number().finite().min(0).max(1_000_000) }).strict();
+const ResourceRequest = z
+  .object({ quantity, minQuantity: quantity.optional() })
+  .strict()
+  .refine((r) => r.minQuantity === undefined || r.minQuantity <= r.quantity, { message: "minQuantity must not exceed quantity" });
+const dims = <T extends z.ZodType>(s: T) => z.partialRecord(z.enum(RESOURCE_DIMENSIONS), s);
+export type ResourceOffers = Partial<Record<ResourceDimension, z.infer<typeof ResourceOffer>>>;
+export type ResourceRequests = Partial<Record<ResourceDimension, z.infer<typeof ResourceRequest>>>;
+export type Allocation = Partial<Record<ResourceDimension, number>>;
+
+/** The provider's private limits. The lowest acceptable price is the higher of the floor, the margin floor and the resource floor. */
 export const InitiatorMandateSchema = z
   .object({
     floorPriceUsd: usd,
@@ -26,6 +46,7 @@ export const InitiatorMandateSchema = z
     maxNetDays: z.number().int().min(0).max(180),
     maxSlaTier: SlaTierSchema,
     autoSettleCeilingUsd: usd,
+    resources: dims(ResourceOffer).optional(),
   })
   .strict()
   .refine((m) => m.anchorPriceUsd >= effectiveFloor(m) * 1.03, { message: "anchorPriceUsd must sit at least 3% above the effective floor" });
@@ -39,6 +60,7 @@ export const CounterpartyMandateSchema = z
     requiredSlaTier: SlaTierSchema,
     targetNetDays: z.number().int().min(0).max(180),
     openingPriceUsd: usd.optional(),
+    resources: dims(ResourceRequest).optional(),
   })
   .strict()
   .refine((m) => m.openingPriceUsd === undefined || m.openingPriceUsd < effectiveCeiling(m), { message: "openingPriceUsd must be below the effective ceiling" });
@@ -74,7 +96,10 @@ export type ThreatVector =
   | "encoded_payload"
   | "hidden_markup"
   | "tool_call_smuggling"
-  | "card_skill_poisoning";
+  | "card_skill_poisoning"
+  | "homoglyph_spoofing"
+  | "token_exhaustion"
+  | "policy_override_loop";
 export type Severity = "low" | "medium" | "high" | "critical";
 export type Threat = { vector: ThreatVector; severity: Severity; rule: string; field: string; excerpt: string };
 export type FirewallVerdict = "clean" | "neutralized" | "quarantined";
@@ -84,7 +109,7 @@ export const TERMINAL: TaskState[] = ["completed", "failed", "canceled"];
 
 export type Environment = "production" | "sandbox" | "stress-test";
 export type Source = "live" | "simulated";
-export type ExceptionKind = "out_of_bounds" | "above_auto_settle" | "sla_infeasible";
+export type ExceptionKind = "out_of_bounds" | "above_auto_settle" | "sla_infeasible" | "resource_bounds";
 export type PeerFramework = "openai" | "anthropic" | "langgraph" | "webhook" | "bloom-sdk" | "custom";
 export type PaymentRail = "stripe" | "x402";
 
@@ -111,7 +136,13 @@ export type Clamp = { rule: "mandate_floor" | "anchor_cap" | "regression" | "con
 /** What the provider's operator sees for each of its own offers: the plan, what Apex proposed, what Sovereign kept. */
 export type OperatorRoundDetail = { n: number; plan: Terms; proposal: Terms | null; clamps: Clamp[]; model: string; beta: number };
 
-export type CortexSignal = { kind: "extreme_anchor" | "lowball" | "bluff" | "stall"; round: number; detail: string };
+export type CortexSignal = { kind: "extreme_anchor" | "lowball" | "bluff" | "stall" | "hoarding"; round: number; detail: string };
+
+/**
+ * Sovereign's verdict on one resource dimension. Public: what was requested and granted, and a salted commitment to
+ * the provider's unit floor for that dimension (provable later without revealing it now).
+ */
+export type ResourceProof = { dimension: ResourceDimension; unit: string; requested: number; granted: number; compliance: "within_mandate" | "clamped_to_capacity"; floorCommitment: string };
 
 export type AetherProof = {
   priceUsd: number;
@@ -124,6 +155,9 @@ export type AetherProof = {
   timeValueCostUsd: number;
   pvAdjustedMarginPct: number;
   restructures: { round: number; fromNetDays: number; toNetDays: number }[];
+  /** The floor the allocated resources impose (Σ granted × unit floor), and how far the price clears it. */
+  resourceFloorUsd: number;
+  resourceHeadroomUsd: number;
 };
 
 export type Compliance = "within_mandate" | "executive_override" | "violation";
@@ -145,6 +179,8 @@ export type SettlementCertificate = {
   terms: Terms & { currency: "USD"; paymentDueDate: string };
   compliance: { initiator: Compliance; counterparty: Compliance; verifiedBy: string };
   rounds: { count: number; chainHead: string; chain: PublicRound[] };
+  /** Present when the enclave cleared resource dimensions: the allocation and one proof per dimension. */
+  resources: { allocation: Allocation; proofs: ResourceProof[] } | null;
   security: { trustScore: number; verdict: FirewallVerdict; threatsNeutralized: number };
   ap2: { checkoutMandate: VerifiableCredential; paymentMandate: VerifiableCredential };
   settlement: { preferredRail: PaymentRail; binding: boolean; stripe: StripeSettlement; x402: X402Requirements };
@@ -203,6 +239,7 @@ export type OperatorView = {
   security: { trust: number; posture: "standard" | "guarded" | "restricted"; verdict: FirewallVerdict; threats: Threat[] };
   signals: CortexSignal[];
   aether: AetherProof | null;
+  resources: { allocation: Allocation; proofs: ResourceProof[] } | null;
   exception: { kind: ExceptionKind; detail: string; counterTerms: Terms | null } | null;
   agreedTerms: Terms | null;
   certificate: SettlementCertificate | null;
@@ -218,4 +255,10 @@ export const DEFAULT_STANDING_MANDATE: InitiatorMandate = {
   maxNetDays: 45,
   maxSlaTier: "gold",
   autoSettleCeilingUsd: 75_000,
+  resources: {
+    computeUnits: { capacity: 120_000, floorUnitPriceUsd: 0.18 },
+    energyKwh: { capacity: 40_000, floorUnitPriceUsd: 0.07 },
+    bandwidthGbps: { capacity: 40, floorUnitPriceUsd: 95 },
+    complianceToken: { capacity: 12, floorUnitPriceUsd: 250 },
+  },
 };

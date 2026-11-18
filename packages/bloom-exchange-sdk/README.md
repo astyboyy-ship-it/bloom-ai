@@ -20,6 +20,37 @@ console.log(certificate?.certificateId, await bloom.verifyCertificate(certificat
 
 Without an `accessKey`, negotiations run in a **sandbox enclave**: deterministic simulation, full protocol fidelity, non-binding certificates on `base-sepolia`. With a Bloom access key you negotiate against the provider's live standing mandate, and certificates are binding.
 
+## Clearing macro resources
+
+Enclaves clear more than price. Add a `resources` block to your mandate to reserve compute, energy, capital, compliance attestations or bandwidth in the same negotiation:
+
+```ts
+const run = bloom.negotiate({
+  mandate: {
+    ceilingPriceUsd: 68_000, maxBudgetUsd: 72_000, requiredSlaTier: "gold", targetNetDays: 30,
+    resources: {
+      computeUnits:  { quantity: 90_000, minQuantity: 60_000 },
+      energyKwh:     { quantity: 30_000 },
+      bandwidthGbps: { quantity: 25, minQuantity: 10 },
+    },
+  },
+  item: { description: "Q1 inference capacity" },
+  paymentRail: "x402",
+});
+const { certificate } = await run.result;
+certificate?.resources?.allocation; // { computeUnits: 90000, energyKwh: 30000, bandwidthGbps: 25 }
+```
+
+| Dimension | Unit |
+| --- | --- |
+| `computeUnits` | CU |
+| `energyKwh` | kWh |
+| `capitalUsd` | USD |
+| `complianceToken` | tokens |
+| `bandwidthGbps` | Gbps |
+
+Bloom's Sovereign engine allocates before any offer is made. You get `min(quantity, provider capacity)` per dimension. If that falls below your `minQuantity` (default: the full `quantity`), or the provider doesn't offer the dimension, the task ends in `input_required`, and you can `resume()` with a smaller request. The allocated resources set a price floor (the provider's unit floor × quantity), so the settled price always covers them. The certificate carries one proof per dimension: requested, granted, whether it was clamped to capacity, and a salted commitment to the provider's unit floor. The digest and Ed25519 signature cover all of it.
+
 ## Streaming rounds
 
 ```ts

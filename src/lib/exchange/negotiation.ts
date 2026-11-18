@@ -44,8 +44,6 @@ export type NegotiationResult = {
   model: string;
 };
 
-const round10 = (n: number) => Math.round(n / 10) * 10;
-
 /** The next round on a chain: numbered, timestamped and hashed over its public fields plus the previous hash. */
 export function chainRound(prior: PublicRound[], by: Side, terms: Terms, message: string, at: Date): PublicRound {
   const last = prior[prior.length - 1];

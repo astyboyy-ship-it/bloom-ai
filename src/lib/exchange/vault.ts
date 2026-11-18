@@ -1,6 +1,7 @@
 import { canonicalize } from "./canonical";
 import { seeded } from "@/lib/engines/util";
-import { effectiveCeiling, effectiveFloor, type CounterpartyMandate, type InitiatorMandate } from "./types";
+import { resourceFloorUsd } from "./resources";
+import { effectiveCeiling, effectiveFloor, type Allocation, type CounterpartyMandate, type InitiatorMandate } from "./types";
 
 /**
  * The zero-leakage double-blind vault. Each enclave seals both parties' mandates server-side and exposes them only
@@ -19,6 +20,8 @@ export type SealedVault = {
   salts: { initiator: string; counterparty: string };
   /** Fractions: the seller's reserve sits this far above its floor, the buyer's this far below its ceiling. */
   guardBand: { initiator: number; counterparty: number };
+  /** Sovereign's resource allocation for this enclave (null when no resource dimensions were requested). */
+  allocation: Allocation | null;
 };
 
 export type InitiatorBrief = {
@@ -36,17 +39,20 @@ export type CounterpartyPolicy = {
   targetNetDays: number;
 };
 
-export function sealVault(seed: string, initiator: InitiatorMandate, counterparty: CounterpartyMandate, salts: { initiator: string; counterparty: string }): SealedVault {
+export function sealVault(seed: string, initiator: InitiatorMandate, counterparty: CounterpartyMandate, salts: { initiator: string; counterparty: string }, allocation: Allocation | null = null): SealedVault {
   const rng = seeded(`guard:${seed}`);
   return {
     initiator,
     counterparty,
     salts,
     guardBand: { initiator: 0.006 + rng.next() * 0.018, counterparty: 0.015 + rng.next() * 0.03 },
+    allocation,
   };
 }
 
-export const sellerReserve = (v: SealedVault) => Math.ceil((effectiveFloor(v.initiator) * (1 + v.guardBand.initiator)) / 10) * 10;
+/** The provider's true lowest price for this enclave: its price/margin floor, or the floor its allocated resources impose. */
+export const initiatorFloor = (v: Pick<SealedVault, "initiator" | "allocation">) => Math.max(effectiveFloor(v.initiator), resourceFloorUsd(v.initiator.resources, v.allocation));
+export const sellerReserve = (v: SealedVault) => Math.ceil((initiatorFloor(v) * (1 + v.guardBand.initiator)) / 10) * 10;
 export const buyerReserve = (v: SealedVault) => Math.floor((effectiveCeiling(v.counterparty) * (1 - v.guardBand.counterparty)) / 10) * 10;
 
 export function initiatorBrief(v: SealedVault): InitiatorBrief {
@@ -67,7 +73,8 @@ export const commitment = (sha256: (s: string) => string, mandate: unknown, salt
 export function privateFigures(v: SealedVault, side: "initiator" | "counterparty"): { usd: number[]; pct: number[] } {
   if (side === "initiator") {
     const m = v.initiator;
-    return { usd: [m.floorPriceUsd, m.costBasisUsd, effectiveFloor(m), m.autoSettleCeilingUsd], pct: [m.minMarginPct] };
+    const unitFloors = Object.values(m.resources ?? {}).map((r) => r.floorUnitPriceUsd).filter((x) => x > 0);
+    return { usd: [m.floorPriceUsd, m.costBasisUsd, effectiveFloor(m), initiatorFloor(v), m.autoSettleCeilingUsd, ...unitFloors], pct: [m.minMarginPct] };
   }
   const c = v.counterparty;
   return { usd: [c.ceilingPriceUsd, c.maxBudgetUsd, effectiveCeiling(c)], pct: [] };

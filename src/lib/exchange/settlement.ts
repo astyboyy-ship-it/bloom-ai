@@ -1,9 +1,9 @@
 import { canonicalize, certificateIdFrom, certificateIdInput, GENESIS } from "./canonical";
 import { randomId, sealDigest, sha256Hex, signDigest, signString, webhookSignature, exchangeKeys } from "./crypto";
-import { commitment, type SealedVault } from "./vault";
+import { allocationViolations, resourceProofs } from "./resources";
+import { commitment, initiatorFloor, type SealedVault } from "./vault";
 import {
   effectiveCeiling,
-  effectiveFloor,
   slaRank,
   SLA_TIERS,
   type Clamp,
@@ -81,15 +81,18 @@ export function enforceInitiatorMandate(p: Terms, m: InitiatorMandate, ctx: Clam
 export function verifySettlement(terms: Terms, v: SealedVault, override = false): { initiator: Compliance; counterparty: Compliance; violations: string[] } {
   const violations: string[] = [];
   const i = v.initiator;
-  if (terms.priceUsd < effectiveFloor(i)) violations.push("initiator:price_below_floor");
+  if (terms.priceUsd < initiatorFloor(v)) violations.push("initiator:price_below_floor");
   if (terms.netDays > i.maxNetDays) violations.push("initiator:net_days_above_max");
   if (slaRank(terms.slaTier) > slaRank(i.maxSlaTier)) violations.push("initiator:sla_above_max");
   const c = v.counterparty;
   if (terms.priceUsd > effectiveCeiling(c)) violations.push("counterparty:price_above_ceiling");
   if (slaRank(terms.slaTier) < slaRank(c.requiredSlaTier)) violations.push("counterparty:sla_below_required");
-  const initiatorBad = violations.some((x) => x.startsWith("initiator:"));
+  // Capacity breaches can't be overridden: a provider can't commit resources it doesn't have.
+  violations.push(...allocationViolations(i.resources, c.resources, v.allocation));
+  const initiatorBad = violations.some((x) => x.startsWith("initiator:") && !x.endsWith("_above_capacity"));
+  const capacityBad = violations.some((x) => x.endsWith("_above_capacity"));
   return {
-    initiator: initiatorBad ? (override ? "executive_override" : "violation") : "within_mandate",
+    initiator: capacityBad ? "violation" : initiatorBad ? (override ? "executive_override" : "violation") : "within_mandate",
     counterparty: violations.some((x) => x.startsWith("counterparty:")) ? "violation" : "within_mandate",
     violations,
   };
@@ -234,6 +237,7 @@ export function mintCertificate(input: MintInput): SettlementCertificate {
     terms: { ...input.terms, currency: "USD", paymentDueDate: due },
     compliance: { initiator: check.initiator, counterparty: check.counterparty, verifiedBy: "sovereign/deterministic-v1" },
     rounds: { count: input.rounds.length, chainHead, chain: input.rounds },
+    resources: input.vault.allocation ? { allocation: input.vault.allocation, proofs: resourceProofs(input.vault.initiator.resources, input.vault.counterparty.resources, input.vault.allocation, input.vault.salts.initiator, sha256Hex) } : null,
     security: input.security,
     ap2: { checkoutMandate, paymentMandate },
     settlement: { preferredRail: input.preferredRail, binding, stripe, x402 },

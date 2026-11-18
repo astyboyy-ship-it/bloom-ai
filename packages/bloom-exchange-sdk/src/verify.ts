@@ -50,7 +50,8 @@ export async function verifyAgentCard(card: AgentCard): Promise<{ valid: boolean
   }
   const key = cardKeys(card).find((k) => k.kid === header.kid);
   if (!key || header.alg !== "EdDSA") return { valid: false, kid: header.kid ?? null };
-  const { signatures: _omit, ...unsigned } = card;
+  const unsigned: Record<string, unknown> = { ...card };
+  delete unsigned.signatures;
   const payload = btoa(String.fromCharCode(...enc.encode(canonicalize(unsigned)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return { valid: await ed25519Verify(key, sig.signature, `${sig.protected}.${payload}`), kid: key.kid };
 }
@@ -66,7 +67,11 @@ async function verifyCredential(c: Credential, keys: Jwk[]): Promise<boolean> {
 export async function verifyCertificate(cert: SettlementCertificate, keys: Jwk[]): Promise<VerificationResult> {
   const checks = { digest: false, certificateId: false, chain: false, signature: false, ap2Proofs: false };
   try {
-    const { digest, signature, seal: _seal, ...body } = cert;
+    const { digest, signature } = cert;
+    const body: Record<string, unknown> = { ...cert };
+    delete body.digest;
+    delete body.signature;
+    delete body.seal;
     checks.digest = (await sha256Hex(canonicalize(body))) === digest;
 
     const chain = cert.rounds.chain;

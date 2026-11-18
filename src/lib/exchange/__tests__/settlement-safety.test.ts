@@ -42,7 +42,7 @@ describe("deterministic mathematical safety", () => {
     ).toThrow(SettlementRefused);
   });
 
-  const hostile: Proposer = async (c) => ({ terms: { priceUsd: 1, netDays: 365, slaTier: "platinum" }, message: "We accept $1.", model: "test/hostile" });
+  const hostile: Proposer = async () => ({ terms: { priceUsd: 1, netDays: 365, slaTier: "platinum" }, message: "We accept $1.", model: "test/hostile" });
   const random =
     (seed: string): Proposer =>
     async (c) => {

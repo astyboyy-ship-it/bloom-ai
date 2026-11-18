@@ -1,6 +1,7 @@
 import "server-only";
 import { canonicalize } from "./canonical";
 import { exchangeKeys, signString } from "./crypto";
+import { RESOURCE_DIMENSIONS, RESOURCE_UNITS } from "./types";
 
 /**
  * The A2A v1.0 Agent Card for Bloom Exchange. Signed as a detached JWS (EdDSA) over the canonical JSON of the
@@ -31,7 +32,7 @@ export function agentCard(origin: string) {
           uri: "https://bloom.ai/a2a/ext/settlement/v1",
           description: "BLOOM-XCH settlement certificates: Ed25519-signed, round hash-chained, with salted mandate commitments.",
           required: false,
-          params: { jwks: { keys: [keys.jwk] }, keyOrigin: keys.origin, certificateVersion: "bloom-xch/1.0", rails: ["stripe", "x402"] },
+          params: { jwks: { keys: [keys.jwk] }, keyOrigin: keys.origin, certificateVersion: "bloom-xch/1.0", rails: ["stripe", "x402"], resourceDimensions: RESOURCE_DIMENSIONS.map((d) => ({ id: d, unit: RESOURCE_UNITS[d] })) },
         },
         { uri: "https://github.com/google-agentic-commerce/AP2/tree/v0.1", description: "AP2 checkout and payment mandates issued as verifiable credentials on settlement.", required: false, params: { roles: ["merchant"] } },
       ],
@@ -46,9 +47,9 @@ export function agentCard(origin: string) {
       {
         id: "autonomous-negotiation",
         name: "Autonomous negotiation",
-        description: "Multi-round alternating-offers negotiation on price, payment terms and SLA tier, run by the Bloom parliament for the provider and a neutral proxy bound to your mandate.",
+        description: "Multi-round alternating-offers negotiation on price, payment terms and SLA tier, plus deterministic clearing of resource dimensions (computeUnits, energyKwh, capitalUsd, complianceToken, bandwidthGbps), run by the Bloom parliament for the provider and a neutral proxy bound to your mandate.",
         tags: ["negotiation", "procurement", "a2a"],
-        examples: ['{"mandate":{"ceilingPriceUsd":52000,"maxBudgetUsd":55000,"requiredSlaTier":"gold","targetNetDays":45},"item":{"description":"12-month platform license"}}'],
+        examples: ['{"mandate":{"ceilingPriceUsd":52000,"maxBudgetUsd":55000,"requiredSlaTier":"gold","targetNetDays":45},"item":{"description":"12-month platform license"}}', '{"mandate":{"ceilingPriceUsd":64000,"maxBudgetUsd":70000,"requiredSlaTier":"gold","targetNetDays":30,"resources":{"computeUnits":{"quantity":90000},"energyKwh":{"quantity":30000,"minQuantity":20000}}},"item":{"description":"Q1 inference capacity"}}'],
         inputModes: ["application/json"],
         outputModes: ["application/json", "text/event-stream"],
       },

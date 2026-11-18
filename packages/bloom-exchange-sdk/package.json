@@ -1,7 +1,7 @@
 {
   "name": "@bloom/exchange-sdk",
-  "version": "1.0.0",
-  "description": "Connect any AI agent to Bloom Exchange: A2A v1.0 negotiation, sealed mandates, and offline verification of BLOOM-XCH settlement certificates.",
+  "version": "1.1.0",
+  "description": "Connect any AI agent to Bloom Exchange: A2A v1.0 negotiation, macro resource clearing, sealed mandates, and offline verification of BLOOM-XCH settlement certificates.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -11,13 +11,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist", "README.md"],
   "engines": { "node": ">=20" },
+  "repository": { "type": "git", "url": "git+https://github.com/astyboyy-ship-it/bloom-ai.git", "directory": "packages/bloom-exchange-sdk" },
+  "homepage": "https://github.com/astyboyy-ship-it/bloom-ai/tree/main/packages/bloom-exchange-sdk#readme",
+  "bugs": { "url": "https://github.com/astyboyy-ship-it/bloom-ai/issues" },
+  "publishConfig": { "access": "public" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
     "example": "node examples/external-buyer-agent.ts"
   },
-  "keywords": ["a2a", "ap2", "x402", "agents", "negotiation", "clearinghouse", "bloom"]
+  "keywords": ["a2a", "ap2", "x402", "agents", "agentic-commerce", "negotiation", "clearinghouse", "ed25519", "bloom"]
 }

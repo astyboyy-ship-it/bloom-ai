@@ -120,6 +120,25 @@ export async function listTraffic(limit = 60): Promise<TrafficEvent[]> {
   return (await range("traffic", limit)).map((s) => JSON.parse(s) as TrafficEvent);
 }
 
+/**
+ * Shield's audit ledger: one entry per screened payload that carried threats, each hash-chained to the previous
+ * entry so a deleted or edited entry is detectable. Concurrent writers on different instances may fork the chain
+ * briefly; every entry still carries its own content hash.
+ */
+export type AuditEntry = { at: string; taskId: string; peer: string; verdict: string; vectors: Record<string, number>; prevHash: string; hash: string };
+
+export async function pushAudit(e: Omit<AuditEntry, "prevHash" | "hash">, sha256: (s: string) => string): Promise<AuditEntry> {
+  const head = (await range("audit", 1))[0];
+  const prevHash = head ? (JSON.parse(head) as AuditEntry).hash : "0".repeat(64);
+  const entry: AuditEntry = { ...e, prevHash, hash: sha256(JSON.stringify({ ...e, prevHash })) };
+  await push("audit", JSON.stringify(entry), 500);
+  return entry;
+}
+
+export async function listAudit(limit = 60): Promise<AuditEntry[]> {
+  return (await range("audit", limit)).map((s) => JSON.parse(s) as AuditEntry);
+}
+
 export async function getStandingMandate(): Promise<{ mandate: InitiatorMandate; configured: boolean }> {
   const r = await run([["GET", `${P}:mandate:standing`]]);
   const raw = (r?.[0] as string | null | undefined) ?? memGet(`${P}:mandate:standing`);

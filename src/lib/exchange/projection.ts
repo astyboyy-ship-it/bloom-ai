@@ -1,4 +1,6 @@
 import { aetherProof } from "./bloom-bridge";
+import { sha256Hex } from "./crypto";
+import { resourceFloorUsd, resourceProofs } from "./resources";
 import type { EnclaveRecord } from "./enclave";
 import type { ExchangeEvent, OperatorView, PublicRound } from "./types";
 
@@ -74,7 +76,8 @@ export function toA2ATask(rec: EnclaveRecord, historyLength?: number): A2ATask {
       "bloom.source": rec.source,
       "bloom.rounds": rec.rounds.length,
       "bloom.firewall": { verdict: rec.security.verdict, vectors: counts },
-      ...(rec.state === "input_required" && { "bloom.awaiting": rec.exception?.kind === "out_of_bounds" ? "revised_mandate_or_executive" : rec.exception?.kind === "sla_infeasible" ? "revised_mandate" : "executive_signoff" }),
+      ...(rec.vault.allocation && { "bloom.allocation": rec.vault.allocation }),
+      ...(rec.state === "input_required" && { "bloom.awaiting": rec.exception?.kind === "out_of_bounds" ? "revised_mandate_or_executive" : rec.exception?.kind === "sla_infeasible" || rec.exception?.kind === "resource_bounds" ? "revised_mandate" : "executive_signoff" }),
     },
   };
 }
@@ -96,7 +99,8 @@ export function operatorView(rec: EnclaveRecord): OperatorView {
     operatorRounds: rec.operatorRounds,
     security: { trust: rec.security.trust, posture: rec.security.posture, verdict: rec.security.verdict, threats: rec.security.threats },
     signals: rec.signals,
-    aether: rec.aether ?? (rec.agreedTerms ? aetherProof(rec.agreedTerms, rec.vault.initiator, rec.restructures) : null),
+    aether: rec.aether ?? (rec.agreedTerms ? aetherProof(rec.agreedTerms, rec.vault.initiator, rec.restructures, resourceFloorUsd(rec.vault.initiator.resources, rec.vault.allocation)) : null),
+    resources: rec.certificate?.resources ?? (rec.vault.allocation ? { allocation: rec.vault.allocation, proofs: resourceProofs(rec.vault.initiator.resources, rec.vault.counterparty.resources, rec.vault.allocation, rec.vault.salts.initiator, sha256Hex) } : null),
     exception: rec.exception ? { kind: rec.exception.kind, detail: rec.exception.detail, counterTerms: rec.exception.counterTerms } : null,
     agreedTerms: rec.agreedTerms,
     certificate: rec.certificate,

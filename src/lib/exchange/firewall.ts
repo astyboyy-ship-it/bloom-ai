@@ -71,11 +71,48 @@ function applyRules(text: string, field: string, threats: Threat[], extraVector?
   return out;
 }
 
-/** Scans one field. `hidden` threats found inside decoded channels count against the field they were hidden in. */
+// Cyrillic and Greek letters that render identically to Latin ones. Mixed into a Latin word ("іgnоre"), they slip
+// an instruction past ASCII rules; folded back, the rules see it.
+const CONFUSABLES: Record<string, string> = {
+  а: "a", е: "e", о: "o", р: "p", с: "c", у: "y", х: "x", і: "i", ј: "j", ѕ: "s", ԁ: "d", һ: "h", ӏ: "l", ο: "o", ν: "v", α: "a", ε: "e", ι: "i", κ: "k", ρ: "p", τ: "t", υ: "u",
+  А: "A", В: "B", Е: "E", К: "K", М: "M", Н: "H", О: "O", Р: "P", С: "C", Т: "T", Х: "X", І: "I", Α: "A", Β: "B", Ε: "E", Ζ: "Z", Η: "H", Ι: "I", Κ: "K", Μ: "M", Ν: "N", Ο: "O", Ρ: "P", Τ: "T", Υ: "Y", Χ: "X",
+};
+const CONFUSABLE_CLASS = new RegExp(`[${Object.keys(CONFUSABLES).join("")}]`, "g");
+const MIXED_SCRIPT_WORD = /[A-Za-z][Ͱ-ϿЀ-ӿ]|[Ͱ-ϿЀ-ӿ][A-Za-z]/;
+const MAX_FIELD = 8000;
+// The same 2-60 character unit repeated eight or more times in a row: a token-exhaustion / context-flooding loop.
+const REPETITION = /(\S[\s\S]{1,59}?)(?:\s*\1){7,}/g;
+const OVERRIDE_VECTORS = new Set<ThreatVector>(["instruction_override", "role_hijack", "jailbreak", "role_token_smuggling", "system_prompt_extraction"]);
+
+/**
+ * Scans one field. Threats found inside decoded channels count against the field they were hidden in. Beyond the
+ * rule set it neutralizes swarm-style multi-vector payloads: homoglyph spoofing, token-exhaustion floods (oversized
+ * fields, repetition loops) and policy-override loops, which escalate to critical so the payload is quarantined.
+ */
 export function scanText(input: string, field: string, opts: { cardField?: boolean } = {}): { clean: string; threats: Threat[] } {
+  const r = scanLayers(input, field, opts);
+  const overrides = r.threats.filter((t) => OVERRIDE_VECTORS.has(t.vector)).length;
+  if (overrides >= 3) r.threats.push({ vector: "policy_override_loop", severity: "critical", rule: `Policy-override loop (${overrides} attempts)`, field, excerpt: "" });
+  return r;
+}
+
+function scanLayers(input: string, field: string, opts: { cardField?: boolean }): { clean: string; threats: Threat[] } {
   const threats: Threat[] = [];
   const extra = opts.cardField ? ("card_skill_poisoning" as const) : undefined;
-  let text = input.normalize("NFKC").slice(0, 8000);
+  let text = input.normalize("NFKC");
+  if (text.length > MAX_FIELD) {
+    threats.push({ vector: "token_exhaustion", severity: "high", rule: `Oversized payload (${text.length.toLocaleString("en-US")} chars, ${MAX_FIELD.toLocaleString("en-US")} max)`, field, excerpt: "" });
+    text = text.slice(0, MAX_FIELD);
+  }
+  text = text.replace(REPETITION, (m, unit: string) => {
+    threats.push({ vector: "token_exhaustion", severity: "high", rule: `Repetition flood (${Math.round(m.length / Math.max(1, unit.length))}× "${unit.trim().slice(0, 24)}")`, field, excerpt: excerpt(unit) });
+    return marker("token_exhaustion");
+  });
+  if (MIXED_SCRIPT_WORD.test(text)) {
+    const before = text;
+    text = text.replace(CONFUSABLE_CLASS, (ch) => CONFUSABLES[ch] ?? ch);
+    if (text !== before) threats.push({ vector: "homoglyph_spoofing", severity: "medium", rule: "Mixed-script homoglyphs folded to Latin", field, excerpt: excerpt(before.match(/\S*[Ͱ-ϿЀ-ӿ]\S*/)?.[0] ?? "") });
+  }
 
   text = text.replace(TAGS, (m) => {
     const decoded = Array.from(m, (ch) => String.fromCharCode((ch.codePointAt(0) ?? 0xe0000) - 0xe0000)).join("");

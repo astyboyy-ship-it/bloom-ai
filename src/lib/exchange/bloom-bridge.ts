@@ -109,7 +109,7 @@ export function aetherTerms(ownLast: number | null, theirLast: number | null, ma
 /** On a turn where terms were extended, Aether halves the price concession. */
 export const priceHold = (restructured: boolean) => (restructured ? 0.5 : 1);
 
-export function aetherProof(terms: Terms, m: InitiatorMandate, restructures: AetherProof["restructures"]): AetherProof {
+export function aetherProof(terms: Terms, m: InitiatorMandate, restructures: AetherProof["restructures"], resourceFloorUsd = 0): AetherProof {
   const r = costOfCapital();
   const margin = ((terms.priceUsd - m.costBasisUsd) / terms.priceUsd) * 100;
   const timeValue = terms.priceUsd * (r / 100) * (terms.netDays / 365);
@@ -126,6 +126,8 @@ export function aetherProof(terms: Terms, m: InitiatorMandate, restructures: Aet
     timeValueCostUsd: r2(timeValue),
     pvAdjustedMarginPct: r2(pvMargin),
     restructures,
+    resourceFloorUsd: r2(resourceFloorUsd),
+    resourceHeadroomUsd: r2(terms.priceUsd - resourceFloorUsd),
   };
 }
 

@@ -1,12 +1,13 @@
-import { randomHex, randomId } from "./crypto";
+import { randomHex, randomId, sha256Hex } from "./crypto";
 import { QUARANTINED, scanAgentCard, screenPayload, verdictFor, type PeerCard } from "./firewall";
 import { aetherProof, shieldAssess, slaFeasible, usd, type Posture, type Proposer } from "./bloom-bridge";
 import { chainRound, negotiate } from "./negotiation";
 import { dispatchSettlement, mintCertificate, SettlementRefused, verifySettlement } from "./settlement";
-import { addToLedger, cancelRequested, pushTraffic, recordProbe, requestCancel, saveTask, type TrafficEvent } from "./store";
-import { counterpartyPolicy, sealVault, type SealedVault } from "./vault";
+import { addToLedger, cancelRequested, pushAudit, pushTraffic, recordProbe, requestCancel, saveTask, type TrafficEvent } from "./store";
+import { allocate, resourceFloorUsd, type AllocationResult } from "./resources";
+import { counterpartyPolicy, initiatorFloor, sealVault, type SealedVault } from "./vault";
 import {
-  effectiveFloor,
+  RESOURCE_UNITS,
   TERMINAL,
   type AetherProof,
   type CortexSignal,
@@ -58,6 +59,8 @@ export type EnclaveRecord = {
   security: { trust: number; posture: Posture; verdict: FirewallVerdict; threats: Threat[] };
   signals: CortexSignal[];
   restructures: AetherProof["restructures"];
+  /** Sovereign's resource allocation (null when the client requested no resource dimensions). */
+  allocation: AllocationResult | null;
   aether: AetherProof | null;
   exception: { kind: ExceptionKind; detail: string; counterTerms: Terms | null } | null;
   agreedTerms: Terms | null;
@@ -121,7 +124,8 @@ export function provisionEnclave(input: ProvisionInput): EnclaveRecord {
   // A poisoned card condemns the whole payload: its message is quarantined along with it.
   const verdict = verdictFor(threats);
   const shield = shieldAssess(threats, input.probes);
-  const vault = sealVault(id, input.initiator, input.counterparty, { initiator: randomHex(), counterparty: randomHex() });
+  const alloc = allocate(input.initiator.resources, input.counterparty.resources);
+  const vault = sealVault(id, input.initiator, input.counterparty, { initiator: randomHex(), counterparty: randomHex() }, alloc && alloc.shortfalls.length === 0 ? alloc.allocation : null);
   const peerName = (card?.name !== "external-agent" ? card?.name : undefined) ?? (input.peerName.replace(/[^\w .@:/-]/g, "").slice(0, 80) || "external-agent");
   const rec: EnclaveRecord = {
     id,
@@ -144,6 +148,7 @@ export function provisionEnclave(input: ProvisionInput): EnclaveRecord {
     security: { trust: shield.trust, posture: shield.posture, verdict, threats },
     signals: [],
     restructures: [],
+    allocation: alloc,
     aether: null,
     exception: null,
     agreedTerms: null,
@@ -156,6 +161,19 @@ export function provisionEnclave(input: ProvisionInput): EnclaveRecord {
   event(rec, { audience: "public", type: "enclave.provisioned", taskId: id, environment: rec.environment, source: rec.source, peer: rec.peer.name }, at);
   event(rec, { audience: "public", type: "firewall.scan", verdict, threats: threats.map((t) => ({ vector: t.vector, severity: t.severity, field: t.field })) }, at);
   event(rec, { audience: "operator", type: "engine.signal", engine: "shield", text: [`Counterparty trust ${shield.trust}/100 (${shield.posture}).`, ...shield.notes].join(" ") }, at);
+  if (alloc) {
+    const offers = input.initiator.resources ?? {};
+    const granted = Object.entries(alloc.allocation).map(([d, q]) => `${d} ${q.toLocaleString("en-US")} ${RESOURCE_UNITS[d as keyof typeof RESOURCE_UNITS]}`);
+    const floor = resourceFloorUsd(offers, alloc.allocation);
+    if (granted.length) event(rec, { audience: "operator", type: "engine.signal", engine: "sovereign", text: `Resource allocation: ${granted.join(" · ")}${alloc.clamped.length ? ` (clamped to capacity: ${alloc.clamped.join(", ")})` : ""}. Resource floor ${usd(floor)}.` }, at);
+    // Asking for far more than exists is a hoarding / swarm-reservation pattern: Cortex flags it for the operator.
+    const hoarded = Object.entries(input.counterparty.resources ?? {}).filter(([d, r]) => r && r.quantity > 2 * (offers[d as keyof typeof offers]?.capacity ?? 0));
+    if (hoarded.length) {
+      const detail = `Requested more than twice available capacity on ${hoarded.map(([d]) => d).join(", ")}: hoarding pattern, grants capped at capacity.`;
+      rec.signals.push({ kind: "hoarding", round: 0, detail });
+      event(rec, { audience: "operator", type: "engine.signal", engine: "cortex", text: detail }, at);
+    }
+  }
   return rec;
 }
 
@@ -163,6 +181,7 @@ const EXTERNAL_REASON: Record<ExceptionKind, string> = {
   out_of_bounds: "Your final counter-offer falls outside the provider's standing mandate. Escalated to the provider's executive; you may send a revised mandate to this task.",
   above_auto_settle: "Agreed terms await the provider's executive sign-off.",
   sla_infeasible: "The required SLA tier is not available under the provider's standing mandate.",
+  resource_bounds: "The requested resources exceed what the provider's standing mandate can commit. You may send a revised mandate to this task.",
 };
 export const externalReason = (k: ExceptionKind) => EXTERNAL_REASON[k];
 
@@ -203,7 +222,7 @@ async function settle(rec: EnclaveRecord, terms: Terms, override: boolean, deps?
     });
     rec.certificate = cert;
     rec.agreedTerms = terms;
-    rec.aether = aetherProof(terms, rec.vault.initiator, rec.restructures);
+    rec.aether = aetherProof(terms, rec.vault.initiator, rec.restructures, resourceFloorUsd(rec.vault.initiator.resources, rec.vault.allocation));
     event(rec, { audience: "operator", type: "engine.signal", engine: "aether", text: `Margin proof: ${rec.aether.realizedMarginPct}% realized vs ${rec.aether.minMarginPct}% floor (${rec.aether.pvAdjustedMarginPct}% after net-${terms.netDays} time value).` }, at, deps);
     event(rec, { audience: "operator", type: "engine.signal", engine: "sovereign", text: `Terms verified against both sealed mandates${override ? " (executive override recorded)" : ""}. Certificate signed ${cert.signature.kid}.` }, at, deps);
     event(rec, { audience: "public", type: "settled", certificateId: cert.certificateId, priceUsd: terms.priceUsd }, at, deps);
@@ -224,7 +243,18 @@ export async function runEnclave(rec: EnclaveRecord, deps: RunDeps): Promise<Enc
   await setState(rec, "working", now(deps), null, deps);
   if (rec.environment !== "sandbox" && rec.rounds.length === 0) {
     await traffic(rec, "handshake", `${rec.peer.framework} agent · ${rec.item.description.slice(0, 60)}`);
-    if (rec.security.threats.length) await traffic(rec, "blocked", `${rec.security.threats.length} vector${rec.security.threats.length === 1 ? "" : "s"} neutralized (${rec.security.verdict})`);
+    if (rec.security.threats.length) {
+      await traffic(rec, "blocked", `${rec.security.threats.length} vector${rec.security.threats.length === 1 ? "" : "s"} neutralized (${rec.security.verdict})`);
+      const vectors: Record<string, number> = {};
+      for (const t of rec.security.threats) vectors[t.vector] = (vectors[t.vector] ?? 0) + 1;
+      await pushAudit({ at: rec.updatedAt, taskId: rec.id, peer: rec.peer.name, verdict: rec.security.verdict, vectors }, sha256Hex);
+    }
+  }
+
+  if (rec.allocation?.shortfalls.length) {
+    const s = rec.allocation.shortfalls.map((x) => `${x.dimension}: needs ≥ ${x.minimum.toLocaleString("en-US")}, capacity ${x.available.toLocaleString("en-US")}`);
+    await raise(rec, "resource_bounds", `Resource request outside standing capacity (${s.join("; ")}).`, null, deps);
+    return rec;
   }
 
   const policy = counterpartyPolicy(rec.vault);
@@ -254,7 +284,8 @@ export async function runEnclave(rec: EnclaveRecord, deps: RunDeps): Promise<Enc
     },
   );
   // negotiate() works on its own copy of the chain; the record's copy was kept in step by onRound.
-  rec.signals = result.signals;
+  // Keep signals raised before negotiation (resource hoarding) alongside the negotiation's own.
+  rec.signals = [...rec.signals.filter((s) => s.kind === "hoarding"), ...result.signals];
   rec.restructures.push(...result.restructures);
   rec.usage = { input: rec.usage.input + result.usage.input, output: rec.usage.output + result.usage.output, liveTurns: rec.usage.liveTurns + result.usage.liveTurns, model: result.model };
 
@@ -264,7 +295,7 @@ export async function runEnclave(rec: EnclaveRecord, deps: RunDeps): Promise<Enc
   }
   if (result.outcome === "no_agreement" || !result.terms) {
     const last = result.lastCounter;
-    const floor = effectiveFloor(rec.vault.initiator);
+    const floor = initiatorFloor(rec.vault);
     const gap = last ? `Final counter ${usd(last.priceUsd)} is ${(((floor - last.priceUsd) / floor) * 100).toFixed(1)}% below the effective floor ${usd(floor)}.` : "No counter-offer.";
     await raise(rec, "out_of_bounds", gap, last, deps);
     return rec;
@@ -313,7 +344,8 @@ export async function resumeEnclave(rec: EnclaveRecord, counterparty: Counterpar
   rec.security.threats.push(...screened.threats);
   rec.security = { ...rec.security, ...shieldAssess(rec.security.threats, 0), verdict: screened.verdict === "clean" ? rec.security.verdict : screened.verdict, threats: rec.security.threats };
   event(rec, { audience: "public", type: "firewall.scan", verdict: screened.verdict, threats: screened.threats.map((t) => ({ vector: t.vector, severity: t.severity, field: t.field })) }, now(deps), deps);
-  rec.vault = { ...rec.vault, counterparty, salts: { ...rec.vault.salts, counterparty: randomHex() } };
+  rec.allocation = allocate(rec.vault.initiator.resources, counterparty.resources);
+  rec.vault = { ...rec.vault, counterparty, salts: { ...rec.vault.salts, counterparty: randomHex() }, allocation: rec.allocation && rec.allocation.shortfalls.length === 0 ? rec.allocation.allocation : null };
   rec.counterpartyMessage = screened.clean;
   rec.exception = null;
   rec.agreedTerms = null;
