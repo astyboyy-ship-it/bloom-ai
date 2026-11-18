@@ -3,14 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, RotateCcw, ScanSearch, Swords, Target } from "lucide-react";
+import { Boxes, Code2, Command, Crosshair, ExternalLink, Grid3x3, Info, KeyRound, Copy, Activity, LayoutDashboard, Network, RotateCcw, ScanSearch, Swords, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { BloomWordmark } from "@/components/bloom/logo";
 import { LanguageSwitcher } from "@/components/bloom/language-switcher";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type PaletteItem } from "./command-palette";
 import { useExchangeCopy, type ExchangeView } from "./copy";
-import { BOOT_KEY, ExchangeBootSequence } from "./ExchangeBootSequence";
+import type { MacroDomain } from "@/lib/exchange/omni-adapter";
+import { AgentGoalInspector } from "./AgentGoalInspector";
+import { DemoDeck } from "./DemoDeck";
+import { GlobalPulse } from "./GlobalPulse";
+import { BOOT_KEY, IntroBoot, IntroHero } from "./IntroHero";
+import { useOmniCopy } from "./omni-copy";
 import { InspectorView } from "./inspector-view";
 import { Kpis } from "./kpis";
 import { Ledger } from "./ledger";
@@ -23,10 +28,12 @@ import { Badge, Kbd, SPRING } from "./ui";
 import { useExchange } from "./use-exchange";
 
 const VIEWS: { id: ExchangeView; icon: typeof Activity; key: string }[] = [
-  { id: "ledger", icon: Activity, key: "1" },
-  { id: "mandate", icon: Grid3x3, key: "2" },
-  { id: "inspector", icon: ScanSearch, key: "3" },
-  { id: "sdk", icon: Code2, key: "4" },
+  { id: "overview", icon: LayoutDashboard, key: "1" },
+  { id: "ledger", icon: Activity, key: "2" },
+  { id: "intents", icon: Network, key: "3" },
+  { id: "mandate", icon: Grid3x3, key: "4" },
+  { id: "inspector", icon: ScanSearch, key: "5" },
+  { id: "sdk", icon: Code2, key: "6" },
 ];
 const VIEW_KEY = "bloom-exchange-view";
 const SCENARIO_ICONS: Record<ScenarioId, typeof Target> = { standard: Target, adversarial: Swords, swarm: Boxes, breach: Crosshair };
@@ -39,7 +46,10 @@ const typing = (e: KeyboardEvent) => {
 /** /exchange: the Bloom Exchange clearing terminal. A standalone product, not a desk tab. Keyboard-first: ⌘K, 1–4. */
 export function ExchangeApp() {
   const t = useExchangeCopy();
+  const o = useOmniCopy();
   const x = useExchange();
+  const [injectOpen, setInjectOpen] = useState(false);
+  const [domain, setDomain] = useState<MacroDomain | "all">("all");
 
   // The boot overlay is server-rendered; the layout's inline script hides it before paint when this session has seen it.
   const [boot, setBoot] = useState<number | null>(0);
@@ -62,7 +72,7 @@ export function ExchangeApp() {
     setBoot((b) => (b ?? 0) + 1);
   }, []);
 
-  const [view, setViewState] = useState<ExchangeView>("ledger");
+  const [view, setViewState] = useState<ExchangeView>("overview");
   useEffect(() => {
     try {
       const saved = localStorage.getItem(VIEW_KEY) as ExchangeView | null;
@@ -118,11 +128,22 @@ export function ExchangeApp() {
           void x.fire(s);
         },
       })),
+      {
+        id: "inject",
+        group: "actions",
+        label: o.hero.inject,
+        hint: "omni",
+        icon: Zap,
+        run: () => {
+          setView("intents");
+          setInjectOpen(true);
+        },
+      },
       { id: "card", group: "actions", label: t.palette.card, hint: "/.well-known", icon: ExternalLink, run: () => window.open("/.well-known/agent-card.json", "_blank", "noopener") },
       { id: "copy", group: "actions", label: t.palette.copy, icon: Copy, run: () => void navigator.clipboard?.writeText(quickstart(window.location.origin)).then(() => toast.success(t.sdk.copied)) },
       { id: "replay", group: "actions", label: t.palette.replay, icon: RotateCcw, run: replay },
     ],
-    [t, x, setView, replay],
+    [t, o, x, setView, replay],
   );
 
   const s = x.status;
@@ -176,6 +197,7 @@ export function ExchangeApp() {
               );
             })}
           </nav>
+          <GlobalPulse tick={x.pulseTick} />
         </header>
 
         <main className="mx-auto max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
@@ -186,6 +208,23 @@ export function ExchangeApp() {
           )}
           <AnimatePresence mode="wait">
             <motion.div key={view} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={SPRING}>
+              {view === "overview" && (
+                <div className="space-y-4">
+                  <IntroHero
+                    onInject={() => {
+                      setView("intents");
+                      setInjectOpen(true);
+                    }}
+                    onSdk={() => setView("sdk")}
+                    onDomain={(d) => {
+                      setDomain(d);
+                      setView("intents");
+                    }}
+                  />
+                  <DemoDeck />
+                </div>
+              )}
+              {view === "intents" && <AgentGoalInspector x={x} onOpenEnclave={inspect} injectOpen={injectOpen} setInjectOpen={setInjectOpen} domain={domain} setDomain={setDomain} />}
               {view === "ledger" && (
                 <div className="space-y-4">
                   <Kpis rows={x.rows} />
@@ -205,7 +244,7 @@ export function ExchangeApp() {
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={items} />
-      {boot !== null && <ExchangeBootSequence key={boot} onDone={() => setBoot(null)} />}
+      {boot !== null && <IntroBoot key={boot} onDone={() => setBoot(null)} />}
     </div>
   );
 }

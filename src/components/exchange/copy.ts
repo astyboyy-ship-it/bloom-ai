@@ -6,13 +6,13 @@ import type { ResourceDimension } from "@/lib/exchange/types";
  * type-check. Protocol names (A2A, AP2, x402, JSON-RPC, SSE), engine names and BLOOM-XCH stay as they are.
  */
 
-type View = "ledger" | "mandate" | "inspector" | "sdk";
+type View = "overview" | "ledger" | "intents" | "mandate" | "inspector" | "sdk";
 type Scenario = "standard" | "adversarial" | "swarm" | "breach";
 
 const en = {
   boot: { handshake: "Key-pair handshake", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "Party A · Provider", partyB: "Party B · Client", enclave: "Double-blind enclave sealed", ready: "Clearinghouse online" },
   header: { product: "Exchange", tagline: "Autonomous Clearinghouse", replay: "Replay boot", desk: "Operating Desk", live: "Live models", simulated: "Simulated", operator: "Operator", sandbox: "Sandbox", production: "Licensed", key: "Signing key", search: "Search or jump to…" },
-  views: { ledger: "Live Clearing Ledger", mandate: "Macro Mandate & Invariant Matrix", inspector: "Double-Blind Enclave Inspector", sdk: "Developer SDK Quickstart" } as Record<View, string>,
+  views: { overview: "Overview", ledger: "Live Clearing Ledger", intents: "Omni-Protocol Intents", mandate: "Macro Mandate & Invariant Matrix", inspector: "Double-Blind Enclave Inspector", sdk: "Developer SDK Quickstart" } as Record<View, string>,
   palette: {
     placeholder: "Type a view or an action…",
     views: "Views",
@@ -148,7 +148,7 @@ type Dict = typeof en;
 const es: Dict = {
   boot: { handshake: "Intercambio de claves", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "Parte A · Proveedor", partyB: "Parte B · Cliente", enclave: "Enclave doble ciego sellado", ready: "Cámara de compensación en línea" },
   header: { product: "Exchange", tagline: "Cámara de compensación autónoma", replay: "Repetir arranque", desk: "Mesa de operaciones", live: "Modelos en vivo", simulated: "Simulado", operator: "Operador", sandbox: "Sandbox", production: "Con licencia", key: "Clave de firma", search: "Buscar o ir a…" },
-  views: { ledger: "Libro de compensación en vivo", mandate: "Mandato macro y matriz de invariantes", inspector: "Inspector de enclaves doble ciego", sdk: "Inicio rápido del SDK" },
+  views: { overview: "Resumen", ledger: "Libro de compensación en vivo", intents: "Intenciones omniprotocolo", mandate: "Mandato macro y matriz de invariantes", inspector: "Inspector de enclaves doble ciego", sdk: "Inicio rápido del SDK" },
   palette: { placeholder: "Escribe una vista o una acción…", views: "Vistas", actions: "Acciones", empty: "Sin resultados.", fire: "Lanzar escenario", replay: "Repetir la secuencia de arranque", card: "Abrir la Agent Card firmada", copy: "Copiar el inicio rápido del SDK", hint: "para navegar", open: "para abrir" },
   notice: { sandbox: "Modo sandbox: simulación determinista con fidelidad total al protocolo. Los certificados se firman pero no son vinculantes. Activa una clave de acceso para negociar en vivo." },
   kpi: { settled: "Liquidadas", volume: "Volumen compensado", threats: "Amenazas neutralizadas", rounds: "Rondas prom.", exceptions: "Excepciones abiertas", session: "esta sesión" },
@@ -271,7 +271,7 @@ const es: Dict = {
 const he: Dict = {
   boot: { handshake: "החלפת מפתחות", protocol: "A2A v1.0 + AP2 MANDATE LAYER", partyA: "צד א׳ · ספק", partyB: "צד ב׳ · לקוח", enclave: "מובלעת סמויה-כפולה נחתמה", ready: "מסלקה מקוונת" },
   header: { product: "Exchange", tagline: "מסלקה אוטונומית", replay: "הפעלה מחדש", desk: "שולחן התפעול", live: "מודלים חיים", simulated: "סימולציה", operator: "מפעיל", sandbox: "ארגז חול", production: "מורשה", key: "מפתח חתימה", search: "חיפוש או מעבר אל…" },
-  views: { ledger: "ספר סליקה חי", mandate: "מנדט מאקרו ומטריצת אינווריאנטים", inspector: "בודק מובלעות סמויות-כפולות", sdk: "התחלה מהירה ל-SDK" },
+  views: { overview: "סקירה", ledger: "ספר סליקה חי", intents: "כוונות אומני-פרוטוקול", mandate: "מנדט מאקרו ומטריצת אינווריאנטים", inspector: "בודק מובלעות סמויות-כפולות", sdk: "התחלה מהירה ל-SDK" },
   palette: { placeholder: "הקלידו תצוגה או פעולה…", views: "תצוגות", actions: "פעולות", empty: "אין תוצאות.", fire: "שיגור תרחיש", replay: "הפעלה מחדש של רצף הפתיחה", card: "פתיחת ה-Agent Card החתומה", copy: "העתקת ההתחלה המהירה ל-SDK", hint: "לניווט", open: "לפתיחה" },
   notice: { sandbox: "מצב ארגז חול: סימולציה דטרמיניסטית בנאמנות מלאה לפרוטוקול. התעודות חתומות אך אינן מחייבות. הפעילו מפתח גישה כדי לנהל משא ומתן חי." },
   kpi: { settled: "נסלקו", volume: "נפח שנסלק", threats: "איומים שנוטרלו", rounds: "סבבים בממוצע", exceptions: "חריגות פתוחות", session: "בהפעלה זו" },

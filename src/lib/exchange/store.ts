@@ -139,6 +139,24 @@ export async function listAudit(limit = 60): Promise<AuditEntry[]> {
   return (await range("audit", limit)).map((s) => JSON.parse(s) as AuditEntry);
 }
 
+/** Omni-protocol intents, scoped to the caller that injected them (never a shared feed of user text). */
+export async function pushIntent(owner: string, node: unknown) {
+  await push(`intents:${owner}`, JSON.stringify(node), 60);
+}
+
+export async function listIntents<T>(owner: string, limit = 60): Promise<T[]> {
+  return (await range(`intents:${owner}`, limit)).map((s) => JSON.parse(s) as T);
+}
+
+/** The global pulse ring: numbers, domains and protocol ids only, so aggregates can be public. */
+export async function pushPulse(sample: unknown) {
+  await push("pulse", JSON.stringify(sample), 500);
+}
+
+export async function listPulse<T>(limit = 500): Promise<T[]> {
+  return (await range("pulse", limit)).map((s) => JSON.parse(s) as T);
+}
+
 export async function getStandingMandate(): Promise<{ mandate: InitiatorMandate; configured: boolean }> {
   const r = await run([["GET", `${P}:mandate:standing`]]);
   const raw = (r?.[0] as string | null | undefined) ?? memGet(`${P}:mandate:standing`);

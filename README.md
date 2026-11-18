@@ -4,7 +4,7 @@
 
 **A neutral, double-blind clearinghouse for autonomous agents.**
 
-Agents discover it over A2A, deposit sealed mandates, and clear price, payment terms and macro resources (compute, energy, capital, compliance, bandwidth) without either side seeing the other's limits. Every outcome is clamped by deterministic code and ends in an Ed25519-signed `BLOOM-XCH` certificate that maps to AP2 payment mandates.
+Any agent, on any protocol (chat, CRM, MCP, cloud, energy grids, payment rails), is normalized into one intent, discovered over A2A, deposits a sealed mandate, and clears price, payment terms and macro resources (compute, energy, capital, compliance, bandwidth) without either side seeing the other's limits. Every outcome is clamped by deterministic code and ends in an Ed25519-signed `BLOOM-XCH` certificate that maps to AP2 payment mandates.
 
 `A2A v1.0` · `JSON-RPC 2.0` · `SSE` · `AP2` · `x402 / USDC` · `Ed25519` · `TypeScript`
 
@@ -36,6 +36,16 @@ flowchart LR
         A[Agent]
     end
 
+    subgraph Surfaces["Any surface · 6 macro-domains · 40 adapters"]
+        S1[Comms & social<br/>WhatsApp · Slack · Email · SMS]
+        S2[Enterprise SaaS<br/>Salesforce · SAP · Shopify · Stripe]
+        S3[Agent protocols<br/>A2A · MCP · LangGraph · CrewAI]
+        S4[Compute & infra<br/>AWS · K8s · GPU · microgrids]
+        S5[Financial rails<br/>x402 · Base · ISO 20022]
+        S6[Custom omni-hook<br/>REST · GraphQL · gRPC · WS]
+    end
+    S1 & S2 & S3 & S4 & S5 & S6 -- "POST /api/exchange/ingest" --> OMNI[OmniAdapter<br/>→ AgentIntentNode]
+    OMNI --> SH
     A -- "1 · GET /.well-known/agent-card.json<br/>(Ed25519-signed, JWKS)" --> CARD[Agent Card]
     A -- "2 · JSON-RPC / HTTP+JSON<br/>SendStreamingMessage + Idempotency-Key" --> GW[Clearing gateway<br/>rate limits · spend caps · tiers]
 
@@ -63,6 +73,7 @@ flowchart LR
 
 | Layer | Module | What it guarantees |
 | --- | --- | --- |
+| Omni ingestion | `src/lib/exchange/omni-adapter.ts` · `intent-store.ts` · `src/app/api/exchange/ingest` | 40 adapters across 6 macro-domains normalize any payload into an `AgentIntentNode`; a generic fallback reads any JSON or plain text. Every intent runs the same Shield, vault, Sovereign and signer as the A2A path. |
 | Discovery | `src/app/.well-known/agent-card.json` · `src/lib/exchange/agent-card.ts` | A2A v1.0 card with JSON-RPC and HTTP+JSON bindings, three skills, resource dimensions, and a detached EdDSA signature over its canonical JSON. |
 | Gateway | `src/lib/exchange/gateway.ts` · `src/app/api/exchange/a2a` | v1.0 method names plus v0.3 aliases, SSE streaming, `Idempotency-Key` (retries never double-settle), resume and cancel, per-identity rate limits. |
 | Shield | `src/lib/exchange/firewall.ts` | Decodes then neutralizes hidden channels (zero-width, bidi, Unicode tags, homoglyphs, HTML comments, base64, data URIs), instruction overrides, role hijacks, mandate extraction, tool-call smuggling, token-exhaustion floods and policy-override loops. Critical findings quarantine the text. Every intercept is written to a hash-chained audit ledger. |
@@ -82,6 +93,37 @@ flowchart LR
 | Provider reasoning (clamps, proofs) | Own sandbox only | Never | Yes |
 | Standing mandate, ledger, audit, overrides | No | No | Yes |
 | The other side's limits | Never | Never | Never |
+
+## Omni-Protocol Ingestion Layer
+
+Agents don't all speak A2A. Most of them live in a Slack workspace, behind a Salesforce webhook, inside an MCP server, on a Kubernetes cluster or at the end of an ISO 20022 payment. The `OmniAdapter` meets them where they are and normalizes each surface's native payload into one `AgentIntentNode`:
+
+| Field | Meaning |
+| --- | --- |
+| `domain` | `COMMS_SOCIAL` · `ENTERPRISE_SAAS` · `AGENT_PROTOCOLS` · `COMPUTE_INFRA` · `FINANCIAL_RAILS` · `CUSTOM_OMNI_HOOK` |
+| `protocolLabel`, `agentName` | The source surface and the agent behind it. |
+| `coreGoal` | The plain-English optimization objective, after Shield. |
+| `resourceVector` | `computeUnits` · `energyKwh` · `capitalUsd` · `complianceToken` · `bandwidthGbps` |
+| `progress`, `invariantStatus` | Pipeline completion, and `locked` · `clamped` · `settled` · `quarantined`. |
+
+| Macro-domain | Adapters |
+| --- | --- |
+| Comms & social | WhatsApp, Telegram, Discord, Slack, X, Email, Instagram, LinkedIn, Voice/SMS |
+| Enterprise SaaS | Salesforce, HubSpot, Shopify, Stripe, SAP S/4HANA, Linear, Notion, ERP (NetSuite) |
+| Agent protocols | A2A v1.0, MCP, LangGraph, CrewAI, AutoGen |
+| Compute & infra | AWS Spot, GCP, Azure, GPU clusters (Slurm), Kubernetes, energy microgrids (OpenADR), IoT (MQTT) |
+| Financial rails | x402 USDC, Ethereum, Solana, Base, SWIFT ISO 20022, treasury APIs |
+| Custom omni-hook | REST, GraphQL, gRPC, WebSocket, any user-defined schema, or just a source name and a goal |
+
+Each adapter knows where its surface keeps the agent, the goal and the amount (with unit scaling such as Stripe cents and atomic USDC). Anything else falls through to a generic reader. It looks for familiar field names (`gpus`, `cpu`, `kwh`, `gbps`, `amount`, `budget`) and for quantities written in the goal itself: "64 H100s", "2.5 MWh", "10 Gbps", "$48k".
+
+```bash
+curl https://your-bloom.app/api/exchange/ingest -H "Content-Type: application/json" \
+  -d '{"protocol":"custom","source":"Tesla Megapack Grid","goal":"Dispatch 35 MWh to the data-center tie-in, $51k"}'
+# → { "invariantStatus": "settled", "certificateId": "BLOOM-XCH-…", "resourceVector": { "energyKwh": 35000, … }, "latencyMs": 7.4, "trace": [ … ] }
+```
+
+Intents are non-binding: they always clear in a sandbox enclave, or as an operator stress test. Each caller sees only its own intents. `GET /api/exchange/pulse` serves global aggregates only (counts, throughput, median and p95 clearing latency), never names or goals.
 
 ## Quickstart: connect an agent
 
@@ -123,12 +165,14 @@ curl -N https://your-bloom.app/api/exchange/a2a \
 
 ## The clearing terminal
 
-`/exchange` is the provider's console: obsidian, keyboard-first, with color reserved for meaning (emerald verified, amber clamped, rose threat). Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>4</kbd>:
+`/exchange` is the provider's console: obsidian, keyboard-first, with color reserved for meaning (emerald verified, amber clamped, rose threat). A global telemetry pulse runs across the top. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> anywhere, or <kbd>1</kbd>–<kbd>6</kbd>:
 
-1. **Live Clearing Ledger.** KPIs, the traffic topology, settlements and the exception queue, and a stress-test bay that fires real A2A requests (standard, injection and lowball, swarm resource hoarding, bounds breach).
-2. **Macro Mandate & Invariant Matrix.** The standing price mandate, per-dimension capacity and unit floors, and the invariants Sovereign enforces.
-3. **Double-Blind Enclave Inspector.** Split pane: rounds and clamps, resource proofs, Shield audit, Aether margin proof, AP2 payloads, and the certificate, verified offline in the browser.
-4. **Developer SDK Quickstart.** The live signed Agent Card and copy-ready snippets.
+1. **Overview.** The thesis, the omni-protocol registry, and a side-by-side "fragmented chaos vs. universal clearing" demo deck (an illustration).
+2. **Live Clearing Ledger.** KPIs, the traffic topology, settlements and the exception queue, and a stress-test bay that fires real A2A requests (standard, injection and lowball, swarm resource hoarding, bounds breach).
+3. **Omni-Protocol Intents.** Every injected intent's core goal, source protocol, resource vector and Sovereign clamp. The "Inject any agent or protocol" drawer fires real-shaped payloads from all six domains, or any custom source, through the live pipeline.
+4. **Macro Mandate & Invariant Matrix.** The standing price mandate, per-dimension capacity and unit floors, and the invariants Sovereign enforces.
+5. **Double-Blind Enclave Inspector.** Split pane: rounds and clamps, resource proofs, Shield audit, Aether margin proof, AP2 payloads, and the certificate, verified offline in the browser.
+6. **Developer SDK Quickstart.** The live signed Agent Card and copy-ready snippets.
 
 It ships in English, Spanish and Hebrew (right-to-left), and as a standalone desktop app: `npm run tauri:exchange`.
 
@@ -165,7 +209,7 @@ npm run dev                   # http://localhost:3000/exchange
 
 ```bash
 npm run typecheck
-npm test          # Vitest: leakage, firewall, mathematical safety, resources, end-to-end settlement
+npm test          # Vitest: leakage, firewall, mathematical safety, resources, omni-protocol ingestion, end-to-end settlement
 npm run build
 ```
 
@@ -174,8 +218,8 @@ The suite proves the guarantees above directly. It checks that no JSON-RPC or st
 ## Repository
 
 ```
-src/lib/exchange/            protocol core (types, vault, firewall, resources, negotiation, settlement, enclave, gateway)
-src/app/api/exchange/        A2A gateway (JSON-RPC + HTTP+JSON), SSE stream, mandate, ledger, tasks, decisions
+src/lib/exchange/            protocol core (types, omni-adapter, intent-store, vault, firewall, resources, negotiation, settlement, enclave, gateway)
+src/app/api/exchange/        A2A gateway (JSON-RPC + HTTP+JSON), omni ingest, intents, pulse, SSE stream, mandate, ledger, tasks, decisions
 src/app/.well-known/         signed A2A Agent Card
 src/components/exchange/     the clearing terminal
 packages/bloom-exchange-sdk/ zero-dependency TypeScript SDK

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cardKeys, sseJson, verifyAgentCard, type AgentCard, type Jwk } from "@bloom/exchange-sdk";
 import { requestHeaders, useDeskSettings } from "@/components/desk/settings";
 import { DEFAULT_STANDING_MANDATE, InitiatorMandateSchema, type ExchangeEvent, type InitiatorMandate, type OperatorView, type PublicRound, type TaskState } from "@/lib/exchange/types";
+import type { AgentIntentNode } from "@/lib/exchange/omni-adapter";
 import { SCENARIOS, type ScenarioId } from "./scenarios";
 
 export type Status = { source: "live" | "simulated"; provider: string; environment: "operator" | "production" | "sandbox"; licensed: boolean; operator: boolean; notice: string | null; kid: string; keyOrigin: string };
@@ -81,6 +82,8 @@ export function useExchange() {
   const [serverRows, setServerRows] = useState<Row[]>([]);
   const [traffic, setTraffic] = useState<TrafficItem[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [intents, setIntents] = useState<AgentIntentNode[]>([]);
+  const [pulseTick, setPulseTick] = useState(0);
   const [run, setRun] = useState<LiveRun | null>(null);
   const logId = useRef(0);
   const operator = status?.operator === true;
@@ -301,7 +304,37 @@ export function useExchange() {
     [headers, storeView, pushTraffic, refreshLedger],
   );
 
-  return { status, card, mandate, saveMandate, rows, traffic, audit, run, fire, decide, loadView, views };
+  useEffect(() => {
+    fetch("/api/exchange/intents", { headers, cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ intents: AgentIntentNode[] }>) : null))
+      .then((d) => d && setIntents(d.intents))
+      .catch(() => undefined);
+  }, [headers]);
+
+  /** Sends any protocol's payload (or a source name and goal) through the live clearing pipeline. */
+  const inject = useCallback(
+    async (input: { protocol: string; payload?: unknown; source?: string; goal?: string }): Promise<AgentIntentNode | { error: string }> => {
+      try {
+        const r = await fetch("/api/exchange/ingest", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(input) });
+        const j = (await r.json()) as AgentIntentNode & { error?: { message?: string } };
+        if (!r.ok) return { error: j.error?.message ?? `HTTP ${r.status}` };
+        setIntents((xs) => [j, ...xs.filter((x) => x.id !== j.id)].slice(0, 60));
+        setPulseTick((n) => n + 1);
+        const at = j.receivedAt;
+        const items: TrafficItem[] = [{ id: `int:${j.id}:h`, at, taskId: j.taskId ?? j.id, kind: "handshake", peer: j.agentName, detail: `${j.protocolLabel} · ${j.domain}` }];
+        if (j.shield.threats) items.push({ id: `int:${j.id}:b`, at, taskId: j.taskId ?? j.id, kind: "blocked", peer: j.agentName, detail: `${j.shield.threats} vectors · ${j.shield.verdict}` });
+        if (j.invariantStatus === "settled" && j.certificateId) items.push({ id: `int:${j.id}:s`, at, taskId: j.taskId ?? j.id, kind: "settled", peer: j.agentName, detail: `${j.certificateId} · ${usd(j.priceUsd ?? 0)}` });
+        if (j.invariantStatus === "clamped") items.push({ id: `int:${j.id}:e`, at, taskId: j.taskId ?? j.id, kind: "exception", peer: j.agentName, detail: "held at mandate bound" });
+        pushTraffic(items);
+        return j;
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+    [headers, pushTraffic],
+  );
+
+  return { status, card, mandate, saveMandate, rows, traffic, audit, run, fire, decide, loadView, views, intents, inject, pulseTick };
 }
 
 export type Exchange = ReturnType<typeof useExchange>;

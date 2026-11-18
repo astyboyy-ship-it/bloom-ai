@@ -1552,3 +1552,84 @@
     animation: none;
   }
 }
+
+/* Global pulse: a 2s sinusoidal breath (ease-in-out is the sine approximation) on the live dot and its glow. */
+@keyframes xch-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.82);
+    box-shadow: 0 0 0 0 rgba(52, 245, 181, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 10px 2px rgba(52, 245, 181, 0.45);
+  }
+}
+.xch-breathe {
+  animation: xch-breathe 2s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+@keyframes xch-breathe-soft {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.xch-breathe-soft {
+  animation: xch-breathe-soft 2s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+/* 1.2s boot: grid lines snap in on a stagger. */
+@keyframes xch-snap-x {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+@keyframes xch-snap-y {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+.xch-snap-x {
+  transform-origin: left center;
+  animation: xch-snap-x 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.xch-snap-y {
+  transform-origin: center top;
+  animation: xch-snap-y 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Progress fills animate transform only (scaleX), never width, so they stay on the compositor at 60fps. */
+.xch-fill {
+  transform-origin: left center;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+[dir="rtl"] .xch-fill {
+  transform-origin: right center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .xch-breathe,
+  .xch-breathe-soft,
+  .xch-snap-x,
+  .xch-snap-y {
+    animation: none;
+  }
+  .xch-fill {
+    transition: none;
+  }
+}
