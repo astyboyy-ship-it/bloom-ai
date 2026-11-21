@@ -21,6 +21,7 @@
     "tauri:exchange": "tauri build --config src-tauri/tauri.exchange.conf.json",
     "tauri:exchange:dev": "tauri dev --config src-tauri/tauri.exchange.conf.json",
     "desktop:dev": "tauri dev",
+    "desktop:local": "tauri dev --config src-tauri/tauri.local.conf.json",
     "desktop:build": "tauri build",
     "desktop:build:win": "tauri build --bundles nsis",
     "desktop:build:mac": "tauri build --target universal-apple-darwin --bundles dmg",
