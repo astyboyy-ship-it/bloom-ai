@@ -8,7 +8,8 @@ import { audit, updateSettings } from "@/components/desk/settings";
 import { obsidianToast } from "@/components/control-plane/obsidian-toast";
 import { useOnboardingCopy } from "@/components/onboarding/copy";
 import { BrandLogo } from "./brand-logo";
-import { brandOf, COMPANIES, money, SHOWCASE, toPipeline, type Company } from "./companies";
+import { brandOf, COMPANIES, money, toPipeline, type Company } from "./companies";
+import { useShowcase } from "./use-desktop";
 
 /**
  * Global Pulse architecture feed: a vertical, snap-scrolling feed of agent architectures, one card per company,
@@ -55,7 +56,8 @@ export function AgentGraph({ company }: { company: Company }) {
 
 function FeedCard({ company }: { company: Company }) {
   const p = useOnboardingCopy().pulse;
-  const brand = brandOf(company);
+  const showcase = useShowcase();
+  const brand = brandOf(company, showcase);
   const href = `/desk/feed/${company.id}`;
   const [hrs, setHrs] = useState(company.savedHrs);
   const [usd, setUsd] = useState(company.preventedUsd);
@@ -86,12 +88,12 @@ function FeedCard({ company }: { company: Company }) {
         <div className="min-w-0 flex-1">
           <h3 className="flex items-center gap-1.5 truncate text-[18px] font-semibold text-white">
             {brand.name}
-            {SHOWCASE && <BadgeCheck className="size-5 shrink-0 text-os-cyan" aria-label={p.verified} />}
+            {showcase && <BadgeCheck className="size-5 shrink-0 text-os-cyan" aria-label={p.verified} />}
           </h3>
           <p className="mt-0.5 flex flex-wrap gap-1.5">
             <span className="rounded-full border border-white/12 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/60">{p.industries[company.industry]}</span>
             <span className="rounded-full border border-white/12 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/45">{p.agents(company.agents.length)}</span>
-            {!SHOWCASE && <span className="rounded-full border border-amber-300/40 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-amber-200/80">{p.example}</span>}
+            {!showcase && <span className="rounded-full border border-amber-300/40 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-amber-200/80">{p.example}</span>}
           </p>
         </div>
         <span className="flex shrink-0 items-center gap-1 rounded-full border border-os-cyan/30 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-os-cyan transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">
@@ -117,7 +119,7 @@ function FeedCard({ company }: { company: Company }) {
       </div>
 
       <footer className="mt-3 flex flex-wrap items-center gap-2">
-        {SHOWCASE && (
+        {showcase && (
           <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-os-emerald">
             <ShieldCheck className="size-3.5" /> {p.zk}
           </span>
@@ -137,9 +139,10 @@ function FeedCard({ company }: { company: Company }) {
 
 export function ArchitectureFeed() {
   const p = useOnboardingCopy().pulse;
+  const showcase = useShowcase();
   return (
     <div>
-      {!SHOWCASE && <p className="mb-3 text-[11.5px] text-white/40">{p.showcaseOff}</p>}
+      {!showcase && <p className="mb-3 text-[11.5px] text-white/40">{p.showcaseOff}</p>}
       <div className="mx-auto grid h-[82vh] max-w-xl snap-y snap-mandatory gap-4 overflow-y-auto overscroll-contain pe-1">
         {COMPANIES.map((c) => (
           <FeedCard key={c.id} company={c} />

@@ -2,7 +2,7 @@ import { authString, canonicalize, concat, sha256Bytes, sha256Hex, toHex, verify
 import { eventHash, GENESIS_HASH, offerPrice, receiptHash, type ReceiptPayload, type RelayReceipt, type Room, type RoomEvent } from "../relay-protocol";
 
 /**
- * An in-memory stand-in for the Bloom Exchange relay, strict where Exchange Scout could go wrong: it verifies every
+ * An in-memory stand-in for the Bloom Exchange relay, strict where Bloom Scout could go wrong: it verifies every
  * signed request (headers, body hash, nonce reuse), records each move's raw body and signature in a hash chain like
  * the real relay, enforces turns and round limits, and accepts a CLEAR only with a receipt that hashes correctly and
  * carries both parties' signatures. `bodies` keeps every request body so tests can check what was sent.

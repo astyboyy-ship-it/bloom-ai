@@ -2,7 +2,7 @@ import { DEFAULT_RELAY_URL } from "./relay-client";
 import type { GapKind, GapReason, Proof, ScenarioId, ScoutCompanyId, ScoutMove, ScoutRun, Vertical } from "./types";
 
 /**
- * The two Exchange Scout scenarios. Each is one deterministic script, used both by live sandbox runs (runner.ts) and
+ * The two Bloom Scout scenarios. Each is one deterministic script, used both by live sandbox runs (runner.ts) and
  * by the pre-recorded illustrative blueprints below, so a live run plays out exactly as its blueprint does.
  *
  * The owner side is the buyer (Bloom AI acting for the company owner); the counterpart is a sandbox seller persona

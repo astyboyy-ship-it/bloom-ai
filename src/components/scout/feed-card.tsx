@@ -5,6 +5,7 @@ import { BellRing, ChevronRight, FlaskConical, Hand, Radio, ScrollText, ShieldQu
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/pulse/brand-logo";
 import { companyById } from "@/components/pulse/companies";
+import { useShowcase } from "@/components/pulse/use-desktop";
 import { usdFromCents } from "@/lib/scout/brief";
 import type { GapKind, ScoutRun, ScoutState } from "@/lib/scout/types";
 import { counterpartName, gapPrice, short } from "./brief-text";
@@ -89,7 +90,7 @@ export function FeedCard({ run, onOpenBrief }: { run: ScoutRun; onOpenBrief: (ru
   const s = c.scenario[run.scenario];
   const company = companyById(run.company);
   const live = run.mode === "live";
-  const name = counterpartName(run, c);
+  const name = counterpartName(run, c, useShowcase());
   const cleared = run.outcome === "CLEARED";
   return (
     <article className={cn("os-panel overflow-hidden rounded-2xl", !live && "relative")}>

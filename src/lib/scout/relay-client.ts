@@ -1,6 +1,6 @@
 /**
  * A self-contained client for the Bloom Exchange clearing relay (docs: bloom-exchange docs/RELAY_PROTOCOL.md), so
- * Exchange Scout does not depend on an unreleased @bloom-exchange/sdk. Runs on Web Crypto only (Node 20+ and modern
+ * Bloom Scout does not depend on an unreleased @bloom-exchange/sdk. Runs on Web Crypto only (Node 20+ and modern
  * browsers), and is byte-compatible with the relay:
  *
  *   X-Bloom-Pubkey     raw Ed25519 public key, base64url (43 chars)

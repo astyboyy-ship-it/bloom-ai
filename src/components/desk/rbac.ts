@@ -4,7 +4,7 @@
  */
 export type Role = "owner" | "admin" | "operator" | "viewer";
 /**
- * "scout.run" starts a live Exchange Scout run on the public relay: owners, admins and operators may press Run,
+ * "scout.run" starts a live Bloom Scout run on the public relay: owners, admins and operators may press Run,
  * viewers never can. The server control is separate: /api/scout/runs accepts only a verified Operator access key,
  * under a daily cap.
  */
@@ -48,7 +48,7 @@ export const roleInfo = (lang: "en" | "es" | "he"): Record<Role, { label: string
 
 /** Permission names in each language. */
 export const PERMISSION_TEXT: Record<"en" | "es" | "he", Record<Permission, string>> = {
-  en: { run: "run", approve: "approve", calibrate: "calibrate", settings: "settings", members: "members", license: "license", "scout.run": "live Exchange Scout runs" },
-  es: { run: "ejecutar", approve: "aprobar", calibrate: "calibrar", settings: "ajustes", members: "miembros", license: "licencia", "scout.run": "ejecuciones en vivo de Exchange Scout" },
-  he: { run: "הרצה", approve: "אישור", calibrate: "כיול", settings: "הגדרות", members: "חברי צוות", license: "רישיון", "scout.run": "הרצות חיות של Exchange Scout" },
+  en: { run: "run", approve: "approve", calibrate: "calibrate", settings: "settings", members: "members", license: "license", "scout.run": "live Bloom Scout runs" },
+  es: { run: "ejecutar", approve: "aprobar", calibrate: "calibrar", settings: "ajustes", members: "miembros", license: "licencia", "scout.run": "ejecuciones en vivo de Bloom Scout" },
+  he: { run: "הרצה", approve: "אישור", calibrate: "כיול", settings: "הגדרות", members: "חברי צוות", license: "רישיון", "scout.run": "הרצות חיות של Bloom Scout" },
 };

@@ -13,7 +13,7 @@ import type { ScoutEvent, ScoutMove, ScoutRun, SignedGapNote } from "./types";
  * Every request body passes the sandbox policy first (the clients' `beforeSend`).
  */
 
-export const SANDBOX_ORG = "Bloom AI Exchange Scout sandbox";
+export const SANDBOX_ORG = "Bloom AI Bloom Scout sandbox";
 
 export type Parties = { owner: RelayClient; counterpart: RelayClient };
 
@@ -24,8 +24,8 @@ export async function runScenario(script: Script, parties: Parties, opts: { runI
   const startedAt = now().toISOString();
 
   emit({ type: "step", step: "register" });
-  await counterpart.registerAgent({ displayName: "Exchange Scout sandbox counterpart (disposable)", org: SANDBOX_ORG });
-  await owner.registerAgent({ displayName: "Exchange Scout sandbox owner agent (disposable)", org: SANDBOX_ORG });
+  await counterpart.registerAgent({ displayName: "Bloom Scout sandbox counterpart (disposable)", org: SANDBOX_ORG });
+  await owner.registerAgent({ displayName: "Bloom Scout sandbox owner agent (disposable)", org: SANDBOX_ORG });
 
   const ownerMandate: Mandate = { vertical: script.vertical, role: "buyer", currency: "USD", limitAtomic: script.ownerLimitAtomic };
   const cpMandate: Mandate = { vertical: script.vertical, role: "seller", currency: "USD", limitAtomic: script.counterpartFloorAtomic };

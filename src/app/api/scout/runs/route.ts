@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   const rawKey = req.headers.get("x-bloom-license");
   const license = await resolveLicense(rawKey);
-  if (license.access?.role !== "operator" || license.readOnly) return fail(403, "Live Exchange Scout runs need a verified Operator access key.", { code: "operator_only" });
+  if (license.access?.role !== "operator" || license.readOnly) return fail(403, "Live Bloom Scout runs need a verified Operator access key.", { code: "operator_only" });
 
   const identity = createHash("sha256").update(rawKey ?? "").digest("hex").slice(0, 16);
   if (!(await rateLimit("scout-run", identity, 3)).ok) return fail(429, "Up to 3 live runs a minute. Try again shortly.", { code: "rate_limited" });

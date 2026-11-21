@@ -8,7 +8,9 @@ import { BRAND_MARKS, type BrandMark } from "./brand-marks";
  * The Global Pulse companies: one shared source for the architecture feed cards, the company pages and their
  * cinematic intros.
  *
- * PRIVATE SHOWCASE: real company names and logos render only when NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE=true. These are
+ * PRIVATE SHOWCASE: real company names and logos render only when NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE=true AND the page
+ * runs inside the desktop app (useShowcase in use-desktop.ts; the public website and every server render show the
+ * fictional companies). These are
  * ILLUSTRATIVE BLUEPRINTS of how a company like each could run on Bloom: not their real systems, customers or
  * results. Every other build shows fictional companies. Blueprint text says "{co}" instead of a company name, so no
  * real name is written into the content itself; brandOf() fills it in.
@@ -449,9 +451,10 @@ export const COMPANIES: Company[] = [
 ];
 
 export const companyById = (id: string): Company | undefined => COMPANIES.find((c) => c.id === id);
-export const brandOf = (c: Company): Brand => REAL?.[c.id] ?? c.fictional;
+/** The brand to show. `showcase` comes from useShowcase(): without it (the default) the fictional company is used. */
+export const brandOf = (c: Company, showcase = false): Brand => (showcase ? REAL?.[c.id] : null) ?? c.fictional;
 /** Fills a blueprint string's {co} with the company name. */
-export const withCo = (text: string, c: Company) => text.replace(/\{co\}/g, brandOf(c).name);
+export const withCo = (text: string, c: Company, showcase = false) => text.replace(/\{co\}/g, brandOf(c, showcase).name);
 export const money = (n: number) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1000)}K`);
 
 /** Every engine this company's setup uses, in roster order. */

@@ -3,7 +3,7 @@ import { kv, kvConfig } from "@/lib/kv";
 import type { ScoutRun } from "./types";
 
 /**
- * Live Exchange Scout runs, kept for 30 days: Redis (the same Upstash / Vercel KV the desk already uses) when it is
+ * Live Bloom Scout runs, kept for 30 days: Redis (the same Upstash / Vercel KV the desk already uses) when it is
  * configured, otherwise this instance's memory. Only live runs are stored; illustrative entries live in code.
  */
 const TTL_S = 30 * 24 * 3600;

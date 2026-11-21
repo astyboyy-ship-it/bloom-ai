@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, Loader2, Lock, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can } from "@/components/desk/rbac";
-import { activeMember, audit, requestHeaders, useDeskSettings } from "@/components/desk/settings";
+import { activeMember, audit, auditPolicyRefusal, POLICY_REFUSALS, requestHeaders, useDeskSettings } from "@/components/desk/settings";
 import { useLicense } from "@/lib/license-context";
 import { usdFromCents } from "@/lib/scout/brief";
 import { SCENARIO_IDS } from "@/lib/scout/scenarios";
@@ -34,7 +34,7 @@ export function RunConsole({ health, onDone }: { health: ScoutHealth | null; onD
   async function start() {
     setBusy(true);
     setLog([]);
-    audit("run", `Started a live Exchange Scout sandbox run (${scenario})`);
+    audit("run", `Started a live Bloom Scout sandbox run (${scenario})`);
     try {
       const res = await fetch("/api/scout/runs", { method: "POST", headers: { ...requestHeaders(settings), "Content-Type": "application/json" }, body: JSON.stringify({ scenario }) });
       if (!res.ok || !res.body) {
@@ -57,7 +57,10 @@ export function RunConsole({ health, onDone }: { health: ScoutHealth | null; onD
           if (e.type === "step") push({ tone: "info", text: c.run.steps[e.step] });
           else if (e.type === "move") push({ tone: "move", text: `#${e.move.seq} ${c.by[e.move.by]} · ${c.moves[e.move.type]}${e.move.priceAtomic ? ` ${usdFromCents(e.move.priceAtomic)}` : ""}` });
           else if (e.type === "gap") push({ tone: "gap", text: c.run.gapLogged(c.states[e.gap.note.kind]) });
-          else if (e.type === "error") push({ tone: "error", text: c.run.failed(e.message) });
+          else if (e.type === "error") {
+            push({ tone: "error", text: c.run.failed(e.message) });
+            if ((POLICY_REFUSALS as readonly string[]).includes(e.code)) auditPolicyRefusal(`a Bloom Scout run (${scenario})`, e.code, e.message);
+          }
           else if (e.type === "done") {
             push({ tone: "ok", text: c.run.done });
             onDone(e.run);

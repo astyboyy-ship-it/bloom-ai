@@ -1,4 +1,6 @@
 import { DynamicShiftTopology } from "@/components/bloom/dynamic-shift-topology";
+import { ExchangeSection } from "@/components/bloom/exchange-section";
+import { ScoutSection } from "@/components/bloom/scout-section";
 import { Footer } from "@/components/bloom/footer";
 import { Hero } from "@/components/bloom/hero";
 import { Navbar } from "@/components/bloom/navbar";
@@ -17,6 +19,8 @@ export default function Home() {
         <Hero />
         <Engines />
         <ProductTopologyGallery />
+        <ExchangeSection />
+        <ScoutSection />
         <DynamicShiftTopology />
         <PartnerProgram />
         <Waitlist />

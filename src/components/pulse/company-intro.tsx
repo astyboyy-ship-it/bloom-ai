@@ -8,6 +8,7 @@ import { BloomWordmark } from "@/components/bloom/logo";
 import { useOnboardingCopy } from "@/components/onboarding/copy";
 import { BrandLogo } from "./brand-logo";
 import { brandOf, type Company } from "./companies";
+import { useShowcase } from "./use-desktop";
 import { CompanyScene } from "./company-scenes";
 
 const HOLD_MS = 4200;
@@ -22,7 +23,7 @@ const EASE = [0.65, 0, 0.35, 1] as const;
 export function CompanyIntro({ company, onDone }: { company: Company; onDone: () => void }) {
   const c = useOnboardingCopy().pulse.company;
   const reduce = useReducedMotion() ?? false;
-  const brand = brandOf(company);
+  const brand = brandOf(company, useShowcase());
   const [leaving, setLeaving] = useState(false);
   const done = useRef(false);
   const leave = useCallback(() => setLeaving(true), []);

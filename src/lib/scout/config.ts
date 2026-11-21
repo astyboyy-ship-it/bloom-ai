@@ -2,7 +2,7 @@ import "server-only";
 import { DEFAULT_RELAY_URL, DEFAULT_VERIFIER_URL } from "./relay-client";
 
 /**
- * Exchange Scout's server configuration. Kept out of src/lib/env.ts, which requires the workspace database.
+ * Bloom Scout's server configuration. Kept out of src/lib/env.ts, which requires the workspace database.
  *
  *   BLOOM_RELAY_URL               the relay origin (default https://bloom-exchange-relay.vercel.app)
  *   BLOOM_VERIFIER_URL            the verifier origin (default https://bloom-exchange-verify.vercel.app)

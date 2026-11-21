@@ -4,7 +4,7 @@ import type { DecisionOption } from "@/lib/scout/brief";
 import type { GapKind, GapReason, MoveType, ScenarioId, ScoutRun, ScoutState } from "@/lib/scout/types";
 
 /**
- * Exchange Scout's copy in the desk's three languages. Spanish and Hebrew are typed against English, so a missing
+ * Bloom Scout's copy in the desk's three languages. Spanish and Hebrew are typed against English, so a missing
  * string fails the type-check. Protocol field names (receipt_hash, transcript_head, ledger_root) stay as they are:
  * they are what the relay and the verifier print.
  */
@@ -116,7 +116,7 @@ const en = {
   },
   feed: { live: "Live sandbox runs", illustrative: "Illustrative blueprints", noLive: "No live runs yet. Run one from Run a sandbox.", loading: "Loading live runs…" },
   approval: {
-    title: (scenario: string, co: string) => `Exchange Scout · ${co}: ${scenario} needs your decision`,
+    title: (scenario: string, co: string) => `Bloom Scout · ${co}: ${scenario} needs your decision`,
   },
 };
 
@@ -225,7 +225,7 @@ const es: ScoutCopy = {
   },
   feed: { live: "Ejecuciones sandbox en vivo", illustrative: "Plantillas ilustrativas", noLive: "Aún no hay ejecuciones en vivo. Lanza una desde Ejecutar sandbox.", loading: "Cargando ejecuciones en vivo…" },
   approval: {
-    title: (scenario, co) => `Exchange Scout · ${co}: ${scenario} necesita tu decisión`,
+    title: (scenario, co) => `Bloom Scout · ${co}: ${scenario} necesita tu decisión`,
   },
 };
 
@@ -331,7 +331,7 @@ const he: ScoutCopy = {
   },
   feed: { live: "הרצות ארגז חול חיות", illustrative: "תבניות להמחשה", noLive: "עדיין אין הרצות חיות. אפשר להריץ אחת מהלשונית הרצת ארגז חול.", loading: "טוען הרצות חיות…" },
   approval: {
-    title: (scenario, co) => `Exchange Scout · ${co}: ${scenario} מחכה להחלטה שלך`,
+    title: (scenario, co) => `Bloom Scout · ${co}: ${scenario} מחכה להחלטה שלך`,
   },
 };
 

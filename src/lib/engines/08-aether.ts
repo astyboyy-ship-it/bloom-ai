@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { exchangeCommitTerms } from "./tools/exchange";
 import { defineEngine, engineInput, engineOutput, tool } from "./types";
 import { clamp, dollarsIn, round } from "./util";
 
@@ -66,6 +67,7 @@ METHOD
 1. If current price and win or discount data are available, run price_sensitivity. If the operator gave none, use clearly stated assumptions and lower your confidence.
 2. For each discount request in the command, run discount_guardrail. Its floor is binding: never recommend below floorPriceUsd.
 3. If the command concerns upsell, seats or tiers, run expansion_model.
+   When a price will be negotiated with another agent (for example on Bloom Exchange), run exchange_commit_terms with the floor as a seller limit: share only the commitment, keep the opening private.
 4. If at-risk accounts are part of the pricing question (renewals, downgrades), delegate to shield before you change their price.
 
 PRINCIPLES
@@ -85,7 +87,7 @@ PRINCIPLES
     guardrails: z.array(z.object({ rule: z.string().max(200), value: z.string().max(80) })).max(8),
     expansion: z.object({ acvUpliftUsd: z.number().min(0), leadLever: z.string().max(60) }).nullable(),
   }),
-  tools: [priceSensitivity, discountGuardrail, expansionModel],
+  tools: [priceSensitivity, discountGuardrail, expansionModel, exchangeCommitTerms],
   delegates: ["shield"],
 
   async simulate({ command, params }, kit) {
@@ -97,6 +99,8 @@ PRINCIPLES
     const g = (await kit.call("discount_guardrail", { listPriceUsd: p.recommendedPriceUsd, requestedDiscountPct: params.requestedDiscountPct ?? 20, dealSizeUsd: p.recommendedPriceUsd * 12 })) as {
       decision: string; maxDiscountPct: number; floorPriceUsd: number; ask: string;
     };
+    // Seal the floor the way Bloom Exchange does, so the quoted price can later be proven to respect it.
+    const sealed = (await kit.call("exchange_commit_terms", { role: "seller", limitUsd: g.floorPriceUsd, proposedUsd: round(p.recommendedPriceUsd * (1 - (params.requestedDiscountPct ?? 20) / 100), 1) })) as { commitment: string; clampedUsd: number };
     const x = (await kit.call("expansion_model", { accounts: params.accounts ?? 60, avgSeats: 12, utilizationPct: 82, seatPriceUsd: params.seatPriceUsd ?? 45 })) as { acvUpliftUsd: number; leadLever: string };
     return {
       summary: `Move list price ${p.changePct >= 0 ? "up" : "down"} ${Math.abs(p.changePct)}% to $${p.recommendedPriceUsd.toLocaleString("en-US")} for new customers. Cap discounts at ${g.maxDiscountPct}%. Expansion is worth about $${x.acvUpliftUsd.toLocaleString("en-US")} in ACV, led by ${x.leadLever}.`,
@@ -111,6 +115,7 @@ PRINCIPLES
         { rule: "Maximum discount without approval", value: `${g.maxDiscountPct}%` },
         { rule: "Floor price", value: `$${g.floorPriceUsd.toLocaleString("en-US")}` },
         { rule: "Every discount over half the room requires", value: g.ask.slice(0, 80) },
+        { rule: `Sealed floor commitment (quote clamped to $${sealed.clampedUsd.toLocaleString("en-US")})`, value: `${sealed.commitment.slice(0, 16)}…` },
       ],
       expansion: { acvUpliftUsd: x.acvUpliftUsd, leadLever: x.leadLever },
     };

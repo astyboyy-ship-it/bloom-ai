@@ -9,11 +9,13 @@ import { counterpartName, gapPrice } from "./brief-text";
 import { useScoutCopy } from "./copy";
 import { GapCallout, GAP_TONE } from "./feed-card";
 import { ReceiptPanel } from "./receipt-panel";
+import { useShowcase } from "@/components/pulse/use-desktop";
 
 /** The Surprise Negotiation Brief, as a dialog: four numbered sections, built from the run's record alone. */
 export function BriefView({ run, onClose }: { run: ScoutRun; onClose: () => void }) {
   const c = useScoutCopy();
   const brief = buildBrief(run);
+  const name = counterpartName(run, c, useShowcase());
   const close = useRef<HTMLButtonElement>(null);
   const h = brief.happened;
   const tone = GAP_TONE[brief.decision.kind];
@@ -30,7 +32,7 @@ export function BriefView({ run, onClose }: { run: ScoutRun; onClose: () => void
       <div role="dialog" aria-modal="true" aria-labelledby="scout-brief-title" className="os-panel w-full max-w-2xl rounded-2xl p-5 sm:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="os-label text-os-cyan/80">{counterpartName(run, c)} · {c.scenario[run.scenario].title}</p>
+            <p className="os-label text-os-cyan/80">{name} · {c.scenario[run.scenario].title}</p>
             <h2 id="scout-brief-title" className="mt-1 text-[24px] font-semibold tracking-[-0.01em] text-white">
               {c.brief.title}
             </h2>
@@ -71,7 +73,7 @@ export function BriefView({ run, onClose }: { run: ScoutRun; onClose: () => void
             ))}
           </ul>
           <p className="mt-2 text-[12px] text-white/50">{c.brief.ceiling(usdFromCents(brief.decision.ownerLimitAtomic))}</p>
-          <p className="mt-1 text-[12px] text-white/50">{c.brief.notify[brief.decision.kind](counterpartName(run, c), usdFromCents(gapPrice(run)))}</p>
+          <p className="mt-1 text-[12px] text-white/50">{c.brief.notify[brief.decision.kind](name, usdFromCents(gapPrice(run)))}</p>
           <p className="mt-3 border-t border-white/10 pt-3 text-[11.5px] text-white/40">{c.brief.sandbox}</p>
         </section>
       </div>

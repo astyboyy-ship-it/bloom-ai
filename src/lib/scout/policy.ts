@@ -1,5 +1,5 @@
 /**
- * The sandbox policy for everything Exchange Scout sends to the relay. The relay's agents, intents, rooms and
+ * The sandbox policy for everything Bloom Scout sends to the relay. The relay's agents, intents, rooms and
  * receipts are public and permanent, so this runs on every request body before it is signed (RelayClient's
  * `beforeSend`) and refuses, rather than rewrites:
  *  - real company names: the brand gate applies to the UI only, so no real name may ever be written to the relay;

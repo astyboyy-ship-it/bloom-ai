@@ -25,7 +25,7 @@ function strings(v: Tree, out: string[] = []): string[] {
   return out;
 }
 
-describe("Exchange Scout copy", () => {
+describe("Bloom Scout copy", () => {
   it("has the same shape in English, Spanish and Hebrew, with no empty strings", () => {
     const en = shape(SCOUT_COPY.en);
     for (const lang of ["es", "he"] as const) {

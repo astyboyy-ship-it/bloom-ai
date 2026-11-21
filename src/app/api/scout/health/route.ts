@@ -4,7 +4,7 @@ import type { RelayHealth } from "@/lib/scout/relay-client";
 
 export const dynamic = "force-dynamic";
 
-/** Exchange Scout's runtime: the relay's /health (fetched server-side, so the desk needs no CORS) and whether live runs are on. */
+/** Bloom Scout's runtime: the relay's /health (fetched server-side, so the desk needs no CORS) and whether live runs are on. */
 export async function GET(req: Request) {
   if (rateLimited(req, "scout-health", 30)) return fail(429, "Too many requests. Try again in a minute.");
   const cfg = scoutConfig();

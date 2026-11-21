@@ -23,6 +23,8 @@ export function Navbar() {
   const links = [
     { href: `${home}#engines`, label: t.nav.engines },
     { href: `${home}#architectures`, label: t.nav.architectures },
+    { href: `${home}#exchange`, label: t.nav.exchange },
+    { href: `${home}#scout`, label: t.nav.scout },
     { href: `${home}#shifts`, label: t.nav.shifts },
     { href: `${home}#developers`, label: t.nav.partners },
     { href: "#waitlist", label: t.nav.waitlist },

@@ -1,5 +1,5 @@
 /**
- * Exchange Scout's records. Two kinds of run share one shape:
+ * Bloom Scout's records. Two kinds of run share one shape:
  *  - "live": a real sandbox negotiation on the Bloom Exchange relay, with real hashes that verify;
  *  - "illustrative": a pre-recorded blueprint with example hashes that are never sent to the relay.
  * `Proof` keeps the two apart in the type system: only the `receipt` and `transcript` variants are live, and only a

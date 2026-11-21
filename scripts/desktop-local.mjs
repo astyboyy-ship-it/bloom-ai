@@ -7,7 +7,7 @@
 //    desktop build: the stamp is HEAD plus a hash of `git status` and of the uncommitted diff.
 // 2. Starts `next start` on port 3210 (BLOOM_DESKTOP_PORT to change it).
 //
-// Exchange Scout live runs are forced off here (BLOOM_SCOUT_LIVE=0 overrides any .env file), so the desktop app can
+// Bloom Scout live runs are forced off here (BLOOM_SCOUT_LIVE=0 overrides any .env file), so the desktop app can
 // show the feed and illustrative entries but never writes to the public relay.
 // The installed release app is unaffected: it still loads the production web deploy (src-tauri/tauri.conf.json).
 import { execFileSync, spawn } from "node:child_process";
@@ -54,7 +54,7 @@ if (have === want && existsSync(join(ROOT, ".next", "BUILD_ID"))) {
   writeFileSync(STAMP, want);
 }
 
-console.log(`[desktop-local] ${branch}: serving on http://localhost:${PORT} (Exchange Scout live runs off)`);
+console.log(`[desktop-local] ${branch}: serving on http://localhost:${PORT} (Bloom Scout live runs off)`);
 const server = spawn(npm, ["run", "start", "--", "-p", String(PORT)], { cwd: ROOT, env, stdio: "inherit", shell: process.platform === "win32" });
 const stop = () => server.kill();
 process.on("SIGINT", stop);

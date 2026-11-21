@@ -53,7 +53,7 @@ export function ScoutDesk() {
       setLive((prev) => mergeRuns([run], prev ?? []));
       // The owner handoff: one approval holding the four-section brief, plus an audit entry. Nothing leaves the desk.
       registerApprovals(run.id, SCOUT_SOURCE, "sovereign", [{ title: c.approval.title(c.scenario[run.scenario].title, counterpartName(run, c)), detail: briefText(run, c), priority: "p0", owner: "human" }], [0]);
-      audit("approval", `Exchange Scout queued an owner brief for live run ${run.id} (${run.gap.note.kind}, ${run.outcome})`);
+      audit("approval", `Bloom Scout queued an owner brief for live run ${run.id} (${run.gap.note.kind}, ${run.outcome})`);
     },
     [c],
   );

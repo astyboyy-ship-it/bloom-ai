@@ -495,6 +495,17 @@ export function audit(kind: AuditKind, message: string) {
   });
 }
 
+/** Codes the Bloom Scout sandbox policy (src/lib/scout/policy.ts) refuses with. */
+export const POLICY_REFUSALS = ["real_brand", "binding_language", "not_sandbox", "out_of_bounds"] as const;
+
+/**
+ * Records a Shield refusal of an outgoing Bloom Exchange payload as a security event, so it shows in the Threat
+ * Matrix with every other refused request. `where` names the run that tried to send it.
+ */
+export function auditPolicyRefusal(where: string, code: string, message: string) {
+  audit("security", `Shield refused a Bloom Exchange payload in ${where} (${code}): ${message} Nothing was sent to the relay.`);
+}
+
 /**
  * Walks the chain. Entries before the first hashed one are "unchained" (written before the chain existed);
  * the first hashed entry after a capped trim anchors on its own stored predecessor hash.

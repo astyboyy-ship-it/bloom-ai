@@ -11,10 +11,10 @@ export const short = (h: string) => (h.length > 20 ? `${h.slice(0, 8)}…${h.sli
  * (Tesla or Epic Games only in the private showcase, fictional names otherwise). Live runs never show a company:
  * they ran between two Bloom-owned sandbox agents, so they name the sandbox persona instead.
  */
-export function counterpartName(run: ScoutRun, c: ScoutCopy): string {
+export function counterpartName(run: ScoutRun, c: ScoutCopy, showcase = false): string {
   if (run.mode === "live") return c.scenario[run.scenario].counterpart;
   const company = companyById(run.company);
-  return company ? brandOf(company).name : c.scenario[run.scenario].counterpart;
+  return company ? brandOf(company, showcase).name : c.scenario[run.scenario].counterpart;
 }
 
 /** The price the counterpart stopped at: the offer the gap note follows. */
