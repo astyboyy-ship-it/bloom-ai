@@ -295,7 +295,7 @@ function respond(input: string, c: Ctx): Reply {
   }
 
   if (RX.perms.test(q)) {
-    const perms: Permission[] = ["run", "approve", "calibrate", "settings", "members", "license"];
+    const perms: Permission[] = ["run", "approve", "calibrate", "settings", "members", "license", "scout.run"];
     const r = roleInfo(c.lang)[me.role];
     return { text: [t.youAre(displayName(me.name, c.lang), r.label, r.blurb), ...perms.map((p) => `  ${can(me.role, p) ? "✓" : "·"} ${PERMISSION_TEXT[c.lang][p]}`)].join("\n") };
   }

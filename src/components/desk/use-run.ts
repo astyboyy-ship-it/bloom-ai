@@ -7,7 +7,7 @@ import type { CalibrationInput } from "@/lib/engines/calibration";
 import type { Metric } from "@/lib/engines/brief";
 import type { RunEvent, RunMode, RunPhase, Usage } from "@/lib/engines/events";
 import { scanCommand } from "@/lib/security/injection";
-import { audit } from "./settings";
+import { audit, auditPolicyRefusal } from "./settings";
 
 /**
  * Drives one command run against /api/command/[engine]: POSTs the command, reads the SSE body, and folds
@@ -179,6 +179,10 @@ export function useRun(networkError: string, aborted: string) {
             try {
               const e = JSON.parse(data) as RunEvent;
               if (e.type === "run.end") ended = true;
+              if (e.type === "tool.result" && e.tool === "exchange_payload_policy" && e.ok) {
+                const out = e.output as { allowed?: boolean; code?: string; message?: string } | null;
+                if (out?.allowed === false) auditPolicyRefusal(`a ${where} run`, out.code ?? "refused", out.message ?? "");
+              }
               dispatch({ type: "event", e, at: Date.now() });
             } catch {
               // A malformed frame is skipped; the run keeps streaming.

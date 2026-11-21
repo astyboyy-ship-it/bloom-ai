@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_ORDER, type EngineKey } from "@/components/bloom/command/engines";
 import { SHIFTS, SHIFT_MODES, allocate } from "@/components/bloom/shift-plan";
+import { exchangeVerifyReceipt } from "./tools/exchange";
 import { defineEngine, engineInput, engineOutput, tool } from "./types";
 import { dollarsIn, round } from "./util";
 
@@ -71,6 +72,7 @@ YOUR JOB
    - aether: pricing, discounts, packaging, expansion revenue.
 3. Before routing anything that moves money, touches access or data, or changes contracts or prices, run evaluate_policy. A "hold" or "block" decision is final: put it in governance and add a human action; do not route around it.
 4. When the command concerns capacity, budget or shift posture, run allocate_capacity.
+5. Before accepting a settlement reached on Bloom Exchange, run exchange_verify_receipt on its receipt hash. Accept it only when valid is true; otherwise put it on hold for a human.
 
 ROUTING DISCIPLINE
 - Delegate at most four engines per command, and only ones whose output changes the decision. Independent delegations can be issued in parallel.
@@ -83,13 +85,14 @@ routing lists every engine you delegated to and why. governance lists every eval
     authorizationLevel: Level,
     budgetUsd: z.number().min(0),
     shift: z.enum(["prime", "dark", "surge"]),
+    receiptHash: z.string().regex(/^[0-9a-f]{64}$/),
   }),
   output: engineOutput({
     routing: z.array(z.object({ engine: EngineEnum, objective: z.string().max(300), why: z.string().max(300) })).max(7),
     governance: z.array(z.object({ action: z.string().max(300), decision: z.enum(["approve", "hold", "block"]), rule: z.string().max(300) })).max(10),
     mode: z.enum(["prime", "dark", "surge"]),
   }),
-  tools: [evaluatePolicy, allocateCapacity],
+  tools: [evaluatePolicy, allocateCapacity, exchangeVerifyReceipt],
   delegates: ENGINE_ORDER.filter((k) => k !== "sovereign"),
 
   async simulate({ command, params }, kit) {
@@ -117,6 +120,13 @@ routing lists every engine you delegated to and why. governance lists every eval
     const governance = [];
     if (budget > 0) governance.push(await kit.call("evaluate_policy", { action: `Deploy $${budget.toLocaleString("en-US")} across engines`, category: "spend", amountUsd: budget, authorizationLevel: level }));
     await kit.call("allocate_capacity", { mode, budgetUsd: budget, priorities: picks.map(([k]) => k) });
+
+    // A Bloom Exchange settlement is accepted only on a receipt that verifies; the lookup runs only when one is named.
+    const receiptHash = params.receiptHash ?? command.match(/\b[0-9a-f]{64}\b/)?.[0];
+    if (receiptHash) {
+      const r = (await kit.call("exchange_verify_receipt", { receiptHash })) as { valid: boolean; status: string };
+      governance.push({ action: `Accept Bloom Exchange settlement ${receiptHash.slice(0, 12)}…`, decision: r.valid ? "approve" : "hold", rule: r.valid ? "Receipt verified: hash, both signatures, ledger inclusion, not revoked" : `Receipt not verified (${r.status}); a human decides` });
+    }
 
     const routing = [];
     // Only hand-offs that actually ran are reported as routed; the rest are named as outside the license.

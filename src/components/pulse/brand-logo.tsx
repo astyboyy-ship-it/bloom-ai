@@ -2,10 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import { brandOf, type Company } from "./companies";
+import { useShowcase } from "./use-desktop";
 
 /** A company's mark in a glass tile: its brand SVG in the private showcase, a monogram otherwise. */
 export function BrandLogo({ company, size = 48, className }: { company: Company; size?: number; className?: string }) {
-  const brand = brandOf(company);
+  const brand = brandOf(company, useShowcase());
   const mark = brand.mark ?? null;
   return (
     <span className={cn("flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/50", className)} style={{ width: size, height: size, boxShadow: `0 0 24px -10px ${brand.color}` }}>

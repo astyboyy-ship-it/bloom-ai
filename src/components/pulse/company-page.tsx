@@ -13,7 +13,8 @@ import { obsidianToast } from "@/components/control-plane/obsidian-toast";
 import { LiveDot, Sparkline } from "@/components/control-plane/ops-ui";
 import { useOnboardingCopy } from "@/components/onboarding/copy";
 import { BrandLogo } from "./brand-logo";
-import { brandOf, money, rosterOf, SHOWCASE, toPipeline, withCo, type Company, type Workflow } from "./companies";
+import { brandOf, money, rosterOf, toPipeline, withCo, type Company, type Workflow } from "./companies";
+import { useShowcase } from "./use-desktop";
 import { CompanyIntro } from "./company-intro";
 
 const INTRO_KEY = "bloom-company-intro-seen";
@@ -41,7 +42,8 @@ function Section({ icon: Icon, title, sub, children }: { icon: typeof Sparkles; 
 function WorkflowCard({ company, wf }: { company: Company; wf: Workflow }) {
   const c = useOnboardingCopy().pulse.company;
   const router = useRouter();
-  const brand = brandOf(company);
+  const showcase = useShowcase();
+  const brand = brandOf(company, showcase);
 
   const fork = (open: "builder" | "sandbox") => {
     const name = `${brand.name} · ${wf.name}`;
@@ -209,7 +211,8 @@ function CompanyPulse({ company }: { company: Company }) {
 export function CompanyPageView({ company }: { company: Company }) {
   const c = useOnboardingCopy().pulse.company;
   const p = useOnboardingCopy().pulse;
-  const brand = brandOf(company);
+  const showcase = useShowcase();
+  const brand = brandOf(company, showcase);
   const [intro, setIntro] = useState(false);
 
   // The intro plays the first time each company is opened in a session; "Replay intro" brings it back.
@@ -264,15 +267,15 @@ export function CompanyPageView({ company }: { company: Company }) {
                 <div className="min-w-0">
                   <h1 className="flex items-center gap-2 text-[34px] font-semibold leading-tight tracking-[-0.02em] text-white drop-shadow-[0_4px_20px_rgb(0_0_0/0.8)] sm:text-[46px]">
                     {brand.name}
-                    {SHOWCASE && <BadgeCheck className="size-7 shrink-0 text-os-cyan" aria-label={p.verified} />}
+                    {showcase && <BadgeCheck className="size-7 shrink-0 text-os-cyan" aria-label={p.verified} />}
                   </h1>
-                  <p className="mt-1 max-w-2xl text-[15px] text-white/75">{withCo(company.tagline, company)}</p>
+                  <p className="mt-1 max-w-2xl text-[15px] text-white/75">{withCo(company.tagline, company, showcase)}</p>
                 </div>
               </div>
               <p className="mt-4 flex flex-wrap gap-1.5">
                 <span className="rounded-full border border-white/20 bg-black/40 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-white/75 backdrop-blur-sm">{p.industries[company.industry]}</span>
                 <span className="rounded-full border border-amber-300/45 bg-black/40 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-amber-200/90 backdrop-blur-sm">{c.illustrative}</span>
-                {SHOWCASE && (
+                {showcase && (
                   <span className="flex items-center gap-1 rounded-full border border-os-emerald/40 bg-black/40 px-2.5 py-0.5 font-mono text-[10px] text-os-emerald backdrop-blur-sm">
                     <ShieldCheck className="size-3" /> {p.zk}
                   </span>

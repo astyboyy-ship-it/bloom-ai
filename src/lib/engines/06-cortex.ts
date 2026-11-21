@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { handoffGapDetect } from "./tools/scout";
 import { defineEngine, engineInput, engineOutput, tool } from "./types";
 import { clamp, round } from "./util";
 
@@ -77,6 +78,7 @@ METHOD
 3. If a competitor is named, run build_battlecard with the strengths the operator gave (or ones clearly implied).
 4. If deal facts are present (silence, stage, committee), run deal_risk_scan.
 5. If the fix is a price restructure rather than a talk track, delegate to aether. If the deal just needs execution, hand back to apex.
+6. Run handoff_gap_detect on the counterparty's words. If handoff is true, the other side cannot close on its own (an authority ceiling or a missing policy): add a p0 action owned by "human" that names the open point, and fill handoff. Never treat such a message as a commitment.
 
 PRINCIPLES
 - Answer the real objection, not the stated one: "too expensive" late in a deal usually means unproven value or no authority.
@@ -92,8 +94,9 @@ PRINCIPLES
     objections: z.array(z.object({ text: z.string().max(300), category: Category, response: z.string().max(600) })).max(8),
     battlecard: z.object({ competitor: z.string().max(80), winThemes: z.array(z.string().max(160)).max(5), landmines: z.array(z.string().max(200)).max(5), traps: z.array(z.string().max(200)).max(5) }).nullable(),
     risk: z.object({ score: z.number().min(0).max(100), factors: z.array(z.string().max(160)).max(6) }).nullable(),
+    handoff: z.object({ kind: z.enum(["AUTHORITY_CEILING", "KNOWLEDGE_OR_POLICY_GAP"]), quote: z.string().max(300), missing: z.string().max(160) }).nullable(),
   }),
-  tools: [classifyObjection, buildBattlecard, dealRiskScan],
+  tools: [classifyObjection, buildBattlecard, dealRiskScan, handoffGapDetect],
   delegates: ["apex", "aether"],
 
   async simulate({ command, params }, kit) {
@@ -109,16 +112,21 @@ PRINCIPLES
       ? ((await kit.call("build_battlecard", { competitor, ourStrengths: params.ourStrengths ?? ["Time to value", "Autonomous follow-up", "Transparent pricing"] })) as { competitor: string; winThemes: string[]; landmines: string[]; traps: string[] })
       : null;
     const risk = (await kit.call("deal_risk_scan", { daysSinceLastTouch: params.daysSinceLastTouch ?? 12, stakeholders: 1, stage: params.stage ?? "demo", competitorPresent: Boolean(competitor) })) as { score: number; factors: string[] };
+    // Bloom Scout's gap detection: where the other side says it can't close, the owner decides, not an agent.
+    const gap = (await kit.call("handoff_gap_detect", { text: [command, ...objections].join("\n").slice(0, 4000) })) as { handoff: boolean; gaps: { kind: "AUTHORITY_CEILING" | "KNOWLEDGE_OR_POLICY_GAP"; quote: string; missing: string }[] };
+    const handoff = gap.handoff ? gap.gaps[0] : null;
     return {
-      summary: `${out.length} objection${out.length === 1 ? "" : "s"} mapped, led by ${out[0]?.category ?? "need"}. Stall risk is ${risk.score}/100${risk.factors.length ? `: ${risk.factors.join(", ")}` : ""}.`,
+      summary: `${handoff ? `${handoff.kind === "AUTHORITY_CEILING" ? "The counterpart hit an authority ceiling" : "The counterpart lacks a policy to price this"}; the open point goes to the owner. ` : ""}${out.length} objection${out.length === 1 ? "" : "s"} mapped, led by ${out[0]?.category ?? "need"}. Stall risk is ${risk.score}/100${risk.factors.length ? `: ${risk.factors.join(", ")}` : ""}.`,
       confidence: 0.5,
       actions: [
+        ...(handoff ? [{ title: "Decide the point the counterpart can't close", owner: "human", priority: "p0" as const, detail: `${handoff.missing}: “${handoff.quote}”`.slice(0, 400) }] : []),
         { title: "Deliver the objection talk track", owner: "human", priority: "p0" as const, detail: out[0]?.response ?? "Confirm the real objection first." },
         ...(risk.factors.includes("Single-threaded") ? [{ title: "Add a second stakeholder", owner: "apex", priority: "p1" as const, detail: "Single-threaded deals stall when the contact goes quiet." }] : []),
       ],
       objections: out,
       battlecard,
       risk,
+      handoff,
     };
   },
 });

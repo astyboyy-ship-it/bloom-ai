@@ -1,0 +1,25 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Bloom AI (local)",
+  "build": {
+    "devUrl": "http://localhost:3210",
+    "beforeDevCommand": "node scripts/desktop-local.mjs"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Bloom AI (local build of the current branch)",
+        "url": "desk/exchange-scout",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#0b0612"
+      }
+    ]
+  }
+}

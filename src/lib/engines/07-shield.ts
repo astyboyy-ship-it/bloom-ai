@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { exchangePayloadPolicy } from "./tools/scout";
 import { defineEngine, engineInput, engineOutput, tool } from "./types";
 import { clamp, round } from "./util";
 
@@ -77,17 +78,18 @@ METHOD
 3. Run rescue_play for every amber and red account. Red accounts always get a human owner.
 4. Green accounts with rising usage and high seat utilization are expansion candidates; if the operator wants them priced, delegate to aether.
 5. If the root cause is operational (onboarding gaps, broken integrations), delegate to coreops.
+6. Before any retention or renewal offer is sent to another agent over Bloom Exchange, run exchange_payload_policy on it. If allowed is false, do not send it: report the reason as a human action.
 
 PRINCIPLES
 - Lead with ARR at risk inside 90 days. That is the number the operator acts on.
 - Never recommend a discount as the first rescue move; fix the driver first.`,
-  input: engineInput({ accounts: z.array(AccountHealth).max(25) }),
+  input: engineInput({ accounts: z.array(AccountHealth).max(25), relayPayload: z.object({ path: z.enum(["/v1/agents", "/v1/intents", "/v1/rooms", "/v1/rooms/events"]), payload: z.record(z.string(), z.unknown()) }) }),
   output: engineOutput({
     accounts: z.array(z.object({ name: z.string().max(120), health: z.number().min(0).max(100), band: Band, driver: Driver, play: z.string().max(300) })).max(25),
     arrAtRiskUsd: z.number().min(0),
     expansionCandidates: z.array(z.string().max(120)).max(10),
   }),
-  tools: [computeHealth, rescuePlay],
+  tools: [computeHealth, rescuePlay, exchangePayloadPolicy],
   delegates: ["aether", "coreops"],
 
   async simulate({ params }, kit) {
@@ -103,12 +105,17 @@ PRINCIPLES
       const p = a.band === "green" ? { play: PLAYS[a.driver] } : ((await kit.call("rescue_play", { account: a.name, band: a.band, driver: a.driver })) as { play: string });
       out.push({ name: a.name, health: a.health, band: a.band, driver: a.driver, play: p.play });
     }
+    // An outgoing Bloom Exchange payload is checked against the sandbox policy only when the operator supplies one.
+    const policy = params.relayPayload ? ((await kit.call("exchange_payload_policy", params.relayPayload)) as { allowed: boolean; code: string | null; message: string }) : null;
     const atRisk = scored.reduce((s, a) => s + a.arrAtRiskUsd, 0);
     const worst = [...out].sort((x, y) => x.health - y.health)[0];
     return {
       summary: `$${atRisk.toLocaleString("en-US")} of ARR is at risk. ${worst.name} is the priority (${worst.health}/100, ${worst.driver.replace("_", " ")}).`,
       confidence: params.accounts ? 0.7 : 0.45,
-      actions: out.filter((a) => a.band !== "green").map((a) => ({ title: `Rescue ${a.name}`, owner: a.band === "red" ? "human" : "shield", priority: a.band === "red" ? ("p0" as const) : ("p1" as const), detail: a.play })),
+      actions: [
+        ...(policy && !policy.allowed ? [{ title: "Rework the Bloom Exchange payload before sending", owner: "human", priority: "p0" as const, detail: `Refused by the sandbox policy (${policy.code}): ${policy.message}`.slice(0, 400) }] : []),
+        ...out.filter((a) => a.band !== "green").map((a) => ({ title: `Rescue ${a.name}`, owner: a.band === "red" ? "human" : "shield", priority: a.band === "red" ? ("p0" as const) : ("p1" as const), detail: a.play })),
+      ],
       accounts: out,
       arrAtRiskUsd: atRisk,
       expansionCandidates: out.filter((a) => a.band === "green").map((a) => a.name),

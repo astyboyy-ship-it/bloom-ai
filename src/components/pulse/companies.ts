@@ -8,12 +8,14 @@ import { BRAND_MARKS, type BrandMark } from "./brand-marks";
  * The Global Pulse companies: one shared source for the architecture feed cards, the company pages and their
  * cinematic intros.
  *
- * PRIVATE SHOWCASE: real company names and logos render only when NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE=true. These are
- * ILLUSTRATIVE BLUEPRINTS of how a company like each could run on Bloom: not their real systems, customers or
- * results. Every other build shows fictional companies. Blueprint text says "{co}" instead of a company name, so no
- * real name is written into the content itself; brandOf() fills it in.
+ * PRIVATE SHOWCASE: real company names and logos exist only in a local desktop build (src/lib/showcase-gate.ts:
+ * NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE=true via `npm run desktop:local`, never on Vercel), and even there render only
+ * inside the desktop window (useShowcase in use-desktop.ts). In every other build the table below folds to null and
+ * the bundler drops it, so the public website ships fictional companies only. These are ILLUSTRATIVE BLUEPRINTS of how
+ * a company like each could run on Bloom: not their real systems, customers or results. Blueprint text says "{co}"
+ * instead of a company name, so no real name is written into the content itself; brandOf() fills it in.
  */
-export const SHOWCASE = process.env.NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE === "true";
+export const SHOWCASE = process.env.BLOOM_SHOWCASE_BUILD === "true";
 
 export type Brand = { name: string; monogram?: string; mark?: BrandMark; color: string };
 export type CompanyId = "auto" | "streaming" | "analytics" | "commerce" | "building" | "games";
@@ -449,9 +451,10 @@ export const COMPANIES: Company[] = [
 ];
 
 export const companyById = (id: string): Company | undefined => COMPANIES.find((c) => c.id === id);
-export const brandOf = (c: Company): Brand => REAL?.[c.id] ?? c.fictional;
+/** The brand to show. `showcase` comes from useShowcase(): without it (the default) the fictional company is used. */
+export const brandOf = (c: Company, showcase = false): Brand => (showcase ? REAL?.[c.id] : null) ?? c.fictional;
 /** Fills a blueprint string's {co} with the company name. */
-export const withCo = (text: string, c: Company) => text.replace(/\{co\}/g, brandOf(c).name);
+export const withCo = (text: string, c: Company, showcase = false) => text.replace(/\{co\}/g, brandOf(c, showcase).name);
 export const money = (n: number) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1000)}K`);
 
 /** Every engine this company's setup uses, in roster order. */
