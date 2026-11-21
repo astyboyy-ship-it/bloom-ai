@@ -3,14 +3,19 @@
  * currently acting (top bar). These are workspace roles on this device; they are not server-side accounts.
  */
 export type Role = "owner" | "admin" | "operator" | "viewer";
-export type Permission = "run" | "approve" | "calibrate" | "settings" | "members" | "license";
+/**
+ * "scout.run" starts a live Exchange Scout run on the public relay: owners, admins and operators may press Run,
+ * viewers never can. The server control is separate: /api/scout/runs accepts only a verified Operator access key,
+ * under a daily cap.
+ */
+export type Permission = "run" | "approve" | "calibrate" | "settings" | "members" | "license" | "scout.run";
 
 export const ROLES: Role[] = ["owner", "admin", "operator", "viewer"];
 
 const GRANTS: Record<Role, Permission[]> = {
-  owner: ["run", "approve", "calibrate", "settings", "members", "license"],
-  admin: ["run", "approve", "calibrate", "settings", "members"],
-  operator: ["run", "approve"],
+  owner: ["run", "approve", "calibrate", "settings", "members", "license", "scout.run"],
+  admin: ["run", "approve", "calibrate", "settings", "members", "scout.run"],
+  operator: ["run", "approve", "scout.run"],
   viewer: [],
 };
 
@@ -43,7 +48,7 @@ export const roleInfo = (lang: "en" | "es" | "he"): Record<Role, { label: string
 
 /** Permission names in each language. */
 export const PERMISSION_TEXT: Record<"en" | "es" | "he", Record<Permission, string>> = {
-  en: { run: "run", approve: "approve", calibrate: "calibrate", settings: "settings", members: "members", license: "license" },
-  es: { run: "ejecutar", approve: "aprobar", calibrate: "calibrar", settings: "ajustes", members: "miembros", license: "licencia" },
-  he: { run: "הרצה", approve: "אישור", calibrate: "כיול", settings: "הגדרות", members: "חברי צוות", license: "רישיון" },
+  en: { run: "run", approve: "approve", calibrate: "calibrate", settings: "settings", members: "members", license: "license", "scout.run": "live Exchange Scout runs" },
+  es: { run: "ejecutar", approve: "aprobar", calibrate: "calibrar", settings: "ajustes", members: "miembros", license: "licencia", "scout.run": "ejecuciones en vivo de Exchange Scout" },
+  he: { run: "הרצה", approve: "אישור", calibrate: "כיול", settings: "הגדרות", members: "חברי צוות", license: "רישיון", "scout.run": "הרצות חיות של Exchange Scout" },
 };

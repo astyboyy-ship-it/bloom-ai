@@ -15,6 +15,7 @@ export type NavHref =
   | "/desk/architectures"
   | "/desk/engines"
   | "/desk/builder"
+  | "/desk/exchange-scout"
   | "/desk/global-pulse"
   | "/desk/threat-matrix"
   | "/desk/vector-memory"
@@ -28,6 +29,7 @@ export type PageRoute =
   | "/desk/audit"
   | "/desk/diagnostics"
   | "/desk/builder"
+  | "/desk/exchange-scout"
   | "/desk/sandbox"
   | "/desk/engines"
   | "/desk/explore"
@@ -64,6 +66,7 @@ const en = {
     "/desk/architectures": { label: "Architectures (10 Stacks)", name: "Architectures" },
     "/desk/engines": { label: "Engine Network (8 Engines)", name: "Engine Network" },
     "/desk/builder": { label: "Pipeline Builder", name: "Pipeline Builder" },
+    "/desk/exchange-scout": { label: "Exchange Scout", name: "Exchange Scout" },
     "/desk/global-pulse": { label: "Global Pulse", name: "Global Pulse" },
     "/desk/threat-matrix": { label: "Threat Matrix", name: "Threat Matrix" },
     "/desk/vector-memory": { label: "Vector Memory Time-Travel", name: "Vector Memory" },
@@ -77,6 +80,7 @@ const en = {
     "/desk/assistant": { kicker: "Local assistant · Agent Zero", title: "Ask the desk about itself", lede: "A deterministic, fully offline assistant: it inspects your license, engines, history and audit chain on this device, without calling any model." },
     "/desk/audit": { kicker: "Audit & certificates", title: "The record of everything", lede: "Every license change, run, approval, security event and setting is appended to a SHA-256 hash chain, and every run is sealed into an execution ledger you can certify. Nothing can be edited or deleted without the chain breaking." },
     "/desk/diagnostics": { kicker: "Diagnostics", title: "Runtime, network & desktop bridge", lede: "Live checks against this deployment: API latency, the SSRF guard on outbound connection tests, and what the desktop shell exposes." },
+    "/desk/exchange-scout": { kicker: "Exchange Scout · Bloom Exchange sandbox", title: "Sandbox negotiations, handed to you where agents stop", lede: "Counterpart agents negotiate in the Bloom Exchange sandbox. When one admits it lacks the authority or the policy to close, you get the exact point, the cryptographic proof and the decision left open. Nothing here is binding." },
     "/desk/builder": { kicker: "Pipeline builder", title: "Compose your own architecture", lede: "Drag engines onto the canvas, link them from output port to input port, and run the chain in the sandbox. Data flows input → engines → output." },
     "/desk/sandbox": { kicker: "Sandbox", title: "Pipeline sandbox", lede: "Run a custom pipeline end to end: each engine hands its result to the next, with the same testbed, meters and brief as the architecture products." },
     "/desk/engines": { kicker: "Engine network · 8 engines", title: "Every engine, one network", lede: "Each engine is a full command center with its own live console and calibration. {n} of 8 are unlocked by your license; lines show who may hand work to whom." },
@@ -176,6 +180,7 @@ const es: OsCopy = {
     "/desk/architectures": { label: "Arquitecturas (10 stacks)", name: "Arquitecturas" },
     "/desk/engines": { label: "Red de motores (8 motores)", name: "Red de motores" },
     "/desk/builder": { label: "Constructor de pipelines", name: "Constructor" },
+    "/desk/exchange-scout": { label: "Exchange Scout", name: "Exchange Scout" },
     "/desk/global-pulse": { label: "Pulso global", name: "Pulso global" },
     "/desk/threat-matrix": { label: "Matriz de amenazas", name: "Amenazas" },
     "/desk/vector-memory": { label: "Memoria vectorial · viaje en el tiempo", name: "Memoria vectorial" },
@@ -188,6 +193,7 @@ const es: OsCopy = {
     "/desk/assistant": { kicker: "Asistente local · Agent Zero", title: "Pregúntale al escritorio sobre sí mismo", lede: "Un asistente determinista y totalmente sin conexión: revisa tu licencia, motores, historial y cadena de auditoría en este dispositivo, sin llamar a ningún modelo." },
     "/desk/audit": { kicker: "Auditoría y certificados", title: "El registro de todo", lede: "Cada cambio de licencia, ejecución, aprobación, evento de seguridad y ajuste se añade a una cadena de hashes SHA-256, y cada ejecución se sella en un libro de ejecución que puedes certificar. Nada puede editarse ni borrarse sin romper la cadena." },
     "/desk/diagnostics": { kicker: "Diagnóstico", title: "Runtime, red y puente de escritorio", lede: "Comprobaciones en vivo contra este despliegue: latencia de la API, la protección SSRF en las pruebas de conexión salientes y lo que expone la app de escritorio." },
+    "/desk/exchange-scout": { kicker: "Exchange Scout · sandbox de Bloom Exchange", title: "Negociaciones sandbox que te llegan donde los agentes se detienen", lede: "Agentes contraparte negocian en el sandbox de Bloom Exchange. Cuando uno admite que no tiene la autoridad o la política para cerrar, recibes el punto exacto, la prueba criptográfica y la decisión pendiente. Nada aquí es vinculante." },
     "/desk/builder": { kicker: "Constructor de pipelines", title: "Diseña tu propia arquitectura", lede: "Arrastra motores al lienzo, conéctalos del puerto de salida al de entrada y ejecuta la cadena en el sandbox. Los datos fluyen entrada → motores → salida." },
     "/desk/sandbox": { kicker: "Sandbox", title: "Sandbox de pipelines", lede: "Ejecuta un pipeline propio de principio a fin: cada motor entrega su resultado al siguiente, con el mismo banco de pruebas, medidores e informe que los productos de arquitectura." },
     "/desk/engines": { kicker: "Red de motores · 8 motores", title: "Todos los motores, una red", lede: "Cada motor es un centro de mando completo con su propia consola en vivo y calibración. Tu licencia desbloquea {n} de 8; las líneas muestran quién puede delegar trabajo a quién." },
@@ -285,6 +291,7 @@ const he: OsCopy = {
     "/desk/architectures": { label: "ארכיטקטורות (10 סטאקים)", name: "ארכיטקטורות" },
     "/desk/engines": { label: "רשת המנועים (8 מנועים)", name: "רשת המנועים" },
     "/desk/builder": { label: "בונה פייפליינים", name: "בונה" },
+    "/desk/exchange-scout": { label: "Exchange Scout", name: "Exchange Scout" },
     "/desk/global-pulse": { label: "דופק גלובלי", name: "דופק גלובלי" },
     "/desk/threat-matrix": { label: "מטריצת איומים", name: "איומים" },
     "/desk/vector-memory": { label: "זיכרון וקטורי · מסע בזמן", name: "זיכרון וקטורי" },
@@ -297,6 +304,7 @@ const he: OsCopy = {
     "/desk/assistant": { kicker: "עוזר מקומי · Agent Zero", title: "שאלו את השולחן על עצמו", lede: "עוזר דטרמיניסטי שעובד לגמרי בלי חיבור: הוא בודק את הרישיון, המנועים, ההיסטוריה ושרשרת הביקורת במכשיר הזה, בלי לפנות לשום מודל." },
     "/desk/audit": { kicker: "ביקורת ותעודות", title: "התיעוד של הכול", lede: "כל שינוי רישיון, הרצה, אישור, אירוע אבטחה והגדרה נרשמים בשרשרת גיבובי SHA-256, וכל הרצה נחתמת ביומן ביצוע שאפשר להנפיק לו תעודה. אי אפשר לערוך או למחוק דבר בלי לשבור את השרשרת." },
     "/desk/diagnostics": { kicker: "אבחון", title: "סביבת ריצה, רשת וגשר שולחני", lede: "בדיקות חיות מול הפריסה הזו: השהיית ה־API, ההגנה מפני SSRF בבדיקות חיבור יוצאות, ומה שהאפליקציה השולחנית חושפת." },
+    "/desk/exchange-scout": { kicker: "Exchange Scout · ארגז החול של Bloom Exchange", title: "משא ומתן בארגז חול, שמגיע אליך בנקודה שבה הסוכנים נעצרים", lede: "סוכנים של הצד השני מנהלים משא ומתן בארגז החול של Bloom Exchange. כשאחד מהם מודה שאין לו הסמכות או המדיניות לסגור, מקבלים את הנקודה המדויקת, את ההוכחה הקריפטוגרפית ואת ההחלטה שנשארה פתוחה. שום דבר כאן לא מחייב." },
     "/desk/builder": { kicker: "בונה פייפליינים", title: "בנו ארכיטקטורה משלכם", lede: "גררו מנועים לקנבס, חברו אותם מפתח הפלט לפתח הקלט והריצו את השרשרת בארגז החול. הנתונים זורמים קלט ← מנועים ← פלט." },
     "/desk/sandbox": { kicker: "ארגז חול", title: "ארגז חול לפייפליינים", lede: "הריצו פייפליין משלכם מקצה לקצה: כל מנוע מעביר את התוצאה שלו לבא אחריו, עם אותה סביבת בדיקה, אותם מדדים ואותו תדריך כמו במוצרי הארכיטקטורה." },
     "/desk/engines": { kicker: "רשת המנועים · 8 מנועים", title: "כל המנועים, רשת אחת", lede: "כל מנוע הוא מרכז פיקוד מלא עם קונסולה חיה וכיול משלו. הרישיון שלכם פותח {n} מתוך 8; הקווים מראים מי רשאי להעביר עבודה למי." },
