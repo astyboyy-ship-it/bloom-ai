@@ -40,8 +40,8 @@ describe("omni-protocol normalization", () => {
   });
 
   it("accepts any custom protocol by name, and payloads of any shape", () => {
-    const n = normalize({ protocol: "custom", source: "Tesla Megapack Grid", goal: "Dispatch 35 MWh to the tie-in, $51k" });
-    expect(n).toMatchObject({ domain: "CUSTOM_OMNI_HOOK", protocolLabel: "Tesla Megapack Grid", resourceVector: { energyKwh: 35_000, capitalUsd: 51_000 } });
+    const n = normalize({ protocol: "custom", source: "Grid Battery Array", goal: "Dispatch 35 MWh to the tie-in, $51k" });
+    expect(n).toMatchObject({ domain: "CUSTOM_OMNI_HOOK", protocolLabel: "Grid Battery Array", resourceVector: { energyKwh: 35_000, capitalUsd: 51_000 } });
     expect(normalize({ protocol: "custom", payload: "plain text: rent 4 GPUs" }).resourceVector.computeUnits).toBe(4_000);
     expect(normalize({ protocol: "custom", payload: { deeply: [{ nested: { goal: "clear 3 Gbps" } }] } }).resourceVector.bandwidthGbps).toBe(3);
     expect(normalize({ protocol: "rest", payload: null }).coreGoal).toMatch(/Clear resources/);

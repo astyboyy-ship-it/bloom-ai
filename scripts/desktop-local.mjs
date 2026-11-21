@@ -19,12 +19,15 @@ import { join } from "node:path";
 const ROOT = join(import.meta.dirname, "..");
 const PORT = Number(process.env.BLOOM_DESKTOP_PORT || 3210);
 const STAMP = join(ROOT, ".next", "desktop-local.stamp");
-const env = { ...process.env, BLOOM_SCOUT_LIVE: "0", NODE_ENV: "production" };
+// BLOOM_DESKTOP_SHOWCASE marks this as a local desktop build, the only kind that may include the private showcase.
+const env = { ...process.env, BLOOM_SCOUT_LIVE: "0", BLOOM_DESKTOP_SHOWCASE: "1", NODE_ENV: "production" };
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
 const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8" });
 function stamp() {
   const h = createHash("sha256");
+  // The build type is part of the stamp, so a build made any other way (e.g. a Vercel-style build) is never reused here.
+  h.update(`desktop-showcase-build:${env.NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE ?? ""};`);
   h.update(git("rev-parse", "HEAD"));
   h.update(git("status", "--porcelain", "--untracked-files=all"));
   h.update(git("diff", "HEAD"));

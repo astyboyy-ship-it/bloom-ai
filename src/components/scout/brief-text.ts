@@ -8,7 +8,7 @@ export const short = (h: string) => (h.length > 20 ? `${h.slice(0, 8)}…${h.sli
 
 /**
  * Who the counterpart is, as the desk names it. Illustrative blueprints show the company through the brand gate
- * (Tesla or Epic Games only in the private showcase, fictional names otherwise). Live runs never show a company:
+ * (real names only in a local desktop showcase build, fictional names otherwise). Live runs never show a company:
  * they ran between two Bloom-owned sandbox agents, so they name the sandbox persona instead.
  */
 export function counterpartName(run: ScoutRun, c: ScoutCopy, showcase = false): string {

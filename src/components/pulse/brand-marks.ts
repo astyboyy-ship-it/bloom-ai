@@ -1,6 +1,6 @@
 /**
  * Brand marks for the private Global Pulse showcase: single-path 24x24 SVGs from simple-icons (CC0 data; the
- * marks themselves remain their owners’ trademarks). Rendered only when NEXT_PUBLIC_BLOOM_PRIVATE_SHOWCASE=true.
+ * marks themselves remain their owners’ trademarks). Included only in local desktop builds (src/lib/showcase-gate.ts).
  * Palantir and Epic Games are drawn light because their brand color is near-black on the obsidian desk.
  */
 export type BrandMark = { title: string; hex: string; path: string };

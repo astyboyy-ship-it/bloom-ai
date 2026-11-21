@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
+import { showcaseBuildAllowed } from "./src/lib/showcase-gate";
 
 const nextConfig: NextConfig = {
+  // The private showcase exists only in local desktop builds (src/lib/showcase-gate.ts); on Vercel this is always "false".
+  env: { BLOOM_SHOWCASE_BUILD: showcaseBuildAllowed(process.env) ? "true" : "false" },
   // The Sovereign Private Node image builds a self-contained server (deploy/sovereign-node/Dockerfile); Vercel doesn't need it.
   ...(process.env.BLOOM_STANDALONE === "1" && { output: "standalone" as const }),
   // Keep Prisma's engine out of the server bundle.
