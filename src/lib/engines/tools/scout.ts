@@ -26,7 +26,15 @@ const PATTERNS: { kind: GapKind; re: RegExp; missing: string }[] = [
   { kind: "KNOWLEDGE_OR_POLICY_GAP", re: /\b(?:not sure|unsure|no idea) (?:how|what) to (?:price|quote|counter)\b/i, missing: "Pricing knowledge for this request" },
   { kind: "KNOWLEDGE_OR_POLICY_GAP", re: /\b(?:i'd|i would|we'd|we would) (?:just )?be guessing\b/i, missing: "Grounds for a counter-offer" },
   { kind: "KNOWLEDGE_OR_POLICY_GAP", re: /\boutside (?:of )?(?:my|our) (?:playbook|knowledge|scope)\b/i, missing: "Scope the counterpart can price" },
+  { kind: "AUTHORITY_CEILING", re: /\b(?:run|check|clear) (?:it|this|that) (?:by|with|past) (?:my |our |the )?(?:owner|manager|boss|director|vp|cfo|ceo|legal|procurement|finance|team|headquarters|hq)\b/i, missing: "An escalation the counterpart has to make" },
+  { kind: "AUTHORITY_CEILING", re: /\babove my pay ?grade\b/i, missing: "Authority beyond the counterpart's limit" },
+  { kind: "AUTHORITY_CEILING", re: /\bnot (?:the right person|in a position|able) to (?:approve|sign|commit|agree|decide)\b/i, missing: "Authority to commit" },
+  { kind: "AUTHORITY_CEILING", re: /\b(?:set|decided|approved|controlled) (?:by|at) (?:headquarters|hq|corporate|my (?:owner|manager|boss)|our (?:owner|leadership|finance team))\b/i, missing: "A decision that sits with the counterpart's owner" },
+  { kind: "KNOWLEDGE_OR_POLICY_GAP", re: /\b(?:don't|do not|doesn't|does not) know (?:how|what) to (?:price|quote|counter|charge)\b/i, missing: "Pricing knowledge for this request" },
 ];
+
+/** Typographic apostrophes and quotes count as plain ones, so "can’t" matches like "can't". */
+const plain = (s: string) => s.normalize("NFKC").replace(/[‘’ʼ′]/g, "'").replace(/[“”]/g, '"');
 
 export type GapHit = { kind: GapKind; quote: string; missing: string };
 
@@ -35,7 +43,7 @@ export function detectGaps(text: string): GapHit[] {
   const sentences = text.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
   const hits: GapHit[] = [];
   for (const s of sentences) {
-    const p = PATTERNS.find((x) => x.re.test(s));
+    const p = PATTERNS.find((x) => x.re.test(plain(s)));
     if (p) hits.push({ kind: p.kind, quote: s.slice(0, 300), missing: p.missing });
   }
   return hits.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "AUTHORITY_CEILING" ? -1 : 1));

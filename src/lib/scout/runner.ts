@@ -96,7 +96,7 @@ export async function runScenario(script: Script, parties: Parties, opts: { runI
 
   emit({ type: "step", step: "verify" });
   const payload = await owner.getReceipt(hash);
-  const v = await verifyReceiptPayload(payload);
+  const v = await verifyReceiptPayload(payload, hash);
   if (!v.valid) throw new Error(`The cleared receipt did not verify: ${Object.entries(v.checks).filter(([, x]) => x === "fail").map(([k]) => k).join(", ")}.`);
   return {
     ...base,

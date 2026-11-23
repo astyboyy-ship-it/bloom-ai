@@ -7,7 +7,7 @@ import { commitMandate, eventHash, receiptHash, RECEIPT_VERSION, verifyInclusion
 import { runScenario } from "../runner";
 import { EXAMPLE_HASHES, ILLUSTRATIVE_RUNS, SCRIPTS } from "../scenarios";
 import { isLiveProof } from "../types";
-import { FAKE_RELAY, fakeRelay } from "./fake-relay";
+import { SIM_RELAY, simRelay } from "../sim-relay";
 
 /** Values computed by the Bloom Exchange SDK itself (packages/sdk), so the port is checked against the original. */
 const SDK = {
@@ -50,15 +50,15 @@ describe("relay client port matches the Bloom Exchange SDK", () => {
 });
 
 async function play(id: keyof typeof SCRIPTS) {
-  const relay = fakeRelay();
+  const relay = simRelay();
   const [ok, ck] = await Promise.all([AgentKey.generate(), AgentKey.generate()]);
-  const client = (key: AgentKey) => new RelayClient({ baseUrl: FAKE_RELAY, key, fetch: relay.fetch, beforeSend: checkRelayRequest });
+  const client = (key: AgentKey) => new RelayClient({ baseUrl: SIM_RELAY, key, fetch: relay.fetch, beforeSend: checkRelayRequest });
   const events: string[] = [];
   const run = await runScenario(SCRIPTS[id], { owner: client(ok), counterpart: client(ck) }, { runId: "scout-test-00000000", verifierUrl: "https://verify.test", emit: (e) => events.push(e.type) });
   return { relay, run, events };
 }
 
-describe("runner on a strict fake relay", () => {
+describe("runner on a strict simulated relay", () => {
   it("fleet-api: counters, records an authority ceiling, then clears provisional terms with a verifying receipt", async () => {
     const { relay, run, events } = await play("fleet-api");
     expect(run.moves.map((m) => `${m.type}${m.priceAtomic ? ` ${m.priceAtomic}` : ""}`)).toEqual(["PROPOSE 60", "COUNTER 80", "COUNTER 68", "COUNTER 72", "ACCEPT", "CLEAR"]);

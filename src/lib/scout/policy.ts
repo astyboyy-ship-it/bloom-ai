@@ -37,9 +37,25 @@ const price = (terms: unknown): string | undefined => {
   return typeof p === "string" ? p : undefined;
 };
 
+/**
+ * Text as the policy reads it: NFKC (full-width "ＴＥＳＬＡ" is "TESLA"), invisible format characters removed (soft
+ * hyphens, zero-width spaces and joiners, bidi marks), lowercased, with runs of spaces, hyphens and underscores
+ * collapsed to one space. `compact` also drops every non-letter, so "T-e s_l.a" is caught too; it is built per string
+ * and skips key-, hash- and signature-shaped tokens, whose random letters could otherwise spell a name by chance.
+ */
+const TOKEN = /^[A-Za-z0-9_\-+/=:.]{32,}$/;
+const fold = (s: string) => s.normalize("NFKC").replace(/\p{Cf}/gu, "").toLowerCase();
+
+export function policyText(body: unknown): { text: string; compact: string[] } {
+  const all = strings(body);
+  const text = fold(all.join("\n")).replace(/[\s\-_]+/g, " ");
+  const compact = all.filter((s) => !TOKEN.test(s)).map((s) => fold(s).replace(/[^\p{L}]/gu, ""));
+  return { text, compact };
+}
+
 export function checkRelayRequest(path: string, body: unknown): void {
-  const text = strings(body).join("\n").toLowerCase();
-  const brand = REAL_BRANDS.find((b) => text.includes(b));
+  const { text, compact } = policyText(body);
+  const brand = REAL_BRANDS.find((b) => text.includes(b) || compact.some((c) => c.includes(b.replace(/[^a-z]/g, ""))));
   if (brand) throw new PolicyError("real_brand", "A real company name may not be sent to the relay: its records are public and permanent.");
   if (BINDING.test(text)) throw new PolicyError("binding_language", "Sandbox runs never state a binding commitment.");
 

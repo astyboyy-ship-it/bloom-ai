@@ -119,11 +119,80 @@ Each adapter knows where its surface keeps the agent, the goal and the amount (w
 
 ```bash
 curl https://your-bloom.app/api/exchange/ingest -H "Content-Type: application/json" \
-  -d '{"protocol":"custom","source":"Tesla Megapack Grid","goal":"Dispatch 35 MWh to the data-center tie-in, $51k"}'
+  -d '{"protocol":"custom","source":"Grid Battery Array","goal":"Dispatch 35 MWh to the data-center tie-in, $51k"}'
 # → { "invariantStatus": "settled", "certificateId": "BLOOM-XCH-…", "resourceVector": { "energyKwh": 35000, … }, "latencyMs": 7.4, "trace": [ … ] }
 ```
 
 Intents are non-binding: they always clear in a sandbox enclave, or as an operator stress test. Each caller sees only its own intents. `GET /api/exchange/pulse` serves global aggregates only (counts, throughput, median and p95 clearing latency), never names or goals.
+
+## Quickstart: watch Bloom Scout negotiate
+
+```bash
+git clone https://github.com/astyboyy-ship-it/bloom-ai.git && cd bloom-ai
+npm ci
+npm run scout:simulate
+```
+
+`scout:simulate` plays both Bloom Scout scenarios against an in-process simulated relay. Keys are fresh Ed25519 keys and every hash, signature and Merkle proof is computed for real; only the relay is simulated. It makes no network calls, needs no API keys or database, and finishes in a few seconds after `npm ci` (Node 24, as `package.json` declares). Abridged output:
+
+```
+Fleet telemetry API procurement · Fleet API sales agent (sandbox persona) · API inference
+Rounds
+  #1  Your agent   Propose  $0.60 per 1k tokens
+  #2  Counterpart  Counter  $0.80 per 1k tokens
+  #3  Your agent   Counter  $0.68 per 1k tokens
+  #4  Counterpart  Counter  $0.72 per 1k tokens
+  #5  Your agent   Accept
+  #6  Your agent   Clear
+handoff_gap_detect (Cortex)
+  → AUTHORITY_CEILING: hand the open point to the owner
+Signed gap note (Bloom AI's record, not a relay move)
+  signature pass · bound to the transcript pass
+Owner catch-up brief: Surprise Negotiation Brief
+  1 · Your agent opened at $0.60. After 3 counters the price on the table was $0.72. …
+exchange_verify_receipt (Sovereign)
+  canonicalHash pass · buyerSignature pass · sellerSignature pass · ledgerInclusion pass · notRevoked pass
+…
+GPU rendering capacity · … → KNOWLEDGE_OR_POLICY_GAP · No deal, so no receipt · nothing to verify
+PASS · fleet-api: cleared after authority ceiling · gpu-render: rejected after knowledge or policy gap
+```
+
+The command exits non-zero if any check fails.
+
+## Bloom Scout
+
+Bloom Scout runs bounded sandbox negotiations on the [Bloom Exchange relay](https://bloom-exchange-relay.vercel.app/health) and tells the owner where the other side stopped, instead of inventing an agreement.
+
+| Scenario | Outcome | Record |
+|---|---|---|
+| Fleet API procurement | The counterpart reaches an `AUTHORITY_CEILING` ("a 12-month commitment needs my owner's sign-off"). Provisional sandbox terms clear at $0.72 per 1k tokens; the open term goes to the owner. | Dual-signed receipt, Merkle ledger inclusion |
+| GPU rendering capacity | The counterpart has a `KNOWLEDGE_OR_POLICY_GAP` ("no margin policy for multi-region burst"), so the owner's agent rejects rather than guess. | Transcript hash only; no receipt |
+
+- **Your side is clamped.** Each offer is clamped to the owner's sealed ceiling before it is signed; the relay sees only a salted commitment.
+- **Gap notes are signed.** The relay has no move for "I lack authority", so Bloom AI records the admission as an Ed25519-signed note bound to the transcript event it followed (`src/lib/scout/gap.ts`).
+- **The owner gets a brief.** Four sections (what happened, where the counterpart stopped, the proof, the decision left open), queued in the desk's approval queue with an audit entry. Nothing is emailed or sent.
+- **Live runs are off by default.** On the desk (`/desk/exchange-scout`), a live run needs `BLOOM_SCOUT_LIVE=1`, a verified Operator access key, and stays under 3 per minute per key and 20 per day per deployment. Every live run leaves a permanent public record on the relay under neutral sandbox names.
+- **The sandbox policy runs before signing** (`src/lib/scout/policy.ts`): no real company names, no binding language, intents and rooms that live at most 10 minutes, at most 4 counters, prices up to $10,000.
+
+The scenarios are scripted personas, and gap detection is rule-based; neither is a model.
+
+| Variable | Default | |
+|---|---|---|
+| `BLOOM_SCOUT_LIVE` | off | `1` allows live runs |
+| `BLOOM_RELAY_URL`, `BLOOM_VERIFIER_URL` | `https://bloom-exchange-relay.vercel.app`, `https://bloom-exchange-verify.vercel.app` | https origins only |
+| `BLOOM_SCOUT_OWNER_SEED`, `BLOOM_SCOUT_COUNTERPART_SEED` | temporary keys per run | 32-byte Ed25519 seeds, base64url |
+| `BLOOM_SCOUT_DAILY_CAP` | 20 | Live runs per UTC day (at most 20) |
+
+## Bloom Exchange tools in the engines
+
+| Engine | Tool | What it does |
+|---|---|---|
+| Sovereign | `exchange_verify_receipt` | Accepts a Bloom Exchange settlement only after its receipt verifies: canonical hash, both Ed25519 signatures, RFC 6962 ledger inclusion, revocation. Otherwise holds it for a person. Read-only. |
+| Aether | `exchange_commit_terms` | Seals a price floor or ceiling as a salted commitment in the relay's `bloom-mandate/1` format and clamps the quote to it. Returns the commitment to share and the opening to keep. |
+| Cortex | `handoff_gap_detect` | Finds authority ceilings and knowledge or policy gaps in a counterparty's words (rule-based). A hit becomes a p0 action owned by a person, never a commitment. |
+| Shield | `exchange_payload_policy` | Checks an outgoing payload against the sandbox policy. Refusals are written to the audit log as security events and appear in the Threat Matrix. |
+
+The tools live in `src/lib/engines/tools/`. In simulated runs, an engine calls its tool only when the input is present (for example, a receipt hash in Sovereign's command), so simulation makes no relay calls on its own.
 
 ## Quickstart: connect an agent
 
@@ -228,7 +297,11 @@ The data plane runs on an internal network with no route out. With no model key 
 
 ```bash
 npm run typecheck
-npm test          # Vitest: leakage, firewall, mathematical safety, resources, omni-protocol ingestion, sovereign node, end-to-end settlement
+npm run lint
+npm test               # Vitest: leakage, firewall, mathematical safety, resources, omni-protocol ingestion, sovereign node,
+                       # end-to-end settlement, Bloom Scout (runner, gap notes, policy, relay-protocol vectors), engine tools,
+                       # the integration map, and the private-showcase boundary
+npm run scout:simulate # both Bloom Scout scenarios against the in-process relay
 npm run build
 ```
 
@@ -241,6 +314,9 @@ src/lib/exchange/            protocol core (types, omni-adapter, intent-store, v
 src/app/api/exchange/        A2A gateway (JSON-RPC + HTTP+JSON), omni ingest, intents, pulse, SSE stream, mandate, ledger, tasks, decisions
 src/app/.well-known/         signed A2A Agent Card
 src/components/exchange/     the clearing terminal
+src/lib/scout/               Bloom Scout: relay client and protocol checks, runner, scenarios, gap notes, policy, brief, simulation
+src/components/scout/        the Bloom Scout desk tab
+src/lib/engines/tools/       Bloom Exchange tools for Sovereign, Aether, Cortex and Shield
 packages/bloom-exchange-sdk/ zero-dependency TypeScript SDK
 src-tauri/                   desktop shells (Bloom Desktop, Bloom Exchange)
 deploy/sovereign-node/       Sovereign Private Node: Dockerfile, Compose, Kubernetes, `npm run sovereign:init`

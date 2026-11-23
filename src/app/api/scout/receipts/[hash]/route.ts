@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ hash: st
     // Reading a receipt is unsigned; the key is only there because the client always carries one.
     const relay = new RelayClient({ baseUrl: cfg.relayUrl, key: await AgentKey.generate() });
     const payload = await relay.getReceipt(hash);
-    return ok({ payload, verification: await verifyReceiptPayload(payload) });
+    return ok({ payload, verification: await verifyReceiptPayload(payload, hash) });
   } catch (err) {
     if (err instanceof RelayError) return fail(err.status === 404 ? 404 : 502, err.status === 404 ? "The relay has no receipt with that hash." : `The relay could not be reached: ${err.message}`);
     return fail(502, "The relay could not be reached.");

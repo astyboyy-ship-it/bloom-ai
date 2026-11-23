@@ -43,7 +43,10 @@ export function makeVerifyReceiptTool(fetchImpl?: typeof fetch) {
       const relay = new RelayClient({ baseUrl: relayUrl, key: await AgentKey.generate(), fetch: fetchImpl, timeoutMs: 8_000 });
       try {
         const p = await relay.getReceipt(receiptHash);
-        const v = await verifyReceiptPayload(p);
+        // A relay (or anything between) could answer with a different, validly signed receipt: the answer must be the
+        // receipt that was asked for, or nothing about it counts.
+        if (p?.hash !== receiptHash) return { receiptHash, valid: false, status: "mismatch", note: "The relay answered with a different receipt than the one requested; nothing was verified." };
+        const v = await verifyReceiptPayload(p, receiptHash);
         return {
           receiptHash,
           valid: v.valid,
@@ -76,13 +79,19 @@ export const exchangeCommitTerms = tool({
     vertical: z.enum(["api.inference", "compute.gpu", "data.retrieval"]).default("api.inference"),
   }),
   async run({ role, limitUsd, proposedUsd, vertical }) {
-    const mandate = { vertical, role, currency: "USD", limitAtomic: atomicCents(limitUsd) };
+    // A limit with fractions of a cent rounds toward safety: a buyer's ceiling down, a seller's floor up, so the sealed
+    // limit is never looser than the one given.
+    const cents = limitUsd * 100;
+    const limitAtomic = String(role === "buyer" ? Math.floor(cents + 1e-9) : Math.ceil(cents - 1e-9));
+    if (limitAtomic === "0") throw new Error("The limit rounds to $0.00; give a limit of at least one cent.");
+    const mandate = { vertical, role, currency: "USD", limitAtomic };
     const clamped = clampPrice(atomicCents(proposedUsd), mandate);
     const { commitment, salt } = await commitMandate(mandate);
     return {
       commitment,
       clampedUsd: usdOf(clamped),
       clamped: clamped !== atomicCents(proposedUsd),
+      sealedLimitUsd: usdOf(limitAtomic),
       rule: role === "seller" ? "Never below the sealed floor" : "Never above the sealed ceiling",
       // Opening the commitment reveals the limit, so it stays with the operator: share only `commitment`.
       opening: { mandate, salt, note: "Keep private. Revealing it later proves the price sat inside the limit." },

@@ -4,7 +4,7 @@ import { commitMandate } from "@/lib/scout/relay-protocol";
 import { checkRelayRequest } from "@/lib/scout/policy";
 import { runScenario } from "@/lib/scout/runner";
 import { EXAMPLE_HASHES, SCRIPTS } from "@/lib/scout/scenarios";
-import { FAKE_RELAY, fakeRelay } from "@/lib/scout/__tests__/fake-relay";
+import { SIM_RELAY, simRelay } from "@/lib/scout/sim-relay";
 import { AGENTS } from "../index";
 import type { EngineAgent, SimulationKit } from "../types";
 import { exchangeCommitTerms, makeVerifyReceiptTool } from "../tools/exchange";
@@ -35,10 +35,10 @@ function kitFor(agent: EngineAgent): SimulationKit & { calls: string[] } {
   };
 }
 
-/** A real cleared receipt, produced by a full sandbox run on the strict fake relay. */
+/** A real cleared receipt, produced by a full sandbox run on the strict simulated relay. */
 async function clearedReceipt() {
-  const relay = fakeRelay();
-  const client = async () => new RelayClient({ baseUrl: FAKE_RELAY, key: await AgentKey.generate(), fetch: relay.fetch, beforeSend: checkRelayRequest });
+  const relay = simRelay();
+  const client = async () => new RelayClient({ baseUrl: SIM_RELAY, key: await AgentKey.generate(), fetch: relay.fetch, beforeSend: checkRelayRequest });
   const run = await runScenario(SCRIPTS["fleet-api"], { owner: await client(), counterpart: await client() }, { runId: "scout-tools-00000000", verifierUrl: "https://verify.test" });
   if (run.proof.kind !== "receipt") throw new Error("expected a receipt");
   return { relay, hash: run.proof.receiptHash };
@@ -52,7 +52,7 @@ afterEach(() => {
 describe("exchange_verify_receipt (Sovereign)", () => {
   it("verifies a cleared receipt: hash, both signatures, ledger inclusion, not revoked", async () => {
     const { relay, hash } = await clearedReceipt();
-    vi.stubEnv("BLOOM_RELAY_URL", FAKE_RELAY);
+    vi.stubEnv("BLOOM_RELAY_URL", SIM_RELAY);
     vi.stubEnv("BLOOM_VERIFIER_URL", "https://verify.test");
     const out = await run(makeVerifyReceiptTool(relay.fetch), { receiptHash: hash });
     expect(out).toMatchObject({ valid: true, status: "verified", verifyUrl: `https://verify.test/r/${hash}` });
@@ -61,7 +61,7 @@ describe("exchange_verify_receipt (Sovereign)", () => {
 
   it("reports an unknown hash as not found, and never looks up an example hash", async () => {
     const { relay } = await clearedReceipt();
-    vi.stubEnv("BLOOM_RELAY_URL", FAKE_RELAY);
+    vi.stubEnv("BLOOM_RELAY_URL", SIM_RELAY);
     expect(await run(makeVerifyReceiptTool(relay.fetch), { receiptHash: "ab".repeat(32) })).toMatchObject({ valid: false, status: "not_found" });
     const spy = vi.fn(relay.fetch);
     const example = [...EXAMPLE_HASHES][0];
@@ -75,7 +75,7 @@ describe("exchange_verify_receipt (Sovereign)", () => {
 
   it("Sovereign accepts a settlement only on a verified receipt, and holds an unverifiable one", async () => {
     const { relay, hash } = await clearedReceipt();
-    vi.stubEnv("BLOOM_RELAY_URL", FAKE_RELAY);
+    vi.stubEnv("BLOOM_RELAY_URL", SIM_RELAY);
     vi.stubGlobal("fetch", relay.fetch);
     const ok = (await AGENTS.sovereign.simulate({ command: `Accept the API settlement ${hash}`, params: {} }, kitFor(AGENTS.sovereign))) as { governance: { decision: string; rule: string }[] };
     expect(ok.governance.find((g) => g.rule.startsWith("Receipt verified"))?.decision).toBe("approve");

@@ -284,8 +284,8 @@ export function aggregatePulse(samples: PulseSample[], now = Date.now(), windowM
 export type NormalizedIntent = Pick<AgentIntentNode, "domain" | "protocol" | "protocolLabel" | "agentName" | "coreGoal" | "resourceVector"> & { scanText: string };
 
 /**
- * Normalizes any payload. `protocol` is a registry id or "custom"; `source` names a custom protocol ("Tesla Megapack
- * Grid"); `goal` overrides the extracted goal when an operator types one. Never throws on odd shapes: an unreadable
+ * Normalizes any payload. `protocol` is a registry id or "custom"; `source` names a custom protocol ("Grid Battery
+ * Array"); `goal` overrides the extracted goal when an operator types one. Never throws on odd shapes: an unreadable
  * payload still yields a node, with a goal and agent derived from whatever it has.
  */
 export function normalize(input: { protocol: string; payload?: unknown; source?: string; goal?: string }): NormalizedIntent {

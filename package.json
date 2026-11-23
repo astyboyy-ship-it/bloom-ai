@@ -1,6 +1,6 @@
 {
   "name": "workflow-architect",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "scout:simulate": "vite-node --config vitest.config.ts scripts/scout-simulate.ts",
     "tauri": "tauri",
     "sovereign:init": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sovereign-init.ts",
     "sovereign:up": "docker compose -f deploy/sovereign-node/docker-compose.yml up -d --build",

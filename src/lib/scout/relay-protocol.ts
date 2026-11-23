@@ -197,12 +197,15 @@ export async function verifyInclusion(hash: string, index: number, treeSize: num
 export type Check = "pass" | "fail";
 export type ReceiptChecks = { canonicalHash: Check; buyerSignature: Check; sellerSignature: Check; ledgerInclusion: Check; notRevoked: Check };
 
-/** Verifies a receipt payload locally: hash, both signatures, ledger inclusion and revocation. */
-export async function verifyReceiptPayload(p: ReceiptPayload): Promise<{ valid: boolean; checks: ReceiptChecks }> {
+/**
+ * Verifies a receipt payload locally: hash, both signatures, ledger inclusion and revocation. Pass `expectedHash` (the
+ * hash that was asked for) so a relay that answers with a different, validly signed receipt fails canonicalHash.
+ */
+export async function verifyReceiptPayload(p: ReceiptPayload, expectedHash?: string): Promise<{ valid: boolean; checks: ReceiptChecks }> {
   const hash = await receiptHash(p.receipt).catch(() => "");
   const ok = (b: boolean): Check => (b ? "pass" : "fail");
   const checks: ReceiptChecks = {
-    canonicalHash: ok(Boolean(hash) && hash === p.hash && p.receipt?.version === RECEIPT_VERSION),
+    canonicalHash: ok(Boolean(hash) && hash === p.hash && (expectedHash === undefined || hash === expectedHash) && p.receipt?.version === RECEIPT_VERSION),
     buyerSignature: ok(Boolean(hash) && (await verifyEd25519(p.receipt.buyer?.pubkey, p.signatures?.buyer, receiptSigningInput(hash)))),
     sellerSignature: ok(Boolean(hash) && (await verifyEd25519(p.receipt.seller?.pubkey, p.signatures?.seller, receiptSigningInput(hash)))),
     ledgerInclusion: ok(Boolean(hash) && Boolean(p.ledger) && (await verifyInclusion(hash, p.ledger.leafIndex, p.ledger.treeSize, p.ledger.proof, p.ledger.root))),

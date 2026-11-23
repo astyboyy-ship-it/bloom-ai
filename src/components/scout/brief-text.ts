@@ -1,7 +1,7 @@
 import { brandOf, companyById } from "@/components/pulse/companies";
 import { buildBrief, usdFromCents, type Brief } from "@/lib/scout/brief";
 import type { ScoutRun } from "@/lib/scout/types";
-import type { ScoutCopy } from "./copy";
+import type { ScoutCopy } from "./copy-text";
 
 /** A hash shortened for display: first 8 and last 6 characters. */
 export const short = (h: string) => (h.length > 20 ? `${h.slice(0, 8)}…${h.slice(-6)}` : h);

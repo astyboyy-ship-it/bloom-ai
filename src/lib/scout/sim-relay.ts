@@ -1,13 +1,14 @@
-import { authString, canonicalize, concat, sha256Bytes, sha256Hex, toHex, verifyEd25519 } from "../relay-client";
-import { eventHash, GENESIS_HASH, offerPrice, receiptHash, type ReceiptPayload, type RelayReceipt, type Room, type RoomEvent } from "../relay-protocol";
+import { authString, canonicalize, concat, sha256Bytes, sha256Hex, toHex, verifyEd25519 } from "./relay-client";
+import { eventHash, GENESIS_HASH, offerPrice, receiptHash, type ReceiptPayload, type RelayReceipt, type Room, type RoomEvent } from "./relay-protocol";
 
 /**
- * An in-memory stand-in for the Bloom Exchange relay, strict where Bloom Scout could go wrong: it verifies every
+ * An in-process simulation of the Bloom Exchange relay (used by `npm run scout:simulate` and the tests; it makes no
+ * network calls), strict where Bloom Scout could go wrong: it verifies every
  * signed request (headers, body hash, nonce reuse), records each move's raw body and signature in a hash chain like
  * the real relay, enforces turns and round limits, and accepts a CLEAR only with a receipt that hashes correctly and
  * carries both parties' signatures. `bodies` keeps every request body so tests can check what was sent.
  */
-export const FAKE_RELAY = "https://fake-relay.test";
+export const SIM_RELAY = "https://relay.sim.invalid";
 
 type Stored = { room: Room; events: RoomEvent[] };
 
@@ -21,7 +22,7 @@ async function root(hashes: string[]): Promise<string> {
   return toHex(await mth(await Promise.all(hashes.map(leaf))));
 }
 
-export function fakeRelay(now = () => new Date("2026-11-21T10:00:00.000Z")) {
+export function simRelay(now = () => new Date("2026-11-21T10:00:00.000Z")) {
   const nonces = new Set<string>();
   const intents = new Map<string, { id: string; owner: string; vertical: string }>();
   const rooms = new Map<string, Stored>();
@@ -83,7 +84,7 @@ export function fakeRelay(now = () => new Date("2026-11-21T10:00:00.000Z")) {
       if (!intent) return deny(404, "no_intent");
       const id = `rm_${++n}`;
       const { priceAtomic, currency } = offerPrice(body.terms as Record<string, unknown>);
-      const room: Room = { id, relay: FAKE_RELAY, intentId: intent.id, vertical: intent.vertical, status: "PROPOSED", buyer: { pubkey: pub, mandateCommitment: String(body.mandateCommitment) }, seller: { pubkey: intent.owner, mandateCommitment: null }, rounds: 0, maxRounds: Number(body.maxRounds), openedAt: at(), expiresAt: at(), accepted: null, receiptHash: null, transcriptHead: GENESIS_HASH, seq: 0 };
+      const room: Room = { id, relay: SIM_RELAY, intentId: intent.id, vertical: intent.vertical, status: "PROPOSED", buyer: { pubkey: pub, mandateCommitment: String(body.mandateCommitment) }, seller: { pubkey: intent.owner, mandateCommitment: null }, rounds: 0, maxRounds: Number(body.maxRounds), openedAt: at(), expiresAt: at(), accepted: null, receiptHash: null, transcriptHead: GENESIS_HASH, seq: 0 };
       const s = { room, events: [] as RoomEvent[] };
       rooms.set(id, s);
       const event = await append(s, "PROPOSE", pub, body, auth);

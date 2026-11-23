@@ -50,13 +50,25 @@ jobs:
         env:
           URL: ${{ vars.BLOOM_APP_URL }}
 
+      # Release notes come from docs/releases/<tag>.md when that file exists; otherwise the one-line default is used.
+      - name: Release notes
+        id: notes
+        shell: bash
+        run: |
+          f="docs/releases/${GITHUB_REF_NAME}.md"
+          {
+            echo "body<<BLOOM_NOTES_EOF"
+            if [ "$GITHUB_REF_TYPE" = "tag" ] && [ -f "$f" ]; then cat "$f"; else echo "Bloom AI Desktop installers: Windows (.exe) and macOS universal (.dmg)."; fi
+            echo "BLOOM_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'desktop-v__VERSION__' }}
           releaseName: "Bloom AI Desktop v__VERSION__"
-          releaseBody: "Bloom AI Desktop installers: Windows (.exe) and macOS universal (.dmg)."
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

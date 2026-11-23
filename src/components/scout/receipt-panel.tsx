@@ -42,7 +42,7 @@ export function ReceiptPanel({ proof }: { proof: Proof }) {
         if (!r.ok) throw new Error(String(r.status));
         const j = (await r.json()) as { payload: ReceiptPayload; verification: { valid: boolean; checks: ReceiptChecks } };
         // Checked again here, with no trust in the server; only a browser without Ed25519 shows the server's result.
-        const local = (await ed25519Supported()) ? await verifyReceiptPayload(j.payload) : null;
+        const local = (await ed25519Supported()) ? await verifyReceiptPayload(j.payload, hash) : null;
         const v: Verified = { by: local ? "browser" : "server", ...(local ?? j.verification), leafIndex: j.payload.ledger.leafIndex, treeSize: j.payload.ledger.treeSize };
         if (!gone) setState({ status: "done", result: v });
       } catch {
